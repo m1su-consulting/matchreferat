@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024">
+  <!-- Matchreferat logo: a girl with a ponytail kicking a football. Original artwork. -->
+  <defs>
+    <clipPath id="ball"><circle cx="378" cy="392" r="38"/></clipPath>
+  </defs>
+  <rect width="512" height="512" fill="#1F8A49"/>
+  <circle cx="256" cy="256" r="300" fill="#24A055" opacity="0.35"/>
+  <!-- pitch line and ground shadow -->
+  <path d="M40 452 H472" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="236" cy="448" rx="70" ry="9" fill="#0F5A2E" opacity="0.45"/>
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <!-- back arm and front arm -->
+    <path d="M246 186 L212 230 L184 250" stroke-width="24"/>
+    <path d="M286 188 L330 210 L356 186" stroke-width="24"/>
+    <!-- planted leg -->
+    <path d="M230 282 L216 358 L206 430 L238 436" stroke-width="30"/>
+    <!-- kicking leg -->
+    <path d="M254 286 L300 334 L340 368" stroke-width="30"/>
+  </g>
+  <!-- jersey -->
+  <path d="M242 166 L288 174 L262 288 L224 282 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round"/>
+  <!-- head with ponytail streaming back -->
+  <path d="M262 104 C238 92 206 98 184 118 C170 130 164 146 160 160 C176 146 192 140 206 142 C214 132 222 128 232 128 C240 128 252 130 262 136 Z" fill="#FFFFFF"/>
+  <circle cx="270" cy="126" r="36" fill="#FFFFFF"/>
+  <circle cx="240" cy="113" r="9" fill="#F4C542"/>
+  <!-- ball -->
+  <circle cx="378" cy="392" r="38" fill="#FFFFFF"/>
+  <g clip-path="url(#ball)" fill="#16341F">
+    <path d="M378 374 L395 386 L389 406 L367 406 L361 386 Z"/>
+    <path d="M378 354 L388 362 L378 370 L368 362 Z"/>
+    <path d="M412 380 L420 396 L404 392 Z"/>
+    <path d="M344 380 L352 392 L336 396 Z"/>
+    <path d="M398 420 L404 432 L388 428 Z"/>
+    <path d="M358 420 L368 428 L352 432 Z"/>
+  </g>
+  <circle cx="378" cy="392" r="38" fill="none" stroke="#16341F" stroke-width="3"/>
+  <!-- speed lines behind the ball -->
+  <path d="M330 404 L312 410 M334 424 L318 432" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="7" stroke-linecap="round"/>
+</svg>

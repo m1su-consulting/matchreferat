@@ -4,7 +4,6 @@ import SwiftUI
 struct StartView: View {
     @Environment(MatchStore.self) private var store
     @State private var showNewMatch = false
-    @State private var confirmReset = false
 
     var body: some View {
         @Bindable var store = store
@@ -59,27 +58,14 @@ struct StartView: View {
             }
 
             Section {
-                Button("Lägg till exempellag") { store.addExampleTeam() }
-                    .disabled(store.teams.contains { $0.id == MatchState.exampleTeamID })
-                Button("Visa exempelmatch", role: .destructive) { confirmReset = true }
-            } header: {
-                Text("Exempel")
-            } footer: {
-                Text("Exempellaget och exempelmatchen har påhittade spelare.")
+                MadeBy()
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 24, leading: 0, bottom: 8, trailing: 0))
             }
         }
-        .navigationTitle("Matchreferat")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
-        .alert("Visa exempelmatchen?", isPresented: $confirmReset) {
-            Button("Visa", role: .destructive) {
-                store.reset()
-                store.showMatch = true
-            }
-            Button("Avbryt", role: .cancel) {}
-        } message: {
-            Text("Den pågående matchen ersätts med exempelmatchen.")
-        }
         .onAppear {
             // `-demoSheet newMatch` opens the new match sheet (used for screenshots).
             if UserDefaults.standard.string(forKey: "demoSheet") == "newMatch" { showNewMatch = true }
@@ -87,29 +73,41 @@ struct StartView: View {
     }
 }
 
-/// Mikael's M1SU logo from the asset catalog ("Logo"), with a placeholder if it is missing.
+/// The app logo (a girl kicking a football) with the app name.
 struct Logo: View {
     var body: some View {
-        if UIImage(named: "Logo") != nil {
-            // The logo has a white background, so it sits on a white card in dark mode too.
+        VStack(spacing: 10) {
+            Image("AppLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                .accessibilityHidden(true)
+            Text("Matchreferat")
+                .font(.title.weight(.heavy))
+        }
+    }
+}
+
+/// Small "Utvecklad av" credit with Mikael's M1SU Consulting logo. The logo is a JPG with a
+/// white background, so it sits on a white card that also looks deliberate in dark mode.
+struct MadeBy: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Utvecklad av")
+                .font(.caption)
+                .foregroundStyle(.secondary)
             Image("Logo")
                 .resizable()
                 .scaledToFit()
-                .frame(maxWidth: 220)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .padding(6)
-                .background(.white, in: RoundedRectangle(cornerRadius: 10))
+                .frame(height: 40)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(.white, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.primary.opacity(0.08)))
+                .opacity(0.9)
                 .accessibilityLabel("M1SU Consulting")
-        } else {
-            VStack(spacing: 8) {
-                Image(systemName: "soccerball")
-                    .font(.system(size: 52, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 96, height: 96)
-                    .background(Theme.green, in: Circle())
-                Text("Matchreferat")
-                    .font(.title2.weight(.heavy))
-            }
         }
     }
 }
