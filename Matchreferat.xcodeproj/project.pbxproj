@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		16F3FF968154DADB7193DAB5 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 6CBDA4D30339D53C419B93B6 /* FirebaseAuth */; };
+		36BDE89B06CC93C0E3217DAE /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 16014A7EC809D85980F1DA6B /* FirebaseFirestore */; };
 		42F57E43625C8873A831F508 /* SquadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67DEA2C591B35E7CA222EB5 /* SquadView.swift */; };
+		4343B3905002AFC95EDCE3B2 /* LiveShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0C41D402F1023B67BCB754 /* LiveShare.swift */; };
 		54A7187220AB2114146BA834 /* MatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C6182995ACEE0EDD2824C6 /* MatchStore.swift */; };
 		59E47B08F9E644AF1BB13925 /* MatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5443206FFA1DEE5BE9B75D /* MatchView.swift */; };
 		728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */; };
@@ -17,6 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3B0C41D402F1023B67BCB754 /* LiveShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveShare.swift; sourceTree = "<group>"; };
 		52264AC78ACDFA24DCD35037 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
 		5415F7129D343D5CA9E5C815 /* FlowSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowSheet.swift; sourceTree = "<group>"; };
 		69C6182995ACEE0EDD2824C6 /* MatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchStore.swift; sourceTree = "<group>"; };
@@ -26,6 +30,18 @@
 		D67DEA2C591B35E7CA222EB5 /* SquadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadView.swift; sourceTree = "<group>"; };
 		FA60336EA9F5AD415E16EEF7 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5268CAAE9F36CA6BD61361F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				16F3FF968154DADB7193DAB5 /* FirebaseAuth in Frameworks */,
+				36BDE89B06CC93C0E3217DAE /* FirebaseFirestore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		039B720B333EF8E366B3150C /* Products */ = {
@@ -49,6 +65,7 @@
 			children = (
 				52264AC78ACDFA24DCD35037 /* EventsView.swift */,
 				5415F7129D343D5CA9E5C815 /* FlowSheet.swift */,
+				3B0C41D402F1023B67BCB754 /* LiveShare.swift */,
 				89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */,
 				69C6182995ACEE0EDD2824C6 /* MatchStore.swift */,
 				AB5443206FFA1DEE5BE9B75D /* MatchView.swift */,
@@ -66,6 +83,7 @@
 			buildConfigurationList = 561211A32013038364A01585 /* Build configuration list for PBXNativeTarget "Matchreferat" */;
 			buildPhases = (
 				DF472BB57C1B37475A1666F0 /* Sources */,
+				5268CAAE9F36CA6BD61361F0 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -73,6 +91,8 @@
 			);
 			name = Matchreferat;
 			packageProductDependencies = (
+				6CBDA4D30339D53C419B93B6 /* FirebaseAuth */,
+				16014A7EC809D85980F1DA6B /* FirebaseFirestore */,
 			);
 			productName = Matchreferat;
 			productReference = 791A520E54E03B49E0FAEE8F /* Matchreferat.app */;
@@ -101,6 +121,9 @@
 			);
 			mainGroup = C245AB54E41D040134FB3E3C;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E949976A5A887958F7391600 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 039B720B333EF8E366B3150C /* Products */;
 			projectDirPath = "";
@@ -118,6 +141,7 @@
 			files = (
 				97AE9ED9D7D57BD4FEDBB532 /* EventsView.swift in Sources */,
 				7A7E1985C92B29FA1C1109B9 /* FlowSheet.swift in Sources */,
+				4343B3905002AFC95EDCE3B2 /* LiveShare.swift in Sources */,
 				54A7187220AB2114146BA834 /* MatchStore.swift in Sources */,
 				59E47B08F9E644AF1BB13925 /* MatchView.swift in Sources */,
 				728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */,
@@ -266,6 +290,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1;
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = se.matchreferat.app;
 				PRODUCT_NAME = Matchreferat;
 				SDKROOT = iphoneos;
@@ -292,6 +317,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1;
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = se.matchreferat.app;
 				PRODUCT_NAME = Matchreferat;
 				SDKROOT = iphoneos;
@@ -322,6 +348,30 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E949976A5A887958F7391600 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		16014A7EC809D85980F1DA6B /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E949976A5A887958F7391600 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		6CBDA4D30339D53C419B93B6 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E949976A5A887958F7391600 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 93863C0AD65A01189BC2EDAA /* Project object */;
 }

@@ -2,14 +2,33 @@ import SwiftUI
 
 @main
 struct MatchreferatApp: App {
-    @State private var store = MatchStore()
+    @State private var store: MatchStore
+    @State private var live: LiveShare
+
+    init() {
+        LiveBackend.configure()
+        _store = State(initialValue: MatchStore())
+        _live = State(initialValue: LiveShare())
+    }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(store)
+                .environment(live)
                 .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
-                .onChange(of: store.state) { store.save() }
+                .onChange(of: store.state) {
+                    store.save()
+                    live.sync(store.state)
+                }
+                .task {
+                    #if DEBUG
+                    // `-demoLive YES` starts sharing on launch (used for emulator tests).
+                    if UserDefaults.standard.bool(forKey: "demoLive") && !live.isOn {
+                        await live.start(store.state)
+                    }
+                    #endif
+                }
         }
     }
 }

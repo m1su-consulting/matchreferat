@@ -3,11 +3,20 @@ options:
   bundleIdPrefix: se.matchreferat
   deploymentTarget:
     iOS: "17.0"
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 13.0.0
 targets:
   Matchreferat:
     type: application
     platform: iOS
     sources: [Sources]
+    dependencies:
+      - package: Firebase
+        product: FirebaseAuth
+      - package: Firebase
+        product: FirebaseFirestore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.matchreferat.app
@@ -24,3 +33,4 @@ targets:
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGNING_REQUIRED: NO
+        OTHER_LDFLAGS: -ObjC

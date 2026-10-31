@@ -1,0 +1,15 @@
+{
+  "name": "matchreferat-firebase",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "emulators": "firebase emulators:start --only auth,firestore,hosting --project demo-matchreferat",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-matchreferat \"node --test tests/\"",
+    "deploy": "firebase deploy --only firestore:rules,hosting"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.1.0",
+    "firebase-tools": "15.34.2"
+  }
+}

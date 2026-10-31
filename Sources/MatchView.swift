@@ -16,8 +16,10 @@ struct MatchView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                HomeAwayPicker()
                 ScoreboardView()
                 ClockControls()
+                LiveRow()
                 EventGrid(flow: $flow)
                 Text("Prototyp med påhittade spelare")
                     .font(.footnote)
@@ -141,23 +143,30 @@ struct EventGrid: View {
     @Environment(MatchStore.self) private var store
     @Binding var flow: Flow?
 
-    private let rows: [EventKind] = [.goal, .shot, .corner, .freeKick, .yellow, .red]
+    /// Events logged for both teams. The opponent is only a team name: no player data, no cards.
+    private let sharedRows: [EventKind] = [.goal, .shot, .corner, .freeKick]
+    private let ourRows: [[EventKind]] = [[.yellow, .red], [.sub, .save]]
 
     var body: some View {
+        let sides = [store.state.homeSide, store.state.awaySide]
         Grid(horizontalSpacing: 10, verticalSpacing: 10) {
             GridRow {
-                header("Vi", .us)
-                header(store.state.opponent, .them)
+                ForEach(sides, id: \.self) { side in
+                    header(side == .us ? "Vi" : store.state.opponent, side)
+                }
             }
-            ForEach(rows, id: \.self) { kind in
+            ForEach(sharedRows, id: \.self) { kind in
                 GridRow {
-                    button(kind, .us)
-                    button(kind, .them)
+                    ForEach(sides, id: \.self) { side in button(kind, side) }
                 }
             }
             GridRow {
-                button(.sub, .us)
-                button(.save, .us)
+                header("Bara vi", .us).gridCellColumns(2).padding(.top, 6)
+            }
+            ForEach(ourRows, id: \.self) { row in
+                GridRow {
+                    ForEach(row, id: \.self) { kind in button(kind, .us) }
+                }
             }
         }
     }
@@ -204,9 +213,23 @@ struct EventGrid: View {
         case (.goal, .us): flow = .goal
         case (.shot, _): flow = .shot(side)
         case (.yellow, .us), (.red, .us): flow = .card(kind)
-        case (.sub, _): flow = .sub
+        case (.sub, .us): flow = .sub
+        case (.yellow, .them), (.red, .them), (.sub, .them), (.save, .them): break
         default: store.log(kind, side: side)
         }
+    }
+}
+
+struct HomeAwayPicker: View {
+    @Environment(MatchStore.self) private var store
+
+    var body: some View {
+        @Bindable var store = store
+        Picker("Vi spelar", selection: $store.state.isHome) {
+            Text("Vi spelar hemma").tag(true)
+            Text("Vi spelar borta").tag(false)
+        }
+        .pickerStyle(.segmented)
     }
 }
 

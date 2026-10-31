@@ -1,3 +1,7 @@
 build/
 .DS_Store
 xcuserdata/
+node_modules/
+.firebase/
+*-debug.log
+Sources/GoogleService-Info.plist

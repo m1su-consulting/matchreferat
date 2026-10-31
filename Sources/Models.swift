@@ -124,6 +124,13 @@ extension MatchState {
     func teamName(_ side: Side) -> String { side == .us ? ourTeam : opponent }
     func name(_ id: UUID?) -> String? { players.first { $0.id == id }?.name }
 
+    /// First name and shirt number, e.g. "Selma (10)". The only form of a player name that may leave the phone.
+    func publicName(_ id: UUID?) -> String? {
+        guard let player = players.first(where: { $0.id == id }) else { return nil }
+        let first = player.name.split(separator: " ").first.map(String.init) ?? player.name
+        return "\(first) (\(player.number))"
+    }
+
     var onField: [Player] { players.filter { $0.status == .start }.sorted { $0.number < $1.number } }
     var bench: [Player] { players.filter { $0.status == .bench }.sorted { $0.number < $1.number } }
     var playingToday: [Player] { players.filter { $0.status != .out }.sorted { $0.number < $1.number } }
@@ -189,13 +196,14 @@ extension MatchState {
         }
     }
 
-    func describe(_ e: MatchEvent) -> String {
+    func describe(_ e: MatchEvent, publicNames: Bool = false) -> String {
+        let name: (UUID?) -> String? = publicNames ? { publicName($0) } : { self.name($0) }
         let who = name(e.player)
         switch e.kind {
         case .goal:
             guard e.side == .us else { return "Mål \(opponent)" }
             var text = "Mål! \(who ?? "Okänd målskytt")"
-            if let assist = name(e.otherPlayer) { text += " (assist \(assist))" }
+            if let assist = name(e.otherPlayer) { text += ", assist \(assist)" }
             return text
         case .shot:
             let result = (e.shot ?? .onTarget).label.lowercased()
@@ -211,6 +219,7 @@ extension MatchState {
         }
     }
 
+    /// Shared outside the app, so players appear only as first name and shirt number.
     func report(at now: Date) -> String {
         let sorted = events.sorted { $0.createdAt < $1.createdAt }
         var lines = ["\(teamName(homeSide)) – \(teamName(awaySide))  \(scoreText)", statusLine(at: now)]
@@ -223,17 +232,17 @@ extension MatchState {
 
         group(sorted.filter { $0.kind == .goal }.map { e in
             guard e.side == .us else { return "⚽ \(e.minute.text) \(opponent)" }
-            var text = "⚽ \(e.minute.text) \(name(e.player) ?? ourTeam)"
-            if let assist = name(e.otherPlayer) { text += " (assist \(assist))" }
+            var text = "⚽ \(e.minute.text) \(publicName(e.player) ?? ourTeam)"
+            if let assist = publicName(e.otherPlayer) { text += ", assist \(assist)" }
             return text
         })
         group(sorted.filter { $0.kind == .yellow || $0.kind == .red }.map { e in
             let emoji = e.kind == .yellow ? "🟨" : "🟥"
-            let who = e.side == .us ? (name(e.player) ?? ourTeam) : opponent
+            let who = publicName(e.player) ?? ourTeam
             return "\(emoji) \(e.minute.text) \(who)"
         })
         group(sorted.filter { $0.kind == .sub }.map { e in
-            "🔁 \(e.minute.text) \(name(e.otherPlayer) ?? "Okänd") in, \(name(e.player) ?? "Okänd") ut"
+            "🔁 \(e.minute.text) \(publicName(e.otherPlayer) ?? "Okänd") in, \(publicName(e.player) ?? "Okänd") ut"
         })
         group(sorted.filter { $0.kind == .period }.map { "⏱ \($0.minute.text) \($0.note ?? "")" })
         lines.append("")
