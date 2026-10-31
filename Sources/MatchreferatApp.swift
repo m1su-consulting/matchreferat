@@ -26,6 +26,15 @@ struct MatchreferatApp: App {
                     // Refresh the viewers' copy on launch, e.g. after the app was closed mid-match.
                     if live.isOn { live.sync(store.state) }
                     #if DEBUG
+                    // `-demoScreenshots YES` shows a fictional team mid-match (App Store screenshots).
+                    if UserDefaults.standard.bool(forKey: "demoScreenshots") {
+                        var team = MatchState.exampleTeam()
+                        team.name = "Björkdalens IF"
+                        var match = MatchState.example()
+                        match.ourTeam = team.name
+                        store.teams = [team]
+                        store.state = match
+                    }
                     // `-demoLive YES` starts sharing on launch (used for emulator tests).
                     if UserDefaults.standard.bool(forKey: "demoLive") && !live.isOn {
                         await live.start(store.state)
@@ -45,6 +54,17 @@ struct MatchreferatApp: App {
                     #endif
                 }
         }
+    }
+}
+
+/// Launch arguments such as `-screen match` used for screenshots and tests; ignored in Release builds.
+enum LaunchArgument {
+    static func string(_ key: String) -> String? {
+        #if DEBUG
+        UserDefaults.standard.string(forKey: key)
+        #else
+        nil
+        #endif
     }
 }
 

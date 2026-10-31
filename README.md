@@ -32,3 +32,12 @@ Appen fungerar utan Firebase. För att aktivera livelänken, se [FIREBASE.md](FI
 - `branding/`: logga och appikon.
 
 Exempeldata i appen har påhittade spelare.
+
+## App Store
+
+Metadata, granskningsanteckningar och skärmdumpar ligger i `appstore/`. Bygg och ladda upp:
+
+```bash
+scripts/archive.sh            # bygger Release-arkiv och öppnar Xcode Organizer
+scripts/archive.sh --upload   # bygger och laddar upp direkt till App Store Connect
+```

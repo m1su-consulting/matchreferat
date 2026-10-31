@@ -35,7 +35,13 @@ struct StartView: View {
 
             Section("Mina lag") {
                 if store.teams.isEmpty {
-                    Text("Lägg till ditt första lag för att kunna starta en match.").foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Lägg till ditt första lag för att kunna starta en match.")
+                            .foregroundStyle(.secondary)
+                        Button("Prova med ett exempellag") { store.addExampleTeam() }
+                            .font(.subheadline)
+                    }
+                    .padding(.vertical, 4)
                 }
                 ForEach($store.teams) { $team in
                     NavigationLink {
@@ -68,7 +74,7 @@ struct StartView: View {
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .onAppear {
             // `-demoSheet newMatch` opens the new match sheet (used for screenshots).
-            if UserDefaults.standard.string(forKey: "demoSheet") == "newMatch" { showNewMatch = true }
+            if LaunchArgument.string("demoSheet") == "newMatch" { showNewMatch = true }
         }
     }
 }
@@ -108,6 +114,12 @@ struct MadeBy: View {
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.primary.opacity(0.08)))
                 .opacity(0.9)
                 .accessibilityLabel("M1SU Consulting")
+            HStack(spacing: 16) {
+                Link("Integritetspolicy", destination: URL(string: "https://matchreferat.web.app/integritet")!)
+                Link("Support", destination: URL(string: "https://matchreferat.web.app/support")!)
+            }
+            .font(.caption)
+            .padding(.top, 6)
         }
     }
 }

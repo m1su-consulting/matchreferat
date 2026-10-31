@@ -80,7 +80,7 @@ struct MatchView: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: store.state.events.count)
         .onAppear {
             // `-demoSheet goal|squad|newMatch` opens that sheet (used for screenshots).
-            switch UserDefaults.standard.string(forKey: "demoSheet") {
+            switch LaunchArgument.string("demoSheet") {
             case "goal": flow = .goal
             case "squad": showSquad = true
             case "settings": showSettings = true

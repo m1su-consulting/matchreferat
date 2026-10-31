@@ -15,7 +15,7 @@ final class MatchStore {
     var teams: [Team]
     var toast: Toast?
     /// Whether the match page is shown on top of the start page; `-screen match` opens it on launch.
-    var showMatch = UserDefaults.standard.string(forKey: "screen") == "match"
+    var showMatch = LaunchArgument.string("screen") == "match"
 
     private static func fileURL(_ name: String) -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
@@ -24,7 +24,7 @@ final class MatchStore {
     private static let teamsURL = fileURL("teams.json")
 
     init() {
-        var match = MatchState.example()
+        var match = MatchState.empty
         if let data = try? Data(contentsOf: Self.matchURL),
            var saved = try? JSONDecoder().decode(MatchState.self, from: data) {
             // Older versions logged saves separately and had blocked shots; a save is now
@@ -41,6 +41,9 @@ final class MatchStore {
             teams = saved
         } else if match.teamID == MatchState.exampleTeamID {
             teams = [MatchState.exampleTeam()]
+        } else if match.players.isEmpty {
+            // First launch: no teams yet.
+            teams = []
         } else {
             // Before teams existed, the squad lived in the match: it becomes the first team.
             let team = Team(name: match.ourTeam, playersOnField: match.playersOnField, periods: match.periods,
@@ -50,7 +53,7 @@ final class MatchStore {
             match.teamID = team.id
         }
         state = match
-        if !FileManager.default.fileExists(atPath: Self.teamsURL.path) {
+        if !teams.isEmpty && !FileManager.default.fileExists(atPath: Self.teamsURL.path) {
             saveTeams()
             save()
         }

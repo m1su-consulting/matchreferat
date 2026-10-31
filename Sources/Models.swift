@@ -397,6 +397,11 @@ extension MatchState {
 }
 
 extension MatchState {
+    /// No team and no match yet, as on first launch.
+    static let empty = MatchState(teamID: nil, ourTeam: "", opponent: "", isHome: true, halfLength: 25, periods: 2,
+                                  playersOnField: 9, players: [], events: [], phase: .notStarted, period: 1,
+                                  isRunning: false, accumulated: 0, runningSince: nil)
+
     /// Fake squad for the example team. Clearly marked as made up in the UI.
     static let exampleTeamID = UUID(uuidString: "6E6F8B6A-0E1D-4C55-9D7B-3A3E2C9A1F00")!
 

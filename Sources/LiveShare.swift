@@ -279,7 +279,7 @@ struct LiveRow: View {
         }
         .onAppear {
             // `-demoSheet live` opens the live sheet (used for screenshots).
-            if UserDefaults.standard.string(forKey: "demoSheet") == "live" { showSheet = true }
+            if LaunchArgument.string("demoSheet") == "live" { showSheet = true }
         }
     }
 }
