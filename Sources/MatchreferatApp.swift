@@ -29,6 +29,11 @@ struct MatchreferatApp: App {
                     if UserDefaults.standard.bool(forKey: "demoLive") && !live.isOn {
                         await live.start(store.state)
                     }
+                    // `-demoNewMatch "Lag"` runs the Ny match flow on launch (used for tests).
+                    if let opponent = UserDefaults.standard.string(forKey: "demoNewMatch") {
+                        await NewMatchSheet.startNewMatch(store: store, live: live, opponent: opponent,
+                                                          isHome: false, halfLength: store.state.halfLength)
+                    }
                     #endif
                 }
         }
@@ -45,11 +50,11 @@ enum Theme {
 }
 
 struct RootView: View {
-    // `-tab 1` as a launch argument opens another tab (used for screenshots).
-    @State private var tab = UserDefaults.standard.integer(forKey: "tab")
+    @Environment(MatchStore.self) private var store
 
     var body: some View {
-        TabView(selection: $tab) {
+        @Bindable var store = store
+        TabView(selection: $store.selectedTab) {
             MatchView()
                 .tabItem { Label("Match", systemImage: "sportscourt.fill") }
                 .tag(0)

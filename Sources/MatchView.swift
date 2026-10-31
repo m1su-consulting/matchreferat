@@ -110,12 +110,17 @@ struct ScoreboardView: View {
 struct ClockControls: View {
     @Environment(MatchStore.self) private var store
     @State private var confirmEnd = false
+    @State private var showNewMatch = false
 
     var body: some View {
         let phase = store.state.phase
         HStack(spacing: 12) {
             Button {
-                if phase == .secondHalf { confirmEnd = true } else { store.advancePhase() }
+                switch phase {
+                case .secondHalf: confirmEnd = true
+                case .finished: showNewMatch = true
+                default: store.advancePhase()
+                }
             } label: {
                 Label(store.primaryTitle, systemImage: store.primaryIcon)
                     .font(.headline)
@@ -123,7 +128,6 @@ struct ClockControls: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Theme.green)
-            .disabled(phase == .finished)
 
             if phase == .firstHalf || phase == .secondHalf {
                 Button { store.togglePause() } label: {
@@ -136,6 +140,7 @@ struct ClockControls: View {
                 .accessibilityLabel(store.state.isRunning ? "Pausa klockan" : "Starta klockan")
             }
         }
+        .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .confirmationDialog("Blås slutsignal?", isPresented: $confirmEnd, titleVisibility: .visible) {
             Button("Slutsignal") { store.advancePhase() }
             Button("Avbryt", role: .cancel) {}

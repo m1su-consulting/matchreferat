@@ -13,6 +13,7 @@
 		493D968D4AF2BB71AF3E1F32 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BD80CF8A089A74362E38F159 /* GoogleService-Info.plist */; };
 		54A7187220AB2114146BA834 /* MatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C6182995ACEE0EDD2824C6 /* MatchStore.swift */; };
 		59E47B08F9E644AF1BB13925 /* MatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5443206FFA1DEE5BE9B75D /* MatchView.swift */; };
+		5A7819D75BF19D1425E4A6BA /* NewMatchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */; };
 		728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */; };
 		78DC81D9A9D063E0B8E70362 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA60336EA9F5AD415E16EEF7 /* Models.swift */; };
 		7A7E1985C92B29FA1C1109B9 /* FlowSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5415F7129D343D5CA9E5C815 /* FlowSheet.swift */; };
@@ -28,6 +29,7 @@
 		89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchreferatApp.swift; sourceTree = "<group>"; };
 		AB5443206FFA1DEE5BE9B75D /* MatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchView.swift; sourceTree = "<group>"; };
 		BD80CF8A089A74362E38F159 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMatchSheet.swift; sourceTree = "<group>"; };
 		D67DEA2C591B35E7CA222EB5 /* SquadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadView.swift; sourceTree = "<group>"; };
 		FA60336EA9F5AD415E16EEF7 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -71,6 +73,7 @@
 				69C6182995ACEE0EDD2824C6 /* MatchStore.swift */,
 				AB5443206FFA1DEE5BE9B75D /* MatchView.swift */,
 				FA60336EA9F5AD415E16EEF7 /* Models.swift */,
+				CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */,
 				D67DEA2C591B35E7CA222EB5 /* SquadView.swift */,
 			);
 			path = Sources;
@@ -158,6 +161,7 @@
 				59E47B08F9E644AF1BB13925 /* MatchView.swift in Sources */,
 				728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */,
 				78DC81D9A9D063E0B8E70362 /* Models.swift in Sources */,
+				5A7819D75BF19D1425E4A6BA /* NewMatchSheet.swift in Sources */,
 				42F57E43625C8873A831F508 /* SquadView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

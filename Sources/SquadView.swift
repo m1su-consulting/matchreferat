@@ -5,6 +5,7 @@ struct SquadView: View {
     @State private var newName = ""
     @State private var newNumber = ""
     @State private var confirmReset = false
+    @State private var showNewMatch = false
 
     private let halfLengths = [15, 20, 25, 30, 35, 45]
 
@@ -12,6 +13,13 @@ struct SquadView: View {
         @Bindable var store = store
         NavigationStack {
             Form {
+                Section {
+                    Button { showNewMatch = true } label: {
+                        Label("Ny match", systemImage: "plus.circle.fill")
+                            .font(.headline)
+                    }
+                }
+
                 Section("Match") {
                     LabeledContent("Vårt lag") {
                         TextField("Vårt lag", text: $store.state.ourTeam)
@@ -60,6 +68,7 @@ struct SquadView: View {
                 }
             }
             .navigationTitle("Trupp")
+            .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
             .confirmationDialog("Återställa exempelmatchen?", isPresented: $confirmReset, titleVisibility: .visible) {
                 Button("Återställ", role: .destructive) { store.reset() }
                 Button("Avbryt", role: .cancel) {}

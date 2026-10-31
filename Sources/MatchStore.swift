@@ -12,6 +12,8 @@ final class MatchStore {
 
     var state: MatchState
     var toast: Toast?
+    /// Selected tab; `-tab 1` as a launch argument opens another tab (used for screenshots).
+    var selectedTab = UserDefaults.standard.integer(forKey: "tab")
 
     private static var fileURL: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -82,7 +84,7 @@ final class MatchStore {
         case .firstHalf: "Halvtid"
         case .halfTime: "Starta 2:a halvlek"
         case .secondHalf: "Slutsignal"
-        case .finished: "Matchen är slut"
+        case .finished: "Ny match"
         }
     }
 
@@ -90,7 +92,8 @@ final class MatchStore {
         switch state.phase {
         case .notStarted, .halfTime: "play.fill"
         case .firstHalf: "pause.circle.fill"
-        case .secondHalf, .finished: "flag.checkered"
+        case .secondHalf: "flag.checkered"
+        case .finished: "plus.circle.fill"
         }
     }
 
@@ -151,6 +154,25 @@ final class MatchStore {
     func addPlayer(name: String, number: Int) {
         state.players.append(Player(name: name, number: number, status: .bench))
         state.players.sort { $0.number < $1.number }
+    }
+
+    /// Whether starting a new match would throw away a match that is under way.
+    var hasUnfinishedMatch: Bool {
+        !state.events.isEmpty && state.phase != .finished
+    }
+
+    /// Clears events, score and clock but keeps the squad and everyone's Start/Bänk/Ej med.
+    func newMatch(opponent: String, isHome: Bool, halfLength: Int) {
+        state.opponent = opponent
+        state.isHome = isHome
+        state.halfLength = halfLength
+        state.events = []
+        state.phase = .notStarted
+        state.isRunning = false
+        state.accumulated = 0
+        state.runningSince = nil
+        toast = nil
+        selectedTab = 0
     }
 
     func reset() {
