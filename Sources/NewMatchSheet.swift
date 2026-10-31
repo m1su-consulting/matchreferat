@@ -41,7 +41,7 @@ struct NewMatchSheet: View {
                     }
                 }
             }
-            .confirmationDialog("Avsluta pågående match?", isPresented: $confirmDiscard, titleVisibility: .visible) {
+            .alert("Avsluta pågående match?", isPresented: $confirmDiscard) {
                 Button("Starta ny match", role: .destructive) { start() }
                 Button("Avbryt", role: .cancel) {}
             } message: {

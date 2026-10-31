@@ -30,6 +30,13 @@ struct MatchreferatApp: App {
                     if UserDefaults.standard.bool(forKey: "demoLive") && !live.isOn {
                         await live.start(store.state)
                     }
+                    // `-demoEvent YES` logs an opponent corner, `-demoTeamName X` renames the first team,
+                    // `-demoLiveOff YES` turns live sharing off (used for device tests).
+                    if UserDefaults.standard.bool(forKey: "demoEvent") { store.log(.corner, side: .them) }
+                    if let name = UserDefaults.standard.string(forKey: "demoTeamName"), !store.teams.isEmpty {
+                        store.teams[0].name = name
+                    }
+                    if UserDefaults.standard.bool(forKey: "demoLiveOff") { await live.stop() }
                     // `-demoNewMatch "Lag"` runs the Ny match flow on launch (used for tests).
                     if let opponent = UserDefaults.standard.string(forKey: "demoNewMatch"), let team = store.teams.first {
                         await NewMatchSheet.startNewMatch(

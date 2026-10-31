@@ -160,7 +160,7 @@ struct ClockControls: View {
             }
         }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
-        .confirmationDialog("Blås slutsignal?", isPresented: $confirmEnd, titleVisibility: .visible) {
+        .alert("Blås slutsignal?", isPresented: $confirmEnd) {
             Button("Slutsignal") { store.advancePhase() }
             Button("Avbryt", role: .cancel) {}
         }

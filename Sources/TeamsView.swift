@@ -54,7 +54,7 @@ struct TeamsView: View {
             }
             .navigationTitle("Lag")
             .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
-            .confirmationDialog("Återställa exempelmatchen?", isPresented: $confirmReset, titleVisibility: .visible) {
+            .alert("Återställa exempelmatchen?", isPresented: $confirmReset) {
                 Button("Återställ", role: .destructive) { store.reset() }
                 Button("Avbryt", role: .cancel) {}
             } message: {
