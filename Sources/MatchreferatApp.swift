@@ -39,10 +39,8 @@ struct MatchreferatApp: App {
                     if UserDefaults.standard.bool(forKey: "demoLiveOff") { await live.stop() }
                     // `-demoNewMatch "Lag"` runs the Ny match flow on launch (used for tests).
                     if let opponent = UserDefaults.standard.string(forKey: "demoNewMatch"), let team = store.teams.first {
-                        await NewMatchSheet.startNewMatch(
-                            store: store, live: live, team: team, opponent: opponent, isHome: false,
-                            playersOnField: 7, periods: 3, periodLength: 15,
-                            players: store.suggestedLineup(for: team, playersOnField: 7))
+                        await NewMatchSheet.startNewMatch(store: store, live: live, team: team, opponent: opponent,
+                                                          isHome: false)
                     }
                     #endif
                 }
@@ -64,16 +62,12 @@ struct RootView: View {
 
     var body: some View {
         @Bindable var store = store
-        TabView(selection: $store.selectedTab) {
-            MatchView()
-                .tabItem { Label("Match", systemImage: "sportscourt.fill") }
-                .tag(0)
-            EventsView()
-                .tabItem { Label("Händelser", systemImage: "list.bullet.rectangle") }
-                .tag(1)
-            TeamsView()
-                .tabItem { Label("Lag", systemImage: "person.3.fill") }
-                .tag(2)
+        NavigationStack {
+            StartView()
+                .navigationDestination(isPresented: $store.showMatch) {
+                    MatchView()
+                        .toolbar(.hidden, for: .navigationBar)
+                }
         }
         .tint(Theme.green)
     }

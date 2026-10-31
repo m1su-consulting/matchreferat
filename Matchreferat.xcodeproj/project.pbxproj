@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0327C84B357804FDB4E81674 /* StartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC947CCCD25F31F357EC250E /* StartView.swift */; };
 		16F3FF968154DADB7193DAB5 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 6CBDA4D30339D53C419B93B6 /* FirebaseAuth */; };
 		42F57E43625C8873A831F508 /* SquadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67DEA2C591B35E7CA222EB5 /* SquadView.swift */; };
 		4343B3905002AFC95EDCE3B2 /* LiveShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0C41D402F1023B67BCB754 /* LiveShare.swift */; };
@@ -14,6 +15,7 @@
 		54A7187220AB2114146BA834 /* MatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C6182995ACEE0EDD2824C6 /* MatchStore.swift */; };
 		59E47B08F9E644AF1BB13925 /* MatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5443206FFA1DEE5BE9B75D /* MatchView.swift */; };
 		5A7819D75BF19D1425E4A6BA /* NewMatchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */; };
+		5E245238FA05AAB467D6DB6B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D76168D8200CDCE61E174F61 /* Assets.xcassets */; };
 		6DA7428CD6456C10AAC54904 /* TeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA55C84662CFA8CC30313FE3 /* TeamsView.swift */; };
 		728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */; };
 		78DC81D9A9D063E0B8E70362 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA60336EA9F5AD415E16EEF7 /* Models.swift */; };
@@ -33,6 +35,8 @@
 		BD80CF8A089A74362E38F159 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMatchSheet.swift; sourceTree = "<group>"; };
 		D67DEA2C591B35E7CA222EB5 /* SquadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadView.swift; sourceTree = "<group>"; };
+		D76168D8200CDCE61E174F61 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		DC947CCCD25F31F357EC250E /* StartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartView.swift; sourceTree = "<group>"; };
 		FA60336EA9F5AD415E16EEF7 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -67,6 +71,7 @@
 		D8467B18DD1EABFF432FD91E /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				D76168D8200CDCE61E174F61 /* Assets.xcassets */,
 				52264AC78ACDFA24DCD35037 /* EventsView.swift */,
 				5415F7129D343D5CA9E5C815 /* FlowSheet.swift */,
 				BD80CF8A089A74362E38F159 /* GoogleService-Info.plist */,
@@ -77,6 +82,7 @@
 				FA60336EA9F5AD415E16EEF7 /* Models.swift */,
 				CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */,
 				D67DEA2C591B35E7CA222EB5 /* SquadView.swift */,
+				DC947CCCD25F31F357EC250E /* StartView.swift */,
 				BA55C84662CFA8CC30313FE3 /* TeamsView.swift */,
 			);
 			path = Sources;
@@ -147,6 +153,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5E245238FA05AAB467D6DB6B /* Assets.xcassets in Resources */,
 				493D968D4AF2BB71AF3E1F32 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -167,6 +174,7 @@
 				78DC81D9A9D063E0B8E70362 /* Models.swift in Sources */,
 				5A7819D75BF19D1425E4A6BA /* NewMatchSheet.swift in Sources */,
 				42F57E43625C8873A831F508 /* SquadView.swift in Sources */,
+				0327C84B357804FDB4E81674 /* StartView.swift in Sources */,
 				6DA7428CD6456C10AAC54904 /* TeamsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -296,7 +304,7 @@
 		AFE3BB64F307B9BA213E06D1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -323,7 +331,7 @@
 		D3E78ACF7EDC2AABC20997FC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

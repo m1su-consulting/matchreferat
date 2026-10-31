@@ -13,6 +13,8 @@ struct MatchView: View {
     @Environment(MatchStore.self) private var store
     @State private var flow: Flow?
     @State private var showSquad = false
+    @State private var showSettings = false
+    @State private var showEvents = false
     @State private var showNewMatch = false
 
     var body: some View {
@@ -22,10 +24,20 @@ struct MatchView: View {
             ScrollView {
                 VStack(spacing: 10) {
                     HStack(spacing: 8) {
+                        Button { store.showMatch = false } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.title3.weight(.semibold))
+                                .frame(width: 30, height: 34)
+                        }
+                        .accessibilityLabel("Till startsidan")
                         HomeAwayPicker()
                         Menu {
+                            Button { showEvents = true } label: { Label("Händelser och referat", systemImage: "list.bullet.rectangle") }
                             Button { showSquad = true } label: { Label("Dagens trupp", systemImage: "person.2") }
+                            Button { showSettings = true } label: { Label("Matchinställningar", systemImage: "slider.horizontal.3") }
+                            Divider()
                             Button { showNewMatch = true } label: { Label("Ny match", systemImage: "plus.circle") }
+                            Button { store.showMatch = false } label: { Label("Till startsidan", systemImage: "house") }
                         } label: {
                             Image(systemName: "ellipsis.circle")
                                 .font(.title2)
@@ -57,7 +69,9 @@ struct MatchView: View {
             do { try await Task.sleep(for: .seconds(4)) } catch { return }
             store.toast = nil
         }
-        .sheet(isPresented: $showSquad) { MatchSquadSheet() }
+        .sheet(isPresented: $showSquad, onDismiss: store.saveLineupToTeam) { MatchSquadSheet() }
+        .sheet(isPresented: $showSettings) { MatchSettingsSheet() }
+        .sheet(isPresented: $showEvents) { EventsView() }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .sheet(item: $flow) { flow in
             FlowSheet(flow: flow)
@@ -69,6 +83,8 @@ struct MatchView: View {
             switch UserDefaults.standard.string(forKey: "demoSheet") {
             case "goal": flow = .goal
             case "squad": showSquad = true
+            case "settings": showSettings = true
+            case "events": showEvents = true
             case "newMatch": showNewMatch = true
             default: break
             }
@@ -186,7 +202,7 @@ struct EventGrid: View {
         Grid(horizontalSpacing: 8, verticalSpacing: 8) {
             GridRow {
                 ForEach(sides, id: \.self) { side in
-                    header(side == .us ? "Vi" : store.state.opponent, side)
+                    header(store.state.teamName(side), side)
                 }
             }
             ForEach(sharedRows, id: \.self) { action in
@@ -195,7 +211,7 @@ struct EventGrid: View {
                 }
             }
             GridRow {
-                header("Bara för oss", .us)
+                header("Bara för \(store.state.ourTeam)", .us)
                     .gridCellColumns(2)
                     .padding(.top, 2)
             }
@@ -272,7 +288,7 @@ struct EventGrid: View {
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(kind.label) Vi, \(count)")
+        .accessibilityLabel("\(kind.label) \(store.state.ourTeam), \(count)")
     }
 
     private func tap(_ action: Action, _ side: Side) {
@@ -291,8 +307,8 @@ struct HomeAwayPicker: View {
     var body: some View {
         @Bindable var store = store
         Picker("Vi spelar", selection: $store.state.isHome) {
-            Text("Vi hemma").tag(true)
-            Text("Vi borta").tag(false)
+            Text("Hemma").tag(true)
+            Text("Borta").tag(false)
         }
         .pickerStyle(.segmented)
     }

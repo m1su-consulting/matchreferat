@@ -1,47 +1,17 @@
 import SwiftUI
 
-/// "Dagens trupp": this match's settings and lineup, editable during the match.
+/// "Dagens trupp": today's lineup, editable during the match. Remembered as the team's lineup.
 struct MatchSquadSheet: View {
     @Environment(MatchStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @State private var showNewMatch = false
 
     var body: some View {
         @Bindable var store = store
         NavigationStack {
             Form {
-                Section {
-                    TextField("Motståndare", text: $store.state.opponent)
-                        .textInputAutocapitalization(.words)
-                    Picker("Vi spelar", selection: $store.state.isHome) {
-                        Text("Vi hemma").tag(true)
-                        Text("Vi borta").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                    FormatFields(playersOnField: $store.state.playersOnField, periods: $store.state.periods,
-                                 periodLength: $store.state.halfLength, suggestsLength: false)
-                } header: {
-                    Text(store.state.ourTeam)
-                } footer: {
-                    Text("Gäller bara den här matchen. Lagets trupp och inställningar ändrar du under Lag.")
-                }
-
                 LineupSection(players: $store.state.players, playersOnField: store.state.playersOnField)
-
                 AddMatchPlayerSection { player, saveInSquad in
-                    store.state.players.append(player)
-                    store.state.players.sort { $0.number < $1.number }
-                    if saveInSquad, let index = store.teams.firstIndex(where: { $0.id == store.state.teamID }) {
-                        var squadPlayer = player
-                        squadPlayer.status = .bench
-                        store.teams[index].players.append(squadPlayer)
-                    }
-                }
-
-                Section {
-                    Button { showNewMatch = true } label: {
-                        Label("Ny match", systemImage: "plus.circle.fill")
-                    }
+                    store.addMatchPlayer(player, saveInSquad: saveInSquad)
                 }
             }
             .navigationTitle("Dagens trupp")
@@ -51,10 +21,44 @@ struct MatchSquadSheet: View {
                     Button("Klar") { dismiss() }
                 }
             }
-            .sheet(isPresented: $showNewMatch, onDismiss: { if store.state.events.isEmpty { dismiss() } }) {
-                NewMatchSheet()
+        }
+    }
+}
+
+/// This match's settings: opponent, home/away, spelform, periods and minutes.
+struct MatchSettingsSheet: View {
+    @Environment(MatchStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        @Bindable var store = store
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Motståndare", text: $store.state.opponent)
+                        .textInputAutocapitalization(.words)
+                    Picker("Vi spelar", selection: $store.state.isHome) {
+                        Text("Hemma").tag(true)
+                        Text("Borta").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    FormatFields(playersOnField: $store.state.playersOnField, periods: $store.state.periods,
+                                 periodLength: $store.state.halfLength, suggestsLength: false)
+                } header: {
+                    Text(store.state.ourTeam)
+                } footer: {
+                    Text("Gäller bara den här matchen. Lagets standardinställningar ändrar du på startsidan under Mina lag.")
+                }
+            }
+            .navigationTitle("Matchinställningar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Klar") { dismiss() }
+                }
             }
         }
+        .presentationDetents([.medium, .large])
     }
 }
 

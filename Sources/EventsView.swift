@@ -2,6 +2,7 @@ import SwiftUI
 
 struct EventsView: View {
     @Environment(MatchStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
     @State private var copied = false
 
     var body: some View {
@@ -46,6 +47,12 @@ struct EventsView: View {
                 }
             }
             .navigationTitle("Händelser")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Klar") { dismiss() }
+                }
+            }
             .task(id: copied) {
                 guard copied else { return }
                 try? await Task.sleep(for: .seconds(2))

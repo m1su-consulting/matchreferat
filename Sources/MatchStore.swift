@@ -14,8 +14,8 @@ final class MatchStore {
     var state: MatchState
     var teams: [Team]
     var toast: Toast?
-    /// Selected tab; `-tab 1` as a launch argument opens another tab (used for screenshots).
-    var selectedTab = UserDefaults.standard.integer(forKey: "tab")
+    /// Whether the match page is shown on top of the start page; `-screen match` opens it on launch.
+    var showMatch = UserDefaults.standard.string(forKey: "screen") == "match"
 
     private static func fileURL(_ name: String) -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
@@ -196,28 +196,37 @@ final class MatchStore {
         !state.events.isEmpty && state.phase != .finished
     }
 
-    /// Starts a fresh match for `team` with this match's settings and lineup.
-    func newMatch(team: Team, opponent: String, isHome: Bool, playersOnField: Int, periods: Int,
-                  periodLength: Int, players: [Player]) {
-        state = MatchState(teamID: team.id, ourTeam: team.name, opponent: opponent, isHome: isHome,
-                           halfLength: periodLength, periods: periods, playersOnField: playersOnField,
-                           players: players.sorted { $0.number < $1.number }, events: [], phase: .notStarted,
-                           period: 1, isRunning: false, accumulated: 0, runningSince: nil)
-        toast = nil
-        selectedTab = 0
+    /// A match that has started or has events and isn't finished, so the start page offers to continue it.
+    var hasMatchInProgress: Bool {
+        state.phase != .finished && (state.phase != .notStarted || !state.events.isEmpty)
     }
 
-    /// The lineup a new match for `team` starts from: the current match's choices if it is
-    /// the same team, otherwise the first players (by squad order) up to the format on the field.
-    func suggestedLineup(for team: Team, playersOnField: Int) -> [Player] {
-        team.players.enumerated().map { index, player in
-            var p = player
-            if state.teamID == team.id, let current = state.players.first(where: { $0.id == player.id }) {
-                p.status = current.status
-            } else {
-                p.status = index < playersOnField ? .start : .bench
+    /// Starts a fresh match for `team` with the team's settings and its last used lineup.
+    func newMatch(team: Team, opponent: String, isHome: Bool) {
+        state = MatchState(teamID: team.id, ourTeam: team.name, opponent: opponent, isHome: isHome,
+                           halfLength: team.periodLength, periods: team.periods, playersOnField: team.playersOnField,
+                           players: team.players.sorted { $0.number < $1.number }, events: [], phase: .notStarted,
+                           period: 1, isRunning: false, accumulated: 0, runningSince: nil)
+        toast = nil
+        showMatch = true
+    }
+
+    /// Remembers today's Start/Bänk/Ej med as the team's lineup for next time.
+    func saveLineupToTeam() {
+        guard let index = teams.firstIndex(where: { $0.id == state.teamID }) else { return }
+        for player in state.players {
+            if let i = teams[index].players.firstIndex(where: { $0.id == player.id }) {
+                teams[index].players[i].status = player.status
             }
-            return p
+        }
+    }
+
+    /// Adds a player to today's match and, if asked, to the team's squad.
+    func addMatchPlayer(_ player: Player, saveInSquad: Bool) {
+        state.players.append(player)
+        state.players.sort { $0.number < $1.number }
+        if saveInSquad, let index = teams.firstIndex(where: { $0.id == state.teamID }) {
+            teams[index].players.append(player)
         }
     }
 

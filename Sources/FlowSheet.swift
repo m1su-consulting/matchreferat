@@ -30,7 +30,7 @@ struct FlowSheet: View {
 
     private var title: String {
         switch flow {
-        case .goal: "Mål – Vi"
+        case .goal: "Mål – \(store.state.ourTeam)"
         case .shot(let result): result == .onTarget ? "Skott på mål" : "Skott utanför"
         case .card(let kind): kind.label
         case .sub: "Byte"
