@@ -2,6 +2,12 @@
 
 Appen fungerar helt utan Firebase. Live-delningen aktiveras när du har gjort stegen nedan.
 
+## Status (31 oktober 2026)
+
+Projektet `matchreferat` är uppsatt: anonym inloggning, Firestore, iOS-appen och Hosting finns, och regler och webbsida är publicerade. Länkarna ser ut så här: `https://matchreferat.web.app/m/<24 tecken>`.
+
+Appen använder Firebase SDK bara för anonym inloggning. Matchen skrivs med Firestore REST API, med användarens ID-token, eftersom Firestore-SDK:ns egen nätverksstack aldrig fick kontakt från den här Macen.
+
 ## Vad som delas
 
 - Lagnamn, hemma/borta, resultat, klocka och statistik.
@@ -51,3 +57,10 @@ xcrun simctl launch booted se.matchreferat.app -liveEmulator YES -demoLive YES
 ```
 
 Webbsidan med exempeldata, utan backend: `public/index.html?demo=1`.
+
+## Tester mot det riktiga projektet
+
+```bash
+node tests/listen.mjs <matchId> 30     # lyssnar som webbsidan och skriver ut varje uppdatering
+node tests/other-user.mjs <matchId>    # en annan anonym användare får inte ändra, radera eller lista
+```

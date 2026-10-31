@@ -1,13 +1,14 @@
 import CoreImage.CIFilterBuiltins
 import FirebaseAuth
 import FirebaseCore
-import FirebaseFirestore
 import Observation
 import OSLog
 import SwiftUI
 
 /// Configures Firebase if the app has a GoogleService-Info.plist (or, in DEBUG, the
 /// `-liveEmulator YES` launch argument). Without either the app works fully offline.
+/// Firebase is used only for anonymous sign-in; the match is written with the
+/// Firestore REST API, authorised by the user's ID token.
 enum LiveBackend {
     enum Mode { case unconfigured, production, emulator }
 
@@ -23,11 +24,6 @@ enum LiveBackend {
             options.apiKey = "AIza" + String(repeating: "0", count: 35)
             FirebaseApp.configure(options: options)
             Auth.auth().useEmulator(withHost: emulatorHost, port: 9099)
-            let settings = Firestore.firestore().settings
-            settings.host = "\(emulatorHost):8080"
-            settings.isSSLEnabled = false
-            settings.cacheSettings = MemoryCacheSettings()
-            Firestore.firestore().settings = settings
             mode = .emulator
             return
         }
@@ -37,6 +33,21 @@ enum LiveBackend {
         mode = .production
     }
 
+    private static var projectID: String? {
+        mode == .emulator ? emulatorProject : FirebaseApp.app()?.options.projectID
+    }
+
+    /// `.../databases/(default)/documents`
+    static var documentsURL: URL? {
+        guard let projectID else { return nil }
+        let host = mode == .emulator ? "http://\(emulatorHost):8080" : "https://firestore.googleapis.com"
+        return URL(string: "\(host)/v1/projects/\(projectID)/databases/(default)/documents")
+    }
+
+    static func documentName(_ matchID: String) -> String? {
+        projectID.map { "projects/\($0)/databases/(default)/documents/matches/\(matchID)" }
+    }
+
     static func viewerURL(for matchID: String) -> URL? {
         switch mode {
         case .unconfigured:
@@ -44,8 +55,8 @@ enum LiveBackend {
         case .emulator:
             return URL(string: "http://\(emulatorHost):5002/m/\(matchID)")
         case .production:
-            guard let project = FirebaseApp.app()?.options.projectID else { return nil }
-            return URL(string: "https://\(project).web.app/m/\(matchID)")
+            guard let projectID else { return nil }
+            return URL(string: "https://\(projectID).web.app/m/\(matchID)")
         }
     }
 }
@@ -56,6 +67,12 @@ final class LiveShare {
     enum Status: Equatable {
         case unconfigured, off, connecting, live
         case failed(String)
+    }
+
+    struct RequestError: Error, CustomStringConvertible {
+        let status: Int
+        let body: String
+        var description: String { "HTTP \(status): \(body)" }
     }
 
     private(set) var status: Status
@@ -85,9 +102,8 @@ final class LiveShare {
         guard isConfigured, matchID == nil else { return }
         status = .connecting
         do {
-            let uid = try await signIn()
             let id = Self.makeID()
-            try await document(id).setData(payload(state, owner: uid))
+            try await write(state, to: id)
             matchID = id
             UserDefaults.standard.set(id, forKey: Self.idKey)
             lastSynced = .now
@@ -106,7 +122,12 @@ final class LiveShare {
         lastSynced = nil
         UserDefaults.standard.removeObject(forKey: Self.idKey)
         status = .off
-        try? await document(id).delete()
+        do {
+            guard let url = LiveBackend.documentsURL?.appendingPathComponent("matches/\(id)") else { return }
+            try await send(authorizedRequest(url, method: "DELETE"))
+        } catch {
+            Self.log.error("Delete failed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     /// Sends the whole public snapshot, debounced so a burst of taps becomes one write.
@@ -117,8 +138,7 @@ final class LiveShare {
             try? await Task.sleep(for: .seconds(1))
             guard !Task.isCancelled else { return }
             do {
-                let uid = try await signIn()
-                try await document(id).setData(payload(state, owner: uid))
+                try await write(state, to: id)
                 lastSynced = .now
                 status = .live
             } catch {
@@ -128,17 +148,46 @@ final class LiveShare {
         }
     }
 
-    private func signIn() async throws -> String {
-        if let user = Auth.auth().currentUser { return user.uid }
-        return try await Auth.auth().signInAnonymously().user.uid
+    /// Replaces the match document in one commit, with `updatedAt` set to the server time.
+    private func write(_ state: MatchState, to id: String) async throws {
+        guard let documents = LiveBackend.documentsURL, let name = LiveBackend.documentName(id),
+              let url = URL(string: documents.absoluteString + ":commit") else { return }
+        let user = try await signedInUser()
+        let body: [String: Any] = [
+            "writes": [[
+                "update": ["name": name, "fields": payload(state, owner: user.uid).mapValues(Self.value)],
+                "updateTransforms": [["fieldPath": "updatedAt", "setToServerValue": "REQUEST_TIME"]],
+            ]],
+        ]
+        var request = try await authorizedRequest(url, method: "POST")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        try await send(request)
     }
 
-    private func document(_ id: String) -> DocumentReference {
-        Firestore.firestore().collection("matches").document(id)
+    private func signedInUser() async throws -> User {
+        if let user = Auth.auth().currentUser { return user }
+        return try await Auth.auth().signInAnonymously().user
+    }
+
+    private func authorizedRequest(_ url: URL, method: String) async throws -> URLRequest {
+        let token = try await signedInUser().getIDToken()
+        var request = URLRequest(url: url, timeoutInterval: 15)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        return request
+    }
+
+    private func send(_ request: URLRequest) async throws {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            throw RequestError(status: status, body: String(decoding: data.prefix(400), as: UTF8.self))
+        }
     }
 
     /// Everything a viewer sees. Players appear only as first name and shirt number,
-    /// and the opponent only as a team name.
+    /// and the opponent only as a team name. `updatedAt` is added by the server.
     private func payload(_ s: MatchState, owner: String) -> [String: Any] {
         let events = s.events.sorted { $0.createdAt < $1.createdAt }.suffix(200).map { e -> [String: Any] in
             [
@@ -167,13 +216,32 @@ final class LiveShare {
             "clockLabel": s.clock(at: .now).text,
             "stats": s.statsLine,
             "events": Array(events),
-            "updatedAt": FieldValue.serverTimestamp(),
-            "expireAt": Timestamp(date: .now.addingTimeInterval(Self.lifetime)),
+            "expireAt": Date.now.addingTimeInterval(Self.lifetime),
         ]
         if s.isRunning, let since = s.runningSince {
-            data["startedAt"] = Timestamp(date: since)
+            data["startedAt"] = since
         }
         return data
+    }
+
+    private static let timestampFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    /// Encodes a Swift value as a Firestore REST `Value`.
+    private static func value(_ v: Any) -> Any {
+        switch v {
+        case let b as Bool: ["booleanValue": b]
+        case let i as Int: ["integerValue": String(i)]
+        case let d as Double: ["doubleValue": d]
+        case let s as String: ["stringValue": s]
+        case let date as Date: ["timestampValue": timestampFormatter.string(from: date)]
+        case let array as [Any]: ["arrayValue": ["values": array.map(value)]]
+        case let map as [String: Any]: ["mapValue": ["fields": map.mapValues(value)]]
+        default: ["nullValue": NSNull()]
+        }
     }
 
     /// 24 random base62 characters (~143 bits), so links cannot be guessed.

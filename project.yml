@@ -15,8 +15,6 @@ targets:
     dependencies:
       - package: Firebase
         product: FirebaseAuth
-      - package: Firebase
-        product: FirebaseFirestore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: se.matchreferat.app
