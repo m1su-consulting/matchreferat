@@ -63,7 +63,7 @@ struct TeamEditor: View {
     }
 }
 
-/// Spelform, number of periods and minutes per period.
+/// Spelform, number of halves (1–4) and minutes per half.
 struct FormatFields: View {
     @Binding var playersOnField: Int
     @Binding var periods: Int
@@ -78,8 +78,8 @@ struct FormatFields: View {
         .onChange(of: playersOnField) { _, format in
             if suggestsLength { periodLength = Team.defaultPeriodLength(for: format) }
         }
-        Stepper("Perioder: \(periods)", value: $periods, in: 1...4)
-        Picker("Minuter per period", selection: $periodLength) {
+        Stepper("Antal halvlekar: \(periods)", value: $periods, in: 1...4)
+        Picker("Minuter per halvlek", selection: $periodLength) {
             ForEach(Team.periodLengths, id: \.self) { Text("\($0) min").tag($0) }
         }
     }

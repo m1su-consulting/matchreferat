@@ -125,7 +125,7 @@ final class MatchStore {
         switch state.phase {
         case .notStarted: "Avspark"
         case .playing: state.isLastPeriod ? "Slutsignal" : state.intervalName
-        case .interval: "Starta \(state.periods == 2 ? "2:a halvlek" : "period \(state.period + 1)")"
+        case .interval: "Starta \(MatchState.halfName(state.period + 1))"
         case .finished: "Ny match"
         }
     }
@@ -152,7 +152,7 @@ final class MatchStore {
         case .interval:
             state.period += 1
             startClock(now)
-            let text = state.periods == 2 ? "Andra halvlek startar" : "Period \(state.period) startar"
+            let text = state.periods == 2 ? "Andra halvlek startar" : "\(MatchState.halfName(state.period)) startar"
             addPeriod(text, MatchMinute(minute: (state.period - 1) * state.halfLength + 1), now)
         case .finished:
             break

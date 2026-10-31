@@ -313,12 +313,14 @@ extension MatchState {
         }
     }
 
-    /// "1:a halvlek" with two periods, otherwise "Period 2".
-    func periodName(_ number: Int) -> String {
-        periods == 2 ? "\(number == 1 ? "1:a" : "2:a") halvlek" : "Period \(number)"
+    /// "1:a halvlek", "3:e halvlek" – periods are always called halvlekar in the app.
+    static func halfName(_ number: Int) -> String {
+        "\(number)\(number <= 2 ? ":a" : ":e") halvlek"
     }
 
-    var intervalName: String { periods == 2 ? "Halvtid" : "Periodpaus" }
+    func periodName(_ number: Int) -> String { Self.halfName(number) }
+
+    var intervalName: String { periods == 2 ? "Halvtid" : "Paus" }
 
     var periodText: String {
         switch phase {
