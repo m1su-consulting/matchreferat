@@ -87,14 +87,19 @@ struct StartView: View {
     }
 }
 
-/// Mikael's logo from the asset catalog ("Logo"); a simple placeholder until the real file is added.
+/// Mikael's M1SU logo from the asset catalog ("Logo"), with a placeholder if it is missing.
 struct Logo: View {
     var body: some View {
         if UIImage(named: "Logo") != nil {
+            // The logo has a white background, so it sits on a white card in dark mode too.
             Image("Logo")
                 .resizable()
                 .scaledToFit()
-                .frame(maxHeight: 120)
+                .frame(maxWidth: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(6)
+                .background(.white, in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityLabel("M1SU Consulting")
         } else {
             VStack(spacing: 8) {
                 Image(systemName: "soccerball")
