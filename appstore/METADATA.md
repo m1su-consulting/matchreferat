@@ -17,6 +17,7 @@ Klistra in i App Store Connect → Matchreferat → version 1.0. Teckengränser 
 | Support-URL | `https://matchreferat.web.app/support` |
 | Upphovsrätt | `2026 M1SU Consulting AB` |
 | Pris | Gratis |
+| Distribution | Offentlig i App Store (inte olistad), alla länder |
 
 ## Version 1.0 – svenska
 
