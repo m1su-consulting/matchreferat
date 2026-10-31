@@ -18,7 +18,7 @@ if [ ! -f Sources/GoogleService-Info.plist ]; then
   exit 1
 fi
 
-xcodegen generate
+rm -rf Matchreferat.xcodeproj && xcodegen generate
 VERSION=$(grep -m1 'MARKETING_VERSION' project.yml | sed -E 's/.*"(.*)".*/\1/')
 BUILD=$(grep -m1 'CURRENT_PROJECT_VERSION' project.yml | sed -E 's/.*"(.*)".*/\1/')
 echo "🏷  Matchreferat $VERSION (bygge $BUILD)"
