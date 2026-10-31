@@ -11,6 +11,7 @@
 		36BDE89B06CC93C0E3217DAE /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 16014A7EC809D85980F1DA6B /* FirebaseFirestore */; };
 		42F57E43625C8873A831F508 /* SquadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67DEA2C591B35E7CA222EB5 /* SquadView.swift */; };
 		4343B3905002AFC95EDCE3B2 /* LiveShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0C41D402F1023B67BCB754 /* LiveShare.swift */; };
+		493D968D4AF2BB71AF3E1F32 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BD80CF8A089A74362E38F159 /* GoogleService-Info.plist */; };
 		54A7187220AB2114146BA834 /* MatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C6182995ACEE0EDD2824C6 /* MatchStore.swift */; };
 		59E47B08F9E644AF1BB13925 /* MatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5443206FFA1DEE5BE9B75D /* MatchView.swift */; };
 		728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */; };
@@ -27,6 +28,7 @@
 		791A520E54E03B49E0FAEE8F /* Matchreferat.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Matchreferat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchreferatApp.swift; sourceTree = "<group>"; };
 		AB5443206FFA1DEE5BE9B75D /* MatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchView.swift; sourceTree = "<group>"; };
+		BD80CF8A089A74362E38F159 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D67DEA2C591B35E7CA222EB5 /* SquadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadView.swift; sourceTree = "<group>"; };
 		FA60336EA9F5AD415E16EEF7 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -65,6 +67,7 @@
 			children = (
 				52264AC78ACDFA24DCD35037 /* EventsView.swift */,
 				5415F7129D343D5CA9E5C815 /* FlowSheet.swift */,
+				BD80CF8A089A74362E38F159 /* GoogleService-Info.plist */,
 				3B0C41D402F1023B67BCB754 /* LiveShare.swift */,
 				89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */,
 				69C6182995ACEE0EDD2824C6 /* MatchStore.swift */,
@@ -83,6 +86,7 @@
 			buildConfigurationList = 561211A32013038364A01585 /* Build configuration list for PBXNativeTarget "Matchreferat" */;
 			buildPhases = (
 				DF472BB57C1B37475A1666F0 /* Sources */,
+				9ECC1AD25A98907E8C0B1B04 /* Resources */,
 				5268CAAE9F36CA6BD61361F0 /* Frameworks */,
 			);
 			buildRules = (
@@ -133,6 +137,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9ECC1AD25A98907E8C0B1B04 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				493D968D4AF2BB71AF3E1F32 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		DF472BB57C1B37475A1666F0 /* Sources */ = {

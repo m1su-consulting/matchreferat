@@ -3,6 +3,7 @@ import FirebaseAuth
 import FirebaseCore
 import FirebaseFirestore
 import Observation
+import OSLog
 import SwiftUI
 
 /// Configures Firebase if the app has a GoogleService-Info.plist (or, in DEBUG, the
@@ -63,6 +64,7 @@ final class LiveShare {
     private var pending: Task<Void, Never>?
 
     private static let idKey = "liveMatchID"
+    private static let log = Logger(subsystem: "se.matchreferat.app", category: "live")
     private static let lifetime: TimeInterval = 7 * 24 * 3600
 
     init() {
@@ -91,6 +93,7 @@ final class LiveShare {
             lastSynced = .now
             status = .live
         } catch {
+            Self.log.error("Start failed: \(String(describing: error), privacy: .public)")
             status = .failed("Kunde inte starta live-delningen. Kontrollera nätet och försök igen.")
         }
     }
@@ -119,6 +122,7 @@ final class LiveShare {
                 lastSynced = .now
                 status = .live
             } catch {
+                Self.log.error("Sync failed: \(String(describing: error), privacy: .public)")
                 status = .failed("Senaste uppdateringen gick inte fram. Appen försöker igen vid nästa händelse.")
             }
         }
