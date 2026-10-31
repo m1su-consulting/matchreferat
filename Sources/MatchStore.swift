@@ -20,7 +20,13 @@ final class MatchStore {
 
     init() {
         if let data = try? Data(contentsOf: Self.fileURL),
-           let saved = try? JSONDecoder().decode(MatchState.self, from: data) {
+           var saved = try? JSONDecoder().decode(MatchState.self, from: data) {
+            // Older versions logged saves separately and had blocked shots; a save is now
+            // implied by a shot on target, and blocked shots count as off target.
+            saved.events.removeAll { $0.kind == .save }
+            for index in saved.events.indices where saved.events[index].shot == .blocked {
+                saved.events[index].shot = .off
+            }
             state = saved
         } else {
             state = .example()

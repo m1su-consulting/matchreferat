@@ -141,6 +141,15 @@ extension MatchState {
 
     func goals(_ side: Side) -> Int { count(.goal, side) }
 
+    /// Logged shots that were not goals; blocked shots from older versions count as off target.
+    func shotCount(_ result: ShotResult, _ side: Side) -> Int {
+        events.filter { e in
+            guard e.kind == .shot, e.side == side else { return false }
+            let onTarget = e.shot == nil || e.shot == .onTarget
+            return result == .onTarget ? onTarget : !onTarget
+        }.count
+    }
+
     /// Shots include goals.
     func shots(_ side: Side) -> Int {
         events.filter { $0.side == side && ($0.kind == .goal || $0.kind == .shot) }.count
@@ -206,8 +215,9 @@ extension MatchState {
             if let assist = name(e.otherPlayer) { text += ", assist \(assist)" }
             return text
         case .shot:
-            let result = (e.shot ?? .onTarget).label.lowercased()
-            return "Skott \(result)" + (who.map { " – \($0)" } ?? "")
+            // A shot on target that isn't a goal was saved by the other team's keeper.
+            let base = e.shot == .off || e.shot == .blocked ? "Skott utanför" : "Skott på mål, räddning"
+            return base + (who.map { " – \($0)" } ?? "")
         case .yellow, .red:
             return e.kind.label + (who.map { " – \($0)" } ?? "")
         case .sub:
@@ -277,7 +287,6 @@ extension MatchState {
             (26, .period, .us, nil, nil, nil, "Andra halvlek startar"),
             (26, .sub, .us, id(7), id(14), nil, nil),
             (28, .shot, .them, nil, nil, .onTarget, nil),
-            (28, .save, .us, nil, nil, nil, nil),
             (31, .goal, .us, id(9), id(14), nil, nil),
             (32, .corner, .us, nil, nil, nil, nil),
         ]

@@ -2,7 +2,7 @@ import SwiftUI
 
 enum Flow: Identifiable, Hashable {
     case goal
-    case shot(Side)
+    case shot(ShotResult)
     case card(EventKind)
     case sub
 
@@ -147,10 +147,15 @@ struct EventGrid: View {
     @Environment(MatchStore.self) private var store
     @Binding var flow: Flow?
 
+    private enum Action: Hashable {
+        case event(EventKind)
+        case shot(ShotResult)
+    }
+
     /// Events logged for both teams. The opponent is only a team name: no player data, no cards.
-    private let sharedRows: [EventKind] = [.goal, .shot, .corner, .freeKick]
+    private let sharedRows: [Action] = [.event(.goal), .shot(.onTarget), .shot(.off), .event(.corner), .event(.freeKick)]
     /// Events only we log, shown as one row of compact tiles.
-    private let ourOnly: [EventKind] = [.yellow, .red, .sub, .save]
+    private let ourOnly: [EventKind] = [.yellow, .red, .sub]
 
     var body: some View {
         let sides = [store.state.homeSide, store.state.awaySide]
@@ -160,10 +165,15 @@ struct EventGrid: View {
                     header(side == .us ? "Vi" : store.state.opponent, side)
                 }
             }
-            ForEach(sharedRows, id: \.self) { kind in
+            ForEach(sharedRows, id: \.self) { action in
                 GridRow {
-                    ForEach(sides, id: \.self) { side in button(kind, side) }
+                    ForEach(sides, id: \.self) { side in button(action, side) }
                 }
+            }
+            GridRow {
+                header("Bara för oss", .us)
+                    .gridCellColumns(2)
+                    .padding(.top, 2)
             }
             GridRow {
                 HStack(spacing: 8) {
@@ -183,16 +193,19 @@ struct EventGrid: View {
             .padding(.leading, 4)
     }
 
-    private func button(_ kind: EventKind, _ side: Side) -> some View {
+    private func button(_ action: Action, _ side: Side) -> some View {
         let color = Theme.color(side)
-        let count = store.state.count(kind, side)
-        return Button { tap(kind, side) } label: {
+        let (label, icon, count): (String, String, Int) = switch action {
+        case .event(let kind): (kind.label, kind.icon, store.state.count(kind, side))
+        case .shot(let result): (result == .onTarget ? "Skott på mål" : "Skott utanför", result.icon, store.state.shotCount(result, side))
+        }
+        return Button { tap(action, side) } label: {
             HStack(spacing: 8) {
-                Image(systemName: kind.icon)
+                Image(systemName: icon)
                     .font(.title3)
                     .foregroundStyle(color)
                     .frame(width: 28)
-                Text(kind.label)
+                Text(label)
                     .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -208,12 +221,12 @@ struct EventGrid: View {
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(kind.label) \(store.state.teamName(side)), \(count)")
+        .accessibilityLabel("\(label) \(store.state.teamName(side)), \(count)")
     }
 
     private func tile(_ kind: EventKind) -> some View {
         let count = store.state.count(kind, .us)
-        return Button { tap(kind, .us) } label: {
+        return Button { flow = kind == .sub ? .sub : .card(kind) } label: {
             VStack(spacing: 2) {
                 HStack(spacing: 5) {
                     Image(systemName: kind.icon)
@@ -238,14 +251,12 @@ struct EventGrid: View {
         .accessibilityLabel("\(kind.label) Vi, \(count)")
     }
 
-    private func tap(_ kind: EventKind, _ side: Side) {
-        switch (kind, side) {
-        case (.goal, .us): flow = .goal
-        case (.shot, _): flow = .shot(side)
-        case (.yellow, .us), (.red, .us): flow = .card(kind)
-        case (.sub, .us): flow = .sub
-        case (.yellow, .them), (.red, .them), (.sub, .them), (.save, .them): break
-        default: store.log(kind, side: side)
+    private func tap(_ action: Action, _ side: Side) {
+        switch (action, side) {
+        case (.event(.goal), .us): flow = .goal
+        case (.shot(let result), .us): flow = .shot(result)
+        case (.shot(let result), .them): store.log(.shot, side: .them, shot: result)
+        case (.event(let kind), _): store.log(kind, side: side)
         }
     }
 }

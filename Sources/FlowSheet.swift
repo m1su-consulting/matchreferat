@@ -7,7 +7,6 @@ struct FlowSheet: View {
 
     @State private var step = 0
     @State private var firstPlayer: UUID?
-    @State private var shotResult: ShotResult?
 
     var body: some View {
         NavigationStack {
@@ -32,7 +31,7 @@ struct FlowSheet: View {
     private var title: String {
         switch flow {
         case .goal: "Mål – Vi"
-        case .shot(let side): "Skott – \(side == .us ? "Vi" : store.state.opponent)"
+        case .shot(let result): result == .onTarget ? "Skott på mål" : "Skott utanför"
         case .card(let kind): kind.label
         case .sub: "Byte"
         }
@@ -54,20 +53,9 @@ struct FlowSheet: View {
                     finish(.goal, .us, player: firstPlayer, otherPlayer: id)
                 }
             }
-        case .shot(let side):
-            if step == 0 {
-                ShotPicker { result in
-                    if side == .them {
-                        finish(.shot, .them, shot: result)
-                    } else {
-                        shotResult = result
-                        step = 1
-                    }
-                }
-            } else {
-                PlayerPicker(prompt: "Vem sköt?", players: state.onField, skip: "Hoppa över") { id in
-                    finish(.shot, .us, player: id, shot: shotResult)
-                }
+        case .shot(let result):
+            PlayerPicker(prompt: "Vem sköt?", players: state.onField, skip: "Hoppa över") { id in
+                finish(.shot, .us, player: id, shot: result)
             }
         case .card(let kind):
             PlayerPicker(prompt: "Vem fick kortet?", players: state.playingToday, skip: "Okänd") { id in
@@ -149,24 +137,5 @@ struct PlayerChip: View {
         .frame(maxWidth: .infinity, minHeight: 62)
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
         .contentShape(RoundedRectangle(cornerRadius: 14))
-    }
-}
-
-struct ShotPicker: View {
-    let pick: (ShotResult) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Hur gick skottet?").font(.title3.bold())
-            ForEach(ShotResult.allCases, id: \.self) { result in
-                Button { pick(result) } label: {
-                    Label(result.label, systemImage: result.icon)
-                        .font(.title3.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 58)
-                }
-                .buttonStyle(.bordered)
-                .tint(Theme.green)
-            }
-        }
     }
 }
