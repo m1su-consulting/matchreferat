@@ -14,24 +14,28 @@ struct MatchView: View {
     @State private var flow: Flow?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                HomeAwayPicker()
-                ScoreboardView()
-                ClockControls()
-                LiveRow()
-                EventGrid(flow: $flow)
-                Text("Prototyp med påhittade spelare")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 70)
+        // Sized to fit one screen above the tab bar on current iPhones; scrolls on smaller ones.
+        // The toast sits below the scroll view, so it is always just above the tab bar.
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 10) {
+                    HStack(spacing: 8) {
+                        HomeAwayPicker()
+                        LiveRow()
+                    }
+                    ScoreboardView()
+                    ClockControls()
+                    EventGrid(flow: $flow)
+                }
+                .padding(.horizontal)
+                .padding(.top, 4)
             }
-            .padding()
-        }
-        .overlay(alignment: .bottom) {
+            .scrollBounceBehavior(.basedOnSize)
+            .contentMargins(.bottom, 12, for: .scrollContent)
+
             if let toast = store.toast {
                 ToastView(toast: toast)
-                    .padding(.bottom, 12)
+                    .padding(.vertical, 8)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -58,11 +62,11 @@ struct ScoreboardView: View {
 
     var body: some View {
         let state = store.state
-        VStack(spacing: 12) {
+        VStack(spacing: 6) {
             HStack(alignment: .center, spacing: 8) {
                 team(state.homeSide)
                 Text("\(state.goals(state.homeSide))–\(state.goals(state.awaySide))")
-                    .font(.system(size: 60, weight: .heavy, design: .rounded).monospacedDigit())
+                    .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
                     .foregroundStyle(.white)
                     .fixedSize()
                 team(state.awaySide)
@@ -70,7 +74,7 @@ struct ScoreboardView: View {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(state.clock(at: context.date).text)
-                        .font(.system(size: 30, weight: .heavy, design: .rounded).monospacedDigit())
+                        .font(.system(size: 26, weight: .heavy, design: .rounded).monospacedDigit())
                         .foregroundStyle(Theme.clock)
                     Text(state.periodText)
                         .font(.subheadline.weight(.medium))
@@ -78,22 +82,22 @@ struct ScoreboardView: View {
                 }
             }
             Text(state.statsLine)
-                .font(.footnote.monospacedDigit())
+                .font(.caption.monospacedDigit())
                 .foregroundStyle(.white.opacity(0.75))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
-        .padding(.vertical, 18)
-        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
-        .background(Theme.slab, in: RoundedRectangle(cornerRadius: 22))
+        .background(Theme.slab, in: RoundedRectangle(cornerRadius: 18))
     }
 
     private func team(_ side: Side) -> some View {
-        VStack(spacing: 6) {
-            Circle().fill(Theme.color(side)).frame(width: 10, height: 10)
+        VStack(spacing: 4) {
+            Circle().fill(Theme.color(side)).frame(width: 8, height: 8)
             Text(store.state.teamName(side))
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -115,7 +119,7 @@ struct ClockControls: View {
             } label: {
                 Label(store.primaryTitle, systemImage: store.primaryIcon)
                     .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)
             .tint(Theme.green)
@@ -125,7 +129,7 @@ struct ClockControls: View {
                 Button { store.togglePause() } label: {
                     Image(systemName: store.state.isRunning ? "pause.fill" : "play.fill")
                         .font(.title2)
-                        .frame(width: 50, height: 50)
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.bordered)
                 .tint(.primary)
@@ -145,11 +149,12 @@ struct EventGrid: View {
 
     /// Events logged for both teams. The opponent is only a team name: no player data, no cards.
     private let sharedRows: [EventKind] = [.goal, .shot, .corner, .freeKick]
-    private let ourRows: [[EventKind]] = [[.yellow, .red], [.sub, .save]]
+    /// Events only we log, shown as one row of compact tiles.
+    private let ourOnly: [EventKind] = [.yellow, .red, .sub, .save]
 
     var body: some View {
         let sides = [store.state.homeSide, store.state.awaySide]
-        Grid(horizontalSpacing: 10, verticalSpacing: 10) {
+        Grid(horizontalSpacing: 8, verticalSpacing: 8) {
             GridRow {
                 ForEach(sides, id: \.self) { side in
                     header(side == .us ? "Vi" : store.state.opponent, side)
@@ -161,19 +166,17 @@ struct EventGrid: View {
                 }
             }
             GridRow {
-                header("Bara vi", .us).gridCellColumns(2).padding(.top, 6)
-            }
-            ForEach(ourRows, id: \.self) { row in
-                GridRow {
-                    ForEach(row, id: \.self) { kind in button(kind, .us) }
+                HStack(spacing: 8) {
+                    ForEach(ourOnly, id: \.self) { kind in tile(kind) }
                 }
+                .gridCellColumns(2)
             }
         }
     }
 
     private func header(_ title: String, _ side: Side) -> some View {
         Text(title)
-            .font(.subheadline.weight(.bold))
+            .font(.footnote.weight(.bold))
             .foregroundStyle(Theme.color(side))
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -200,12 +203,39 @@ struct EventGrid: View {
                     .foregroundStyle(count > 0 ? color : Color.secondary)
             }
             .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, minHeight: 60)
-            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-            .contentShape(RoundedRectangle(cornerRadius: 14))
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(kind.label) \(store.state.teamName(side)), \(count)")
+    }
+
+    private func tile(_ kind: EventKind) -> some View {
+        let count = store.state.count(kind, .us)
+        return Button { tap(kind, .us) } label: {
+            VStack(spacing: 2) {
+                HStack(spacing: 5) {
+                    Image(systemName: kind.icon)
+                        .font(.body)
+                        .foregroundStyle(kind == .yellow ? .yellow : kind == .red ? .red : Theme.green)
+                    Text("\(count)")
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(count > 0 ? Theme.green : Color.secondary)
+                }
+                Text(kind.label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(Theme.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(kind.label) Vi, \(count)")
     }
 
     private func tap(_ kind: EventKind, _ side: Side) {
@@ -226,8 +256,8 @@ struct HomeAwayPicker: View {
     var body: some View {
         @Bindable var store = store
         Picker("Vi spelar", selection: $store.state.isHome) {
-            Text("Vi spelar hemma").tag(true)
-            Text("Vi spelar borta").tag(false)
+            Text("Vi hemma").tag(true)
+            Text("Vi borta").tag(false)
         }
         .pickerStyle(.segmented)
     }

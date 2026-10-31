@@ -55,6 +55,8 @@ struct SquadView: View {
 
                 Section {
                     Button("Återställ exempelmatch", role: .destructive) { confirmReset = true }
+                } footer: {
+                    Text("Prototyp med påhittade spelare")
                 }
             }
             .navigationTitle("Trupp")

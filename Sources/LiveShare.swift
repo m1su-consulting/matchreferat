@@ -258,37 +258,19 @@ struct LiveRow: View {
 
     var body: some View {
         Button { showSheet = true } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 6) {
                 Image(systemName: live.isOn ? "dot.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right")
-                    .font(.title3)
-                    .foregroundStyle(live.isOn ? .red : Theme.green)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(live.isOn ? "Livelänken är aktiv" : "Dela live")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Text(live.isOn ? "Visa länk och QR-kod" : "Låt fler följa matchen via en länk")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if live.isOn {
-                    Text("LIVE")
-                        .font(.caption.weight(.heavy))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(.red, in: Capsule())
-                }
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                Text(live.isOn ? "LIVE" : "Dela live")
             }
-            .padding(.horizontal, 14)
-            .frame(minHeight: 58)
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
-            .contentShape(RoundedRectangle(cornerRadius: 14))
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(live.isOn ? Color.white : Theme.green)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 32)
+            .background(live.isOn ? Color.red : Theme.green.opacity(0.14), in: Capsule())
+            .contentShape(Capsule())
+            .fixedSize()
         }
+        .accessibilityLabel(live.isOn ? "Livelänken är aktiv, visa länk" : "Dela live")
         .buttonStyle(.plain)
         .sheet(isPresented: $showSheet) {
             LiveShareSheet().presentationDetents([.large])

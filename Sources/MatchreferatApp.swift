@@ -22,6 +22,8 @@ struct MatchreferatApp: App {
                     live.sync(store.state)
                 }
                 .task {
+                    // Refresh the viewers' copy on launch, e.g. after the app was closed mid-match.
+                    if live.isOn { live.sync(store.state) }
                     #if DEBUG
                     // `-demoLive YES` starts sharing on launch (used for emulator tests).
                     if UserDefaults.standard.bool(forKey: "demoLive") && !live.isOn {
