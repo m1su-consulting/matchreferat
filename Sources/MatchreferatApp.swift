@@ -21,6 +21,7 @@ struct MatchreferatApp: App {
                     store.save()
                     live.sync(store.state)
                 }
+                .onChange(of: store.teams) { store.saveTeams() }
                 .task {
                     // Refresh the viewers' copy on launch, e.g. after the app was closed mid-match.
                     if live.isOn { live.sync(store.state) }
@@ -30,9 +31,11 @@ struct MatchreferatApp: App {
                         await live.start(store.state)
                     }
                     // `-demoNewMatch "Lag"` runs the Ny match flow on launch (used for tests).
-                    if let opponent = UserDefaults.standard.string(forKey: "demoNewMatch") {
-                        await NewMatchSheet.startNewMatch(store: store, live: live, opponent: opponent,
-                                                          isHome: false, halfLength: store.state.halfLength)
+                    if let opponent = UserDefaults.standard.string(forKey: "demoNewMatch"), let team = store.teams.first {
+                        await NewMatchSheet.startNewMatch(
+                            store: store, live: live, team: team, opponent: opponent, isHome: false,
+                            playersOnField: 7, periods: 3, periodLength: 15,
+                            players: store.suggestedLineup(for: team, playersOnField: 7))
                     }
                     #endif
                 }
@@ -61,8 +64,8 @@ struct RootView: View {
             EventsView()
                 .tabItem { Label("Händelser", systemImage: "list.bullet.rectangle") }
                 .tag(1)
-            SquadView()
-                .tabItem { Label("Trupp", systemImage: "person.3.fill") }
+            TeamsView()
+                .tabItem { Label("Lag", systemImage: "person.3.fill") }
                 .tag(2)
         }
         .tint(Theme.green)

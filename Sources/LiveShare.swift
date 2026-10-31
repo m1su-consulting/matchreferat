@@ -212,6 +212,8 @@ final class LiveShare {
             "running": s.isRunning,
             "accumulated": s.accumulated,
             "halfLength": s.halfLength,
+            "period": s.period,
+            "periods": s.periods,
             "periodText": s.periodText,
             "clockLabel": s.clock(at: .now).text,
             "stats": s.statsLine,

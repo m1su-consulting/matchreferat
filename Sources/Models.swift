@@ -18,11 +18,80 @@ enum PlayerStatus: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-struct Player: Codable, Identifiable, Equatable, Hashable {
+struct Player: Identifiable, Equatable, Hashable {
+    var id = UUID()
+    var firstName: String
+    var lastName: String = ""
+    var number: Int
+    var status: PlayerStatus = .bench
+
+    var name: String { lastName.isEmpty ? firstName : "\(firstName) \(lastName)" }
+
+    /// Splits "Selma Lund" into first and last name at the first space.
+    init(id: UUID = UUID(), name: String, number: Int, status: PlayerStatus = .bench) {
+        let parts = name.trimmingCharacters(in: .whitespaces).split(separator: " ", maxSplits: 1)
+        self.init(id: id, firstName: parts.first.map(String.init) ?? "", lastName: parts.count > 1 ? String(parts[1]) : "",
+                  number: number, status: status)
+    }
+
+    init(id: UUID = UUID(), firstName: String, lastName: String = "", number: Int, status: PlayerStatus = .bench) {
+        self.id = id
+        self.firstName = firstName
+        self.lastName = lastName
+        self.number = number
+        self.status = status
+    }
+}
+
+extension Player: Codable {
+    private enum CodingKeys: String, CodingKey { case id, firstName, lastName, name, number, status }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let id = try c.decode(UUID.self, forKey: .id)
+        let number = try c.decode(Int.self, forKey: .number)
+        let status = try c.decodeIfPresent(PlayerStatus.self, forKey: .status) ?? .bench
+        if let first = try c.decodeIfPresent(String.self, forKey: .firstName) {
+            self.init(id: id, firstName: first, lastName: try c.decodeIfPresent(String.self, forKey: .lastName) ?? "",
+                      number: number, status: status)
+        } else {
+            // Saved before first and last name were separate.
+            self.init(id: id, name: try c.decode(String.self, forKey: .name), number: number, status: status)
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(firstName, forKey: .firstName)
+        try c.encode(lastName, forKey: .lastName)
+        try c.encode(number, forKey: .number)
+        try c.encode(status, forKey: .status)
+    }
+}
+
+/// A team the user reports for, with its squad and default match settings.
+struct Team: Codable, Identifiable, Equatable, Hashable {
     var id = UUID()
     var name: String
-    var number: Int
-    var status: PlayerStatus
+    var playersOnField: Int = 9
+    var periods: Int = 2
+    var periodLength: Int = 25
+    var players: [Player] = []
+
+    static let formats = [5, 7, 9, 11]
+    static let periodLengths = [10, 12, 15, 20, 25, 30, 35, 40, 45]
+
+    static func formatLabel(_ playersOnField: Int) -> String { "\(playersOnField) mot \(playersOnField)" }
+
+    static func defaultPeriodLength(for playersOnField: Int) -> Int {
+        switch playersOnField {
+        case ...5: 15
+        case 6...7: 20
+        case 8...9: 25
+        default: 35
+        }
+    }
 }
 
 enum EventKind: String, Codable, Hashable {
@@ -77,7 +146,8 @@ enum ShotResult: String, Codable, CaseIterable, Hashable {
 }
 
 enum Phase: String, Codable {
-    case notStarted, firstHalf, halfTime, secondHalf, finished
+    /// `interval` is the break after `period` (half-time when there are two periods).
+    case notStarted, playing, interval, finished
 }
 
 struct MatchMinute: Codable, Equatable {
@@ -104,17 +174,73 @@ struct MatchEvent: Codable, Identifiable, Equatable {
     var note: String? = nil
 }
 
-struct MatchState: Codable, Equatable {
+struct MatchState: Equatable {
+    var teamID: UUID?
     var ourTeam: String
     var opponent: String
     var isHome: Bool
+    /// Minutes per period.
     var halfLength: Int
+    var periods: Int = 2
+    var playersOnField: Int = 9
     var players: [Player]
     var events: [MatchEvent]
     var phase: Phase
+    /// The period being played, or the one just finished during an interval.
+    var period: Int = 1
     var isRunning: Bool
     var accumulated: TimeInterval
     var runningSince: Date?
+}
+
+extension MatchState: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case teamID, ourTeam, opponent, isHome, halfLength, periods, playersOnField, players, events
+        case phase, period, isRunning, accumulated, runningSince
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        teamID = try c.decodeIfPresent(UUID.self, forKey: .teamID)
+        ourTeam = try c.decode(String.self, forKey: .ourTeam)
+        opponent = try c.decode(String.self, forKey: .opponent)
+        isHome = try c.decode(Bool.self, forKey: .isHome)
+        halfLength = try c.decode(Int.self, forKey: .halfLength)
+        periods = try c.decodeIfPresent(Int.self, forKey: .periods) ?? 2
+        playersOnField = try c.decodeIfPresent(Int.self, forKey: .playersOnField) ?? 9
+        players = try c.decode([Player].self, forKey: .players)
+        events = try c.decode([MatchEvent].self, forKey: .events)
+        isRunning = try c.decode(Bool.self, forKey: .isRunning)
+        accumulated = try c.decode(TimeInterval.self, forKey: .accumulated)
+        runningSince = try c.decodeIfPresent(Date.self, forKey: .runningSince)
+        // Older versions always had two halves with their own phase names.
+        switch try c.decode(String.self, forKey: .phase) {
+        case "firstHalf": phase = .playing; period = 1
+        case "halfTime": phase = .interval; period = 1
+        case "secondHalf": phase = .playing; period = 2
+        case let raw:
+            phase = Phase(rawValue: raw) ?? .notStarted
+            period = try c.decodeIfPresent(Int.self, forKey: .period) ?? 1
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(teamID, forKey: .teamID)
+        try c.encode(ourTeam, forKey: .ourTeam)
+        try c.encode(opponent, forKey: .opponent)
+        try c.encode(isHome, forKey: .isHome)
+        try c.encode(halfLength, forKey: .halfLength)
+        try c.encode(periods, forKey: .periods)
+        try c.encode(playersOnField, forKey: .playersOnField)
+        try c.encode(players, forKey: .players)
+        try c.encode(events, forKey: .events)
+        try c.encode(phase, forKey: .phase)
+        try c.encode(period, forKey: .period)
+        try c.encode(isRunning, forKey: .isRunning)
+        try c.encode(accumulated, forKey: .accumulated)
+        try c.encodeIfPresent(runningSince, forKey: .runningSince)
+    }
 }
 
 extension MatchState {
@@ -127,8 +253,7 @@ extension MatchState {
     /// First name and shirt number, e.g. "Selma (10)". The only form of a player name that may leave the phone.
     func publicName(_ id: UUID?) -> String? {
         guard let player = players.first(where: { $0.id == id }) else { return nil }
-        let first = player.name.split(separator: " ").first.map(String.init) ?? player.name
-        return "\(first) (\(player.number))"
+        return "\(player.firstName) (\(player.number))"
     }
 
     var onField: [Player] { players.filter { $0.status == .start }.sorted { $0.number < $1.number } }
@@ -170,28 +295,36 @@ extension MatchState {
         return accumulated + max(0, now.timeIntervalSince(runningSince))
     }
 
+    var isLastPeriod: Bool { period >= periods }
+
     func clock(at now: Date) -> MatchMinute {
         switch phase {
         case .notStarted:
             return MatchMinute(minute: 0)
-        case .halfTime:
-            return MatchMinute(minute: halfLength)
+        case .interval:
+            return MatchMinute(minute: period * halfLength)
         case .finished:
-            return MatchMinute(minute: halfLength * 2)
-        case .firstHalf, .secondHalf:
-            let base = phase == .firstHalf ? 0 : halfLength
+            return MatchMinute(minute: periods * halfLength)
+        case .playing:
+            let base = (period - 1) * halfLength
             let full = base + Int(elapsed(at: now) / 60) + 1
             let limit = base + halfLength
             return full > limit ? MatchMinute(minute: limit, added: full - limit) : MatchMinute(minute: full)
         }
     }
 
+    /// "1:a halvlek" with two periods, otherwise "Period 2".
+    func periodName(_ number: Int) -> String {
+        periods == 2 ? "\(number == 1 ? "1:a" : "2:a") halvlek" : "Period \(number)"
+    }
+
+    var intervalName: String { periods == 2 ? "Halvtid" : "Periodpaus" }
+
     var periodText: String {
         switch phase {
         case .notStarted: "Ej startad"
-        case .firstHalf: isRunning ? "1:a halvlek" : "1:a halvlek · pausad"
-        case .halfTime: "Halvtid"
-        case .secondHalf: isRunning ? "2:a halvlek" : "2:a halvlek · pausad"
+        case .playing: periodName(period) + (isRunning ? "" : " · pausad")
+        case .interval: intervalName
         case .finished: "Slut"
         }
     }
@@ -199,8 +332,8 @@ extension MatchState {
     func statusLine(at now: Date) -> String {
         switch phase {
         case .notStarted: "Ej startad"
-        case .firstHalf, .secondHalf: "Pågår, \(clock(at: now).text)" + (isRunning ? "" : " (pausad)")
-        case .halfTime: "Halvtid"
+        case .playing: "Pågår, \(clock(at: now).text)" + (isRunning ? "" : " (pausad)")
+        case .interval: intervalName
         case .finished: "Slut"
         }
     }
@@ -262,6 +395,14 @@ extension MatchState {
 }
 
 extension MatchState {
+    /// Fake squad for the example team. Clearly marked as made up in the UI.
+    static let exampleTeamID = UUID(uuidString: "6E6F8B6A-0E1D-4C55-9D7B-3A3E2C9A1F00")!
+
+    static func exampleTeam() -> Team {
+        Team(id: exampleTeamID, name: "Ditt lag (exempel)", playersOnField: 9, periods: 2, periodLength: 25,
+             players: example().players.map { var p = $0; p.status = .bench; return p })
+    }
+
     static func example(now: Date = .now) -> MatchState {
         let roster: [(Int, String, PlayerStatus)] = [
             (1, "Alva Berg", .start), (2, "Leo Andersson", .start), (3, "Noah Lindqvist", .bench),
@@ -271,7 +412,11 @@ extension MatchState {
             (13, "William Sjöberg", .bench), (14, "Freja Håkansson", .start), (15, "Theo Björk", .bench),
             (16, "Nora Engström", .out),
         ]
-        let players = roster.map { Player(name: $0.1, number: $0.0, status: $0.2) }
+        // Stable ids so the example match and the example team share players.
+        let players = roster.map {
+            Player(id: UUID(uuidString: String(format: "6E6F8B6A-0E1D-4C55-9D7B-0000000000%02d", $0.0))!,
+                   name: $0.1, number: $0.0, status: $0.2)
+        }
         func id(_ number: Int) -> UUID { players.first { $0.number == number }!.id }
 
         let specs: [(Int, EventKind, Side, UUID?, UUID?, ShotResult?, String?)] = [
@@ -296,8 +441,9 @@ extension MatchState {
                        player: s.3, otherPlayer: s.4, shot: s.5, note: s.6)
         }
 
-        return MatchState(ourTeam: "Ditt lag", opponent: "Ekbacka IK", isHome: true, halfLength: 25,
-                          players: players, events: events, phase: .secondHalf, isRunning: true,
+        return MatchState(teamID: exampleTeamID, ourTeam: "Ditt lag (exempel)", opponent: "Ekbacka IK", isHome: true,
+                          halfLength: 25, periods: 2, playersOnField: 9, players: players, events: events,
+                          phase: .playing, period: 2, isRunning: true,
                           accumulated: 0, runningSince: now.addingTimeInterval(-500))
     }
 }

@@ -12,6 +12,8 @@ enum Flow: Identifiable, Hashable {
 struct MatchView: View {
     @Environment(MatchStore.self) private var store
     @State private var flow: Flow?
+    @State private var showSquad = false
+    @State private var showNewMatch = false
 
     var body: some View {
         // Sized to fit one screen above the tab bar on current iPhones; scrolls on smaller ones.
@@ -21,6 +23,16 @@ struct MatchView: View {
                 VStack(spacing: 10) {
                     HStack(spacing: 8) {
                         HomeAwayPicker()
+                        Menu {
+                            Button { showSquad = true } label: { Label("Dagens trupp", systemImage: "person.2") }
+                            Button { showNewMatch = true } label: { Label("Ny match", systemImage: "plus.circle") }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.title2)
+                                .foregroundStyle(Theme.green)
+                                .frame(width: 34, height: 34)
+                        }
+                        .accessibilityLabel("Mer")
                         LiveRow()
                     }
                     ScoreboardView()
@@ -45,14 +57,21 @@ struct MatchView: View {
             do { try await Task.sleep(for: .seconds(4)) } catch { return }
             store.toast = nil
         }
+        .sheet(isPresented: $showSquad) { MatchSquadSheet() }
+        .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .sheet(item: $flow) { flow in
             FlowSheet(flow: flow)
                 .presentationDetents([.medium, .large])
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: store.state.events.count)
         .onAppear {
-            // `-demoSheet goal` opens the goal flow (used for screenshots).
-            if UserDefaults.standard.string(forKey: "demoSheet") == "goal" { flow = .goal }
+            // `-demoSheet goal|squad|newMatch` opens that sheet (used for screenshots).
+            switch UserDefaults.standard.string(forKey: "demoSheet") {
+            case "goal": flow = .goal
+            case "squad": showSquad = true
+            case "newMatch": showNewMatch = true
+            default: break
+            }
         }
     }
 }
@@ -117,7 +136,7 @@ struct ClockControls: View {
         HStack(spacing: 12) {
             Button {
                 switch phase {
-                case .secondHalf: confirmEnd = true
+                case .playing where store.state.isLastPeriod: confirmEnd = true
                 case .finished: showNewMatch = true
                 default: store.advancePhase()
                 }
@@ -129,7 +148,7 @@ struct ClockControls: View {
             .buttonStyle(.borderedProminent)
             .tint(Theme.green)
 
-            if phase == .firstHalf || phase == .secondHalf {
+            if phase == .playing {
                 Button { store.togglePause() } label: {
                     Image(systemName: store.state.isRunning ? "pause.fill" : "play.fill")
                         .font(.title2)

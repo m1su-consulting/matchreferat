@@ -1,79 +1,58 @@
 import SwiftUI
 
-struct SquadView: View {
+/// "Dagens trupp": this match's settings and lineup, editable during the match.
+struct MatchSquadSheet: View {
     @Environment(MatchStore.self) private var store
-    @State private var newName = ""
-    @State private var newNumber = ""
-    @State private var confirmReset = false
+    @Environment(\.dismiss) private var dismiss
     @State private var showNewMatch = false
-
-    private let halfLengths = [15, 20, 25, 30, 35, 45]
 
     var body: some View {
         @Bindable var store = store
         NavigationStack {
             Form {
                 Section {
-                    Button { showNewMatch = true } label: {
-                        Label("Ny match", systemImage: "plus.circle.fill")
-                            .font(.headline)
-                    }
-                }
-
-                Section("Match") {
-                    LabeledContent("Vårt lag") {
-                        TextField("Vårt lag", text: $store.state.ourTeam)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    LabeledContent("Motståndare") {
-                        TextField("Motståndare", text: $store.state.opponent)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    Picker("Plats", selection: $store.state.isHome) {
-                        Text("Hemma").tag(true)
-                        Text("Borta").tag(false)
+                    TextField("Motståndare", text: $store.state.opponent)
+                        .textInputAutocapitalization(.words)
+                    Picker("Vi spelar", selection: $store.state.isHome) {
+                        Text("Vi hemma").tag(true)
+                        Text("Vi borta").tag(false)
                     }
                     .pickerStyle(.segmented)
-                    Picker("Halvlek", selection: $store.state.halfLength) {
-                        ForEach(halfLengths, id: \.self) { Text("\($0) min").tag($0) }
-                    }
-                }
-
-                Section {
-                    ForEach($store.state.players) { $player in
-                        PlayerRow(player: $player)
-                    }
-                    .onDelete { store.state.players.remove(atOffsets: $0) }
+                    FormatFields(playersOnField: $store.state.playersOnField, periods: $store.state.periods,
+                                 periodLength: $store.state.halfLength, suggestsLength: false)
                 } header: {
-                    Text("Trupp · \(store.state.onField.count) på plan · \(store.state.bench.count) bänk")
+                    Text(store.state.ourTeam)
+                } footer: {
+                    Text("Gäller bara den här matchen. Lagets trupp och inställningar ändrar du under Lag.")
                 }
 
-                Section("Lägg till spelare") {
-                    TextField("Namn", text: $newName)
-                        .textContentType(.name)
-                    TextField("Nummer", text: $newNumber)
-                        .keyboardType(.numberPad)
-                    Button("Lägg till") {
-                        store.addPlayer(name: newName.trimmingCharacters(in: .whitespaces), number: Int(newNumber) ?? 0)
-                        newName = ""
-                        newNumber = ""
+                LineupSection(players: $store.state.players, playersOnField: store.state.playersOnField)
+
+                AddMatchPlayerSection { player, saveInSquad in
+                    store.state.players.append(player)
+                    store.state.players.sort { $0.number < $1.number }
+                    if saveInSquad, let index = store.teams.firstIndex(where: { $0.id == store.state.teamID }) {
+                        var squadPlayer = player
+                        squadPlayer.status = .bench
+                        store.teams[index].players.append(squadPlayer)
                     }
-                    .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty || Int(newNumber) == nil)
                 }
 
                 Section {
-                    Button("Återställ exempelmatch", role: .destructive) { confirmReset = true }
-                } footer: {
-                    Text("Prototyp med påhittade spelare")
+                    Button { showNewMatch = true } label: {
+                        Label("Ny match", systemImage: "plus.circle.fill")
+                    }
                 }
             }
-            .navigationTitle("Trupp")
-            .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
-            .confirmationDialog("Återställa exempelmatchen?", isPresented: $confirmReset, titleVisibility: .visible) {
-                Button("Återställ", role: .destructive) { store.reset() }
-                Button("Avbryt", role: .cancel) {}
-            } message: {
-                Text("Alla händelser och ändringar i truppen ersätts med exempeldata.")
+            .navigationTitle("Dagens trupp")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Klar") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showNewMatch, onDismiss: { if store.state.events.isEmpty { dismiss() } }) {
+                NewMatchSheet()
             }
         }
     }

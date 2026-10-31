@@ -159,16 +159,18 @@
     const millis = (t) => (t == null ? null : typeof t.toMillis === "function" ? t.toMillis() : Number(t));
 
     function liveMinute(d, now) {
-      const half = d.halfLength;
+      const len = d.halfLength;
+      const periods = d.periods || 2;
+      const period = d.period || 1;
       if (d.phase === "notStarted") return "0'";
-      if (d.phase === "halfTime") return `${half}'`;
-      if (d.phase === "finished") return `${half * 2}'`;
+      if (d.phase === "interval") return `${period * len}'`;
+      if (d.phase === "finished") return `${periods * len}'`;
       let elapsed = d.accumulated || 0;
       const started = millis(d.startedAt);
       if (d.running && started) elapsed += Math.max(0, (now - started) / 1000);
-      const base = d.phase === "firstHalf" ? 0 : half;
+      const base = (period - 1) * len;
       const full = base + Math.floor(elapsed / 60) + 1;
-      const limit = base + half;
+      const limit = base + len;
       return full > limit ? `${limit}+${full - limit}'` : `${full}'`;
     }
 
@@ -204,8 +206,9 @@
       $("stats").textContent = d.stats;
       document.title = `${d.homeName} – ${d.awayName} ${d.homeScore}–${d.awayScore} · Matchreferat`;
 
-      const live = d.phase === "firstHalf" || d.phase === "secondHalf";
-      setBadge(live, live ? "LIVE" : d.phase === "finished" ? "SLUT" : d.phase === "halfTime" ? "HALVTID" : "EJ STARTAD");
+      const live = d.phase === "playing";
+      const pause = (d.periods || 2) === 2 ? "HALVTID" : "PAUS";
+      setBadge(live, live ? "LIVE" : d.phase === "finished" ? "SLUT" : d.phase === "interval" ? pause : "EJ STARTAD");
 
       const list = $("timeline");
       list.replaceChildren();
@@ -253,7 +256,7 @@
       const ev = (m, type, side, text, team) => ({ m, type, side, text, team });
       return {
         homeName: "Ditt lag", awayName: "Ekbacka IK", isHome: true, homeScore: 2, awayScore: 1,
-        phase: "secondHalf", running: true, startedAt: now - 500000, accumulated: 0, halfLength: 25,
+        phase: "playing", period: 2, periods: 2, running: true, startedAt: now - 500000, accumulated: 0, halfLength: 25,
         periodText: "2:a halvlek", stats: "Skott 3–3 · På mål 3–2 · Hörnor 2–1",
         updatedAt: now - 20000, expireAt: now + 7 * 864e5,
         events: [

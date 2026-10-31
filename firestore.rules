@@ -35,17 +35,19 @@ service cloud.firestore {
     function validMatch(d) {
       return d.keys().hasAll(['v', 'ownerUid', 'ourTeam', 'opponent', 'isHome', 'homeName', 'awayName',
                               'homeScore', 'awayScore', 'phase', 'running', 'accumulated', 'halfLength',
-                              'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
+                              'period', 'periods', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
         && d.keys().hasOnly(['v', 'ownerUid', 'ourTeam', 'opponent', 'isHome', 'homeName', 'awayName',
                              'homeScore', 'awayScore', 'phase', 'running', 'startedAt', 'accumulated',
-                             'halfLength', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
+                             'halfLength', 'period', 'periods', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
         && d.v == 1
         && shortString(d.ourTeam, 60) && shortString(d.opponent, 60)
         && shortString(d.homeName, 60) && shortString(d.awayName, 60)
         && d.isHome is bool && d.running is bool
         && d.homeScore is int && d.homeScore >= 0 && d.homeScore < 100
         && d.awayScore is int && d.awayScore >= 0 && d.awayScore < 100
-        && d.phase in ['notStarted', 'firstHalf', 'halfTime', 'secondHalf', 'finished']
+        && d.phase in ['notStarted', 'playing', 'interval', 'finished']
+        && d.periods is int && d.periods >= 1 && d.periods <= 4
+        && d.period is int && d.period >= 1 && d.period <= d.periods
         && (!('startedAt' in d) || d.startedAt is timestamp)
         && d.accumulated is number && d.accumulated >= 0
         && d.halfLength is int && d.halfLength > 0 && d.halfLength <= 60
