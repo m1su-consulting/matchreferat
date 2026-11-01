@@ -36,6 +36,24 @@ struct ScoreTests {
         #expect(match.publicName(selma.id) == "Selma (10)")
         #expect(!match.report(at: .now).contains("Lund"))
     }
+
+    @Test func shotPickerFallsBackToSquadWithoutStarters() {
+        var match = MatchState.example()
+        #expect(match.pickable == match.onField)
+        match.players = match.players.map { var p = $0; if p.status == .start { p.status = .bench }; return p }
+        #expect(match.onField.isEmpty)
+        #expect(match.pickable == match.playingToday)
+        #expect(!match.pickable.isEmpty)
+    }
+
+    @Test func shotWithAndWithoutPlayer() throws {
+        let match = MatchState.example()
+        let selma = try #require(match.players.first { $0.number == 10 })
+        let named = MatchEvent(kind: .shot, side: .us, minute: MatchMinute(minute: 5), createdAt: .now, player: selma.id, shot: .onTarget)
+        let anonymous = MatchEvent(kind: .shot, side: .us, minute: MatchMinute(minute: 6), createdAt: .now, shot: .off)
+        #expect(match.describe(named, publicNames: true) == "Skott på mål, räddning – Selma (10)")
+        #expect(match.describe(anonymous) == "Skott utanför")
+    }
 }
 
 @Suite("Klocka och halvlekar")

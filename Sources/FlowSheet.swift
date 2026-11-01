@@ -43,18 +43,18 @@ struct FlowSheet: View {
         switch flow {
         case .goal:
             if step == 0 {
-                PlayerPicker(prompt: "Vem gjorde målet?", players: state.onField, skip: "Okänd") { id in
+                PlayerPicker(prompt: "Vem gjorde målet?", players: state.pickable, skip: "Okänd") { id in
                     firstPlayer = id
                     step = 1
                 }
             } else {
-                PlayerPicker(prompt: "Assist?", players: state.onField.filter { $0.id != firstPlayer },
+                PlayerPicker(prompt: "Assist?", players: state.pickable.filter { $0.id != firstPlayer },
                              skip: "Ingen assist") { id in
                     finish(.goal, .us, player: firstPlayer, otherPlayer: id)
                 }
             }
         case .shot(let result):
-            PlayerPicker(prompt: "Vem sköt?", players: state.onField, skip: "Hoppa över") { id in
+            PlayerPicker(prompt: "Vem sköt?", players: state.pickable, skip: "Hoppa över") { id in
                 finish(.shot, .us, player: id, shot: result)
             }
         case .card(let kind):
@@ -102,7 +102,10 @@ struct PlayerPicker: View {
                         .tint(Theme.green)
                 }
             }
-            if players.isEmpty {
+            if players.isEmpty, let skip {
+                Text("Inga spelare inlagda. Tryck på \"\(skip)\" för att spara utan spelare.")
+                    .foregroundStyle(.secondary)
+            } else if players.isEmpty {
                 Text("Inga spelare att välja").foregroundStyle(.secondary)
             }
             LazyVGrid(columns: columns, spacing: 10) {

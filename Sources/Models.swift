@@ -259,6 +259,8 @@ extension MatchState {
     var onField: [Player] { players.filter { $0.status == .start }.sorted { $0.number < $1.number } }
     var bench: [Player] { players.filter { $0.status == .bench }.sorted { $0.number < $1.number } }
     var playingToday: [Player] { players.filter { $0.status != .out }.sorted { $0.number < $1.number } }
+    /// Players to pick from for goals and shots: those on the pitch, or everyone playing today if no starters are set.
+    var pickable: [Player] { onField.isEmpty ? playingToday : onField }
 
     func count(_ kind: EventKind, _ side: Side) -> Int {
         events.filter { $0.kind == kind && $0.side == side }.count
