@@ -24,6 +24,28 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid;
     }
 
+    // A small public summary of each ongoing shared match, so people connected to the same
+    // server can find it. Anyone signed in (everyone with the connection link) may list it;
+    // it holds only team names, score and clock, never players or events. The id is the
+    // match id, so a listed match can be opened. Only the owner may write.
+    match /ongoing/{matchId} {
+      allow get, list: if request.auth != null;
+
+      allow create: if validId(matchId)
+        && request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && validOngoing(request.resource.data);
+
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && validOngoing(request.resource.data);
+
+      // Deleting a summary that is already gone is allowed, so the app can always clean up.
+      allow delete: if request.auth != null
+        && (resource == null || resource.data.ownerUid == request.auth.uid);
+    }
+
     function validId(id) {
       return id.size() >= 22 && id.size() <= 64 && id.matches('^[A-Za-z0-9]+$');
     }
@@ -53,6 +75,21 @@ service cloud.firestore {
         && d.halfLength is int && d.halfLength > 0 && d.halfLength <= 60
         && shortString(d.periodText, 40) && shortString(d.clockLabel, 12) && shortString(d.stats, 120)
         && d.events is list && d.events.size() <= 200
+        && d.updatedAt == request.time
+        && d.expireAt is timestamp && d.expireAt <= request.time + duration.value(8, 'd');
+    }
+
+    function validOngoing(d) {
+      return d.keys().hasOnly(['v', 'ownerUid', 'homeName', 'awayName', 'homeScore', 'awayScore',
+                               'phase', 'periodText', 'clockLabel', 'updatedAt', 'expireAt'])
+        && d.keys().hasAll(['v', 'ownerUid', 'homeName', 'awayName', 'homeScore', 'awayScore',
+                            'phase', 'periodText', 'clockLabel', 'updatedAt', 'expireAt'])
+        && d.v == 1
+        && shortString(d.homeName, 60) && shortString(d.awayName, 60)
+        && d.homeScore is int && d.homeScore >= 0 && d.homeScore < 100
+        && d.awayScore is int && d.awayScore >= 0 && d.awayScore < 100
+        && d.phase in ['notStarted', 'playing', 'interval']
+        && shortString(d.periodText, 40) && shortString(d.clockLabel, 12)
         && d.updatedAt == request.time
         && d.expireAt is timestamp && d.expireAt <= request.time + duration.value(8, 'd');
     }

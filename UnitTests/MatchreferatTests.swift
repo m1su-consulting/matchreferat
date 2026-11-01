@@ -239,4 +239,89 @@ struct LiveServerTests {
             _ = try await AnonymousSession.signUp(server, client: disabled)
         }
     }
+
+    // MARK: Ongoing matches
+
+    @Test func parsesOngoingList() throws {
+        let json = #"""
+        {"documents":[
+          {"name":"projects/p/databases/(default)/documents/ongoing/AbCdEfGhIjKlMnOpQrStUv12",
+           "fields":{"v":{"integerValue":"1"},"ownerUid":{"stringValue":"anna"},
+             "homeName":{"stringValue":"Ekbacka IK"},"awayName":{"stringValue":"Björkdalens IF"},
+             "homeScore":{"integerValue":"1"},"awayScore":{"integerValue":"3"},"phase":{"stringValue":"playing"},
+             "periodText":{"stringValue":"2:a halvlek"},"clockLabel":{"stringValue":"41'"},
+             "updatedAt":{"timestampValue":"2026-11-01T15:00:00.123456789Z"},
+             "expireAt":{"timestampValue":"2026-11-08T15:00:00Z"}}},
+          {"name":"projects/p/databases/(default)/documents/ongoing/broken","fields":{"homeName":{"stringValue":"X"}}}
+        ]}
+        """#
+        let list = OngoingMatch.parseList(Data(json.utf8))
+        let match = try #require(list.first)
+        #expect(list.count == 1)
+        #expect(match.id == "AbCdEfGhIjKlMnOpQrStUv12")
+        #expect(match.title == "Ekbacka IK – Björkdalens IF")
+        #expect(match.scoreText == "1–3")
+        #expect(match.statusText == "41' · 2:a halvlek")
+        #expect(OngoingMatch.parseList(Data("{}".utf8)).isEmpty)
+    }
+
+    @Test func hidesOwnExpiredAndStaleMatches() {
+        let now = Date.now
+        func match(_ id: String, owner: String = "anna", updated: TimeInterval = -60, expires: TimeInterval = 86400) -> OngoingMatch {
+            OngoingMatch(id: id, ownerUid: owner, homeName: "A", awayName: "B", homeScore: 0, awayScore: 0,
+                         phase: .playing, periodText: "", clockLabel: "", updatedAt: now + updated, expireAt: now + expires)
+        }
+        let all = [match("old", updated: -7 * 3600), match("mine", owner: "me"), match("expired", expires: -1),
+                   match("ownShare", owner: "otherDevice"), match("newer", updated: -10), match("live")]
+        let visible = OngoingMatch.visible(all, excludingOwner: "me", ownMatch: "ownShare", now: now)
+        #expect(visible.map(\.id) == ["newer", "live"])
+    }
+
+    @MainActor
+    @Test func summaryHasNoPlayersOrEvents() {
+        let summary = LiveShare.summary(.example())
+        #expect(Set(summary.keys) == ["v", "homeName", "awayName", "homeScore", "awayScore", "phase",
+                                      "periodText", "clockLabel", "expireAt"])
+        #expect(summary["homeScore"] as? Int == 2)
+    }
+
+    /// Answers sign-up, and refuses commits that include the `ongoing` summary, like a server with old rules.
+    final class OldRulesServer: HTTPClient, @unchecked Sendable {
+        private let lock = NSLock()
+        private var commits: [Int] = []
+        var writeCounts: [Int] { lock.withLock { commits } }
+
+        func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+            let url = request.url!
+            var status = 200
+            var body = "{}"
+            if url.host() == "identitytoolkit.googleapis.com" {
+                body = #"{"localId":"uid1","idToken":"t","refreshToken":"r","expiresIn":"3600"}"#
+            } else if url.absoluteString.hasSuffix(":commit") {
+                let json = try JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any]
+                let count = (json?["writes"] as? [Any])?.count ?? 0
+                lock.withLock { commits.append(count) }
+                if count > 1 { status = 403 }
+            }
+            return (Data(body.utf8), HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: nil)!)
+        }
+    }
+
+    @MainActor
+    @Test func sharingWorksOnServerWithOldRules() async throws {
+        let suite = "matchreferat-tests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let server = LiveServer(projectID: "gamla-regler", apiKey: "AIzaTESTKEY0123456789abcdefghijklmnop", name: "Gamla")
+        defaults.set(try JSONEncoder().encode(server), forKey: "liveServer")
+        let client = OldRulesServer()
+        let live = LiveShare(client: client, defaults: defaults)
+
+        await live.start(.example())
+        #expect(live.isOn)
+        await live.stop()
+        // The first commit (match + summary) is refused and retried alone; later commits skip the summary.
+        #expect(client.writeCounts == [2, 1, 1])
+    }
 }
+

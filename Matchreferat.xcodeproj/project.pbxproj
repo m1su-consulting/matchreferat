@@ -12,6 +12,7 @@
 		1D23A198298D1F1CF4D0C06D /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B344D7EB8CAB799918C7B0 /* Persistence.swift */; };
 		215F0B4D0986328F833DCA4C /* LicensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2145666CD07F6062F9EF1659 /* LicensesView.swift */; };
 		2AA5900F455E64DC51B89E0A /* Apache-2.0.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2226A5DD1AAD795DC85C8C7B /* Apache-2.0.txt */; };
+		38BBEA65EF1252F6FFE3B642 /* OngoingMatches.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9A27FE2E2D1571B4C4A6849 /* OngoingMatches.swift */; };
 		42F57E43625C8873A831F508 /* SquadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67DEA2C591B35E7CA222EB5 /* SquadView.swift */; };
 		4343B3905002AFC95EDCE3B2 /* LiveShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B0C41D402F1023B67BCB754 /* LiveShare.swift */; };
 		54A7187220AB2114146BA834 /* MatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C6182995ACEE0EDD2824C6 /* MatchStore.swift */; };
@@ -56,6 +57,7 @@
 		CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMatchSheet.swift; sourceTree = "<group>"; };
 		D67DEA2C591B35E7CA222EB5 /* SquadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquadView.swift; sourceTree = "<group>"; };
 		D76168D8200CDCE61E174F61 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D9A27FE2E2D1571B4C4A6849 /* OngoingMatches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OngoingMatches.swift; sourceTree = "<group>"; };
 		DC947CCCD25F31F357EC250E /* StartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartView.swift; sourceTree = "<group>"; };
 		ECFB973BB49F68109FFF1731 /* MatchreferatTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = MatchreferatTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FA60336EA9F5AD415E16EEF7 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 				AB5443206FFA1DEE5BE9B75D /* MatchView.swift */,
 				FA60336EA9F5AD415E16EEF7 /* Models.swift */,
 				CD3E164E24EE8EF20F762323 /* NewMatchSheet.swift */,
+				D9A27FE2E2D1571B4C4A6849 /* OngoingMatches.swift */,
 				B7B344D7EB8CAB799918C7B0 /* Persistence.swift */,
 				B619018374C6792E417EDFA9 /* Previews.swift */,
 				671AFD78B8019A05E17A26E0 /* PrivacyInfo.xcprivacy */,
@@ -226,6 +229,7 @@
 				728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */,
 				78DC81D9A9D063E0B8E70362 /* Models.swift in Sources */,
 				5A7819D75BF19D1425E4A6BA /* NewMatchSheet.swift in Sources */,
+				38BBEA65EF1252F6FFE3B642 /* OngoingMatches.swift in Sources */,
 				1D23A198298D1F1CF4D0C06D /* Persistence.swift in Sources */,
 				841C9CC01EE715845D144924 /* Previews.swift in Sources */,
 				42F57E43625C8873A831F508 /* SquadView.swift in Sources */,

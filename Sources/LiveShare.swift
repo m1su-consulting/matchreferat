@@ -57,8 +57,8 @@ struct LiveServer: Codable, Equatable {
         URL(string: "https://firestore.googleapis.com/v1/projects/\(projectID)/databases/(default)/documents")!
     }
 
-    func documentName(_ matchID: String) -> String {
-        "projects/\(projectID)/databases/(default)/documents/matches/\(matchID)"
+    func documentName(_ matchID: String, in collection: String = "matches") -> String {
+        "projects/\(projectID)/databases/(default)/documents/\(collection)/\(matchID)"
     }
 }
 
@@ -134,10 +134,14 @@ final class LiveShare {
     private(set) var server: LiveServer?
     private(set) var matchID: String?
     private(set) var lastSynced: Date?
+    /// Other people's shared matches on the connected server, for the start page.
+    private(set) var ongoing: OngoingList = .loading
     /// A connection link opened from outside the app, waiting for the user to confirm.
     var pendingLink: String?
     private var session: AnonymousSession?
     private var pending: Task<Void, Never>?
+    /// False once the server has refused the `ongoing` summary (its rules predate it), so sharing keeps working.
+    private var ongoingSupported = true
     private let client: any HTTPClient
     private let defaults: UserDefaults
 
@@ -180,6 +184,8 @@ final class LiveShare {
         if isOn { await stop() }
         server = newServer
         session = newSession
+        ongoingSupported = true
+        ongoing = .loading
         persist()
         status = .off
     }
@@ -264,7 +270,8 @@ final class LiveShare {
         status = isConfigured ? .off : .unconfigured
         guard let server else { return }
         do {
-            try await send(authorizedRequest(server.documentsURL.appendingPathComponent("matches/\(id)"), method: "DELETE"))
+            try await commit(["delete": server.documentName(id)],
+                             ongoing: ["delete": server.documentName(id, in: "ongoing")])
         } catch {
             Self.log.error("Delete failed: \(String(describing: error), privacy: .public)")
         }
@@ -288,19 +295,69 @@ final class LiveShare {
         }
     }
 
-    /// Replaces the match document in one commit, with `updatedAt` set to the server time.
+    /// Replaces the match document and its `ongoing` summary in one commit, with `updatedAt` set
+    /// to the server time. A finished match has no summary, so it is deleted instead.
     private func write(_ state: MatchState, to id: String) async throws {
-        guard let server, let url = URL(string: server.documentsURL.absoluteString + ":commit") else { return }
+        guard let server else { return }
         let current = try await validSession()
-        let body: [String: Any] = [
-            "writes": [[
-                "update": ["name": server.documentName(id), "fields": payload(state, owner: current.uid).mapValues(Self.value)],
-                "updateTransforms": [["fieldPath": "updatedAt", "setToServerValue": "REQUEST_TIME"]],
-            ]],
+        let stamp = [["fieldPath": "updatedAt", "setToServerValue": "REQUEST_TIME"]]
+        let match: [String: Any] = [
+            "update": ["name": server.documentName(id), "fields": payload(state, owner: current.uid).mapValues(Self.value)],
+            "updateTransforms": stamp,
         ]
-        var request = try await authorizedRequest(url, method: "POST")
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        try await send(request)
+        let summary: [String: Any] = state.phase == .finished
+            ? ["delete": server.documentName(id, in: "ongoing")]
+            : ["update": ["name": server.documentName(id, in: "ongoing"),
+                          "fields": Self.summary(state).merging(["ownerUid": current.uid]) { $1 }.mapValues(Self.value)],
+               "updateTransforms": stamp]
+        try await commit(match, ongoing: summary)
+    }
+
+    /// Commits the match write together with the `ongoing` write. A server whose rules don't know
+    /// `ongoing` yet refuses the whole commit, so the match is then written alone from now on.
+    private func commit(_ match: [String: Any], ongoing: [String: Any]) async throws {
+        guard let server, let url = URL(string: server.documentsURL.absoluteString + ":commit") else { return }
+        func send(_ writes: [[String: Any]]) async throws {
+            var request = try await authorizedRequest(url, method: "POST")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["writes": writes])
+            try await self.send(request)
+        }
+        guard ongoingSupported else { return try await send([match]) }
+        do {
+            try await send([match, ongoing])
+        } catch let error as RequestError where error.status == 403 {
+            Self.log.info("Server has no rules for ongoing matches; sharing without the summary")
+            ongoingSupported = false
+            try await send([match])
+        }
+    }
+
+    /// Fetches other people's ongoing matches on the connected server.
+    func refreshOngoing() async {
+        guard let server else { return }
+        #if DEBUG
+        // `-demoOngoing YES` shows example matches instead (used for screenshots).
+        if UserDefaults.standard.bool(forKey: "demoOngoing") { ongoing = .loaded(OngoingMatch.examples); return }
+        #endif
+        do {
+            let current = try await validSession()
+            var components = URLComponents(url: server.documentsURL.appendingPathComponent("ongoing"), resolvingAgainstBaseURL: false)!
+            components.queryItems = [URLQueryItem(name: "pageSize", value: "100")]
+            let request = try await authorizedRequest(components.url!, method: "GET")
+            let (data, response) = try await client.data(for: request)
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            guard (200..<300).contains(code) else { throw RequestError(status: code, body: "") }
+            let all = OngoingMatch.parseList(data)
+            ongoing = .loaded(OngoingMatch.visible(all, excludingOwner: current.uid, ownMatch: matchID, now: .now))
+        } catch let error as RequestError where error.status == 403 {
+            ongoing = .failed("Servern har inte de senaste säkerhetsreglerna, så pågående matcher kan inte visas.")
+        } catch is CancellationError {
+            return
+        } catch {
+            Self.log.error("Listing ongoing failed: \(String(describing: error), privacy: .public)")
+            if case .loaded = ongoing { return }    // keep the last list on a brief network hiccup
+            ongoing = .failed("Kunde inte hämta pågående matcher. Dra nedåt för att försöka igen.")
+        }
     }
 
     /// The stored anonymous session for the connected server, refreshed when it is about to expire.
@@ -375,6 +432,22 @@ final class LiveShare {
             data["startedAt"] = since
         }
         return data
+    }
+
+    /// The public summary in `ongoing`: team names, score and clock only. `ownerUid` and
+    /// `updatedAt` are added when writing.
+    static func summary(_ s: MatchState) -> [String: Any] {
+        [
+            "v": 1,
+            "homeName": s.teamName(s.homeSide),
+            "awayName": s.teamName(s.awaySide),
+            "homeScore": s.goals(s.homeSide),
+            "awayScore": s.goals(s.awaySide),
+            "phase": s.phase.rawValue,
+            "periodText": s.periodText,
+            "clockLabel": s.clock(at: .now).text,
+            "expireAt": Date.now.addingTimeInterval(lifetime),
+        ]
     }
 
     private static let timestampFormatter: ISO8601DateFormatter = {

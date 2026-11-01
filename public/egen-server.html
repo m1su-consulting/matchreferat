@@ -33,12 +33,14 @@
 </ol>
 <button class="btn secondary" id="copy-rules" type="button">Kopiera reglerna</button>
 <pre id="rules">Laddar reglerna…</pre>
-<p class="muted">Reglerna gör att vem som helst med en länk kan läsa just den matchen, men ingen kan lista matcher och bara den som skapade matchen kan ändra den.</p>
+<p class="muted">Reglerna gör att vem som helst med en livelänk kan läsa just den matchen, men ingen kan lista matcherna och bara den som skapade matchen kan ändra den. Alla som har kopplat appen till servern (med kopplingslänken) ser dessutom en lista "Pågår nu" med lagnamn, ställning och matchminut för matcher som delas live. Spelare och händelser syns bara på livesidan.</p>
+<p class="muted"><strong>Har du redan en server?</strong> Klistra in reglerna igen när du uppdaterar appen till 1.0.2, annars visas inte "Pågår nu". Livedelningen fungerar ändå med de gamla reglerna.</p>
 
 <h2>5. Automatisk radering (rekommenderas)</h2>
 <ol>
 <li>I Firestore, öppna fliken <strong>Time-to-live (TTL)</strong> → <strong>Create policy</strong>.</li>
 <li>Collection group: <code>matches</code>, Timestamp field: <code>expireAt</code> → <strong>Create</strong>.</li>
+<li>Skapa en policy till med Collection group: <code>ongoing</code>, Timestamp field: <code>expireAt</code>.</li>
 </ol>
 <p class="muted">Då raderas matcher automatiskt sju dagar efter senaste uppdateringen. Matchen raderas också direkt när du stänger av "Dela live".</p>
 

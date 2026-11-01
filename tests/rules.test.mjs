@@ -104,3 +104,65 @@ test("okända fält, fel typer och för lång livslängd nekas", async () => {
   await assertFails(setDoc(doc(db("alice"), "matches", ID), match("alice", { expireAt: Timestamp.fromMillis(Date.now() + 30 * 864e5) })));
   await assertFails(setDoc(doc(db("alice"), "matches", ID), match("alice", { events: Array(201).fill({}) })));
 });
+
+// Ongoing-match summaries: listable by signed-in users, writable only by the owner.
+
+function ongoing(ownerUid, extra = {}) {
+  return {
+    v: 1,
+    ownerUid,
+    homeName: "Ditt lag",
+    awayName: "Ekbacka IK",
+    homeScore: 2,
+    awayScore: 1,
+    phase: "playing",
+    periodText: "2:a halvlek",
+    clockLabel: "34'",
+    updatedAt: serverTimestamp(),
+    expireAt: Timestamp.fromMillis(Date.now() + 7 * 864e5),
+    ...extra,
+  };
+}
+
+async function seedOngoing() {
+  await assertSucceeds(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice")));
+}
+
+test("ägaren kan lägga upp en pågående match", seedOngoing);
+
+test("inloggade kan lista pågående matcher, oinloggade inte", async () => {
+  await seedOngoing();
+  await assertSucceeds(getDocs(collection(db("bob"), "ongoing")));
+  await assertSucceeds(getDoc(doc(db("bob"), "ongoing", ID)));
+  await assertFails(getDocs(collection(db(null), "ongoing")));
+});
+
+test("matcher går fortfarande inte att lista när ongoing finns", async () => {
+  await seed();
+  await seedOngoing();
+  await assertFails(getDocs(collection(db("bob"), "matches")));
+});
+
+test("bara ägaren kan ändra eller radera en pågående match", async () => {
+  await seedOngoing();
+  await assertFails(setDoc(doc(db("bob"), "ongoing", ID), ongoing("bob")));
+  await assertFails(updateDoc(doc(db("bob"), "ongoing", ID), { homeScore: 9, updatedAt: serverTimestamp() }));
+  await assertFails(deleteDoc(doc(db("bob"), "ongoing", ID)));
+  await assertSucceeds(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { homeScore: 3 })));
+  await assertSucceeds(deleteDoc(doc(db("alice"), "ongoing", ID)));
+});
+
+test("ägaren kan radera en sammanfattning som redan är borta", async () => {
+  await assertSucceeds(deleteDoc(doc(db("alice"), "ongoing", ID)));
+  await assertFails(deleteDoc(doc(db(null), "ongoing", ID)));
+});
+
+test("pågående match: spelare, händelser, avslutad match och fel fält nekas", async () => {
+  await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { events: [] })));
+  await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { players: ["Selma"] })));
+  await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { phase: "finished" })));
+  await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { homeScore: "2" })));
+  await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { homeName: "x".repeat(61) })));
+  await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { expireAt: Timestamp.fromMillis(Date.now() + 30 * 864e5) })));
+  await assertFails(setDoc(doc(db("alice"), "ongoing", "kort"), ongoing("alice")));
+});

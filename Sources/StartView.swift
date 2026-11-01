@@ -6,6 +6,7 @@ struct StartView: View {
     @Environment(LiveShare.self) private var live
     @State private var showNewMatch = false
     @State private var confirmDelete = false
+    @State private var browserPage: BrowserPage?
 
     var body: some View {
         @Bindable var store = store
@@ -34,6 +35,12 @@ struct StartView: View {
                         .buttonStyle(.plain)
                         .contextMenu { matchActions }
                         .swipeActions { matchActions }
+                }
+            }
+
+            if let server = live.server {
+                OngoingSection(list: live.ongoing, serverName: server.name) { match in
+                    browserPage = BrowserPage(url: server.viewerURL(matchID: match.id))
                 }
             }
 
@@ -88,6 +95,15 @@ struct StartView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .refreshable { await live.refreshOngoing() }
+        .task(id: live.server?.projectID) {
+            // Poll while the start page is visible; the task is cancelled when it disappears.
+            while live.isConfigured, !Task.isCancelled {
+                await live.refreshOngoing()
+                try? await Task.sleep(for: .seconds(25))
+            }
+        }
+        .sheet(item: $browserPage) { page in SafariView(url: page.url).ignoresSafeArea() }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
         .onAppear {

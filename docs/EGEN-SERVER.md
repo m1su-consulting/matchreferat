@@ -32,12 +32,15 @@ Du behöver ett Google-konto. Gratisnivån (Spark) räcker gott, och du behöver
 
 Se [firestore.rules](../firestore.rules) – kopiera hela filen.
 
-> Reglerna gör att vem som helst med en länk kan läsa just den matchen, men ingen kan lista matcher och bara den som skapade matchen kan ändra den.
+> Reglerna gör att vem som helst med en livelänk kan läsa just den matchen, men ingen kan lista matcherna och bara den som skapade matchen kan ändra den. Alla som har kopplat appen till servern (med kopplingslänken) ser dessutom en lista "Pågår nu" med lagnamn, ställning och matchminut för matcher som delas live. Spelare och händelser syns bara på livesidan.
+>
+> **Har du redan en server?** Klistra in reglerna igen när du uppdaterar appen till 1.0.2, annars visas inte "Pågår nu". Livedelningen fungerar ändå med de gamla reglerna.
 
 ## 5. Automatisk radering (rekommenderas)
 
 1. I Firestore, öppna fliken **Time-to-live (TTL)** → **Create policy**.
 1. Collection group: `matches`, Timestamp field: `expireAt` → **Create**.
+1. Skapa en policy till med Collection group: `ongoing`, Timestamp field: `expireAt`.
 
 > Då raderas matcher automatiskt sju dagar efter senaste uppdateringen. Matchen raderas också direkt när du stänger av "Dela live".
 
