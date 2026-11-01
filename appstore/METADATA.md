@@ -1,6 +1,6 @@
 # App Store-metadata – Matchreferat
 
-Klistra in i App Store Connect → Matchreferat → version 1.0. Teckengränser inom parentes.
+Klistra in i App Store Connect → Matchreferat → version 1.0.2 (tidigare 1.0/1.0.1). Teckengränser inom parentes.
 
 ## Appinformation
 
@@ -39,10 +39,12 @@ UNDER MATCHEN
 • Klocka med halvlekar, halvtid och tilläggstid (t.ex. 25+2')
 • Logga mål med målskytt och assist, skott på mål och utanför, hörnor, frisparkar, gula och röda kort och byten
 • Ångra direkt om du tryckte fel
+• Avsluta eller ta bort en match när du vill
 • Allt får plats på en skärm – byggt för att användas med en hand vid sidlinjen
 
 DELA
 • Livelänk och QR-kod – de som följer behöver ingen app, länken öppnas i webbläsaren
+• "Pågår nu" visar matcher som andra föräldrar delar via samma live-server
 • Färdigt referat att kopiera eller dela i Messenger, SMS eller WhatsApp
 
 INTEGRITET
@@ -58,9 +60,14 @@ fotboll,referat,live,match,resultat,ungdomsfotboll,barnfotboll,förälder,ledare
 ```
 (96 tecken)
 
-**Nyheter i den här versionen**
+**Nyheter i den här versionen** (1.0.2)
 ```
-Första versionen av Matchreferat.
+• Pågår nu: se matcher som andra delar live via samma live-server, direkt på startsidan
+• Avsluta eller ta bort en pågående match från menyn eller startsidan
+• Välj skytt vid skott – eller hoppa över
+• Snabbare och säkrare: ny databas, inloggningen sparas i nyckelringen
+• Bättre stöd för VoiceOver och större text
+• Versionsnummer längst ner på startsidan
 ```
 
 ## Version 1.0 – engelska (valfri extra lokalisering)
@@ -128,9 +135,11 @@ How to test (no login needed):
    <KOPPLINGSLÄNK>
    (or paste it under Inställningar → Live-server). The app tests the connection and confirms.
 5. Go back to the match, tap "Dela live" at the top right and switch it on to get a link and QR code. Open the link in Safari to see the live page update as you log events. Switching it off deletes the shared match from the server.
-6. "⋯" opens the timeline and a text report (Kopiera/Dela), today's squad and match settings. Licenses are under Inställningar → Licenser.
+6. "⋯" opens the timeline and a text report (Kopiera/Dela), today's squad and match settings. It also has "Avsluta match" (ends the match at the current score) and "Ta bort match" (asks first, then deletes the match and stops live sharing). The same two actions appear when you swipe left on the "Pågående match" card on the start page. Licenses are under Inställningar → Licenser.
+7. When logging a shot ("Skott på mål"/"Skott utanför") you can pick the shooter or tap "Hoppa över"; a player is never required.
+8. New in 1.0.2: when a live server is connected, the start page shows "Pågår nu", a list of matches that other people are sharing live on the same server (team names, score and minute only). To test it, share a match from one device and look at the start page on another device connected with the same link; tapping a match opens its live page. With nothing shared it shows "Inga matcher pågår just nu". Your own match is not listed there, it appears under "Pågående match".
 
-Privacy: no account. Only team names, events and players as first name + shirt number are uploaded, and only to the live server the user has connected, and only when live sharing is on. Shared matches are deleted when sharing stops or after 7 days. Privacy policy: https://matchreferat.web.app/integritet
+Privacy: no account. Only team names, events and players as first name + shirt number are uploaded, and only to the live server the user has connected, and only when live sharing is on. Users connected to the same server see team names, score and minute of ongoing shared matches in "Pågår nu"; players and events are only on the live page. Shared matches are deleted when sharing stops or after 7 days. Privacy policy: https://matchreferat.web.app/integritet
 ```
 
 Kontaktuppgifter för granskning: ditt namn, telefon och e-post.
