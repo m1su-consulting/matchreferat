@@ -12,14 +12,16 @@ struct NewMatchSheet: View {
     @State private var isHome = true
     @State private var confirmDiscard = false
 
-    private var team: Team? { store.teams.first { $0.id == teamID } }
+    private var sport: Sport { store.sport ?? store.state.sport }
+    private var teams: [Team] { store.teams(for: sport) }
+    private var team: Team? { teams.first { $0.id == teamID } }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     Picker("Lag", selection: $teamID) {
-                        ForEach(store.teams) { Text($0.name).tag(Optional($0.id)) }
+                        ForEach(teams) { Text($0.name).tag(Optional($0.id)) }
                     }
                     TextField("Motståndare", text: $opponent)
                         .textInputAutocapitalization(.words)
@@ -32,12 +34,12 @@ struct NewMatchSheet: View {
                     .pickerStyle(.segmented)
                 } footer: {
                     if let team {
-                        Text("\(Team.formatLabel(team.playersOnField)) · \(team.periods) × \(team.periodLength) min · senaste uppställningen. Ändras under ⋯ på matchsidan."
+                        Text("\(team.sport.label) · \(Team.formatLabel(team.playersOnField)) · \(team.periods) × \(team.periodLength) min · senaste uppställningen. Ändras under ⋯ på matchsidan."
                              + (live.isOn ? " Den gamla livelänken slutar fungera." : ""))
                     }
                 }
             }
-            .navigationTitle("Ny match")
+            .navigationTitle(sport == .football ? "Ny fotbollsmatch" : "Ny innebandymatch")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -52,10 +54,10 @@ struct NewMatchSheet: View {
                 Button("Starta ny match", role: .destructive) { start() }
                 Button("Avbryt", role: .cancel) {}
             } message: {
-                Text("Händelserna i den pågående matchen försvinner.")
+                Text("Händelserna i den pågående \(store.state.sport == .football ? "fotbollsmatchen" : "innebandymatchen") försvinner.")
             }
             .onAppear {
-                teamID = store.teams.first { $0.id == store.state.teamID }?.id ?? store.teams.first?.id
+                teamID = teams.first { $0.id == store.state.teamID }?.id ?? teams.first?.id
                 isHome = store.state.isHome
             }
         }

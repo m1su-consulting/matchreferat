@@ -5,6 +5,8 @@ enum Flow: Identifiable, Hashable {
     case shot(ShotResult)
     case card(EventKind)
     case sub
+    case penalty(Side)
+    case suspension
 
     var id: String { "\(self)" }
 }
@@ -90,6 +92,8 @@ struct MatchView: View {
             switch LaunchArgument.string("demoSheet") {
             case "goal": flow = .goal
             case "shot": flow = .shot(.onTarget)
+            case "penalty": flow = .penalty(.us)
+            case "suspension": flow = .suspension
             case "squad": showSquad = true
             case "settings": showSettings = true
             case "events": showEvents = true
@@ -233,10 +237,21 @@ struct EventGrid: View {
         case shot(ShotResult)
     }
 
-    /// Events logged for both teams. The opponent is only a team name: no player data, no cards.
-    private let sharedRows: [Action] = [.event(.goal), .shot(.onTarget), .shot(.off), .event(.corner), .event(.freeKick)]
+    /// Events logged for both teams. The opponent is only a team name: no player data, no cards or utvisningar.
+    private var sharedRows: [Action] {
+        switch store.state.sport {
+        case .football: [.event(.goal), .shot(.onTarget), .shot(.off), .event(.corner), .event(.freeKick), .event(.penalty)]
+        case .floorball: [.event(.goal), .shot(.onTarget), .shot(.off), .event(.freeKick), .event(.penalty)]
+        }
+    }
+
     /// Events only we log, shown as one row of compact tiles.
-    private let ourOnly: [EventKind] = [.yellow, .red, .sub]
+    private var ourOnly: [EventKind] {
+        switch store.state.sport {
+        case .football: [.yellow, .red, .sub]
+        case .floorball: [.suspension, .sub]
+        }
+    }
 
     var body: some View {
         let sides = [store.state.homeSide, store.state.awaySide]
@@ -276,8 +291,10 @@ struct EventGrid: View {
 
     private func button(_ action: Action, _ side: Side) -> some View {
         let color = Theme.color(side)
+        let sport = store.state.sport
         let (label, icon, count): (String, String, Int) = switch action {
-        case .event(let kind): (kind.label, kind.icon, store.state.count(kind, side))
+        case .event(.penalty): (EventKind.penalty.label(for: sport), EventKind.penalty.icon(for: sport), store.state.penalties(side))
+        case .event(let kind): (kind.label(for: sport), kind.icon(for: sport), store.state.count(kind, side))
         case .shot(let result): (result == .onTarget ? "Skott på mål" : "Skott utanför", result.icon, store.state.shotCount(result, side))
         }
         return Button { tap(action, side) } label: {
@@ -297,7 +314,7 @@ struct EventGrid: View {
                     .foregroundStyle(count > 0 ? color : Color.secondary)
             }
             .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, minHeight: 50)
+            .frame(maxWidth: .infinity, minHeight: rowHeight)
             .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
@@ -305,19 +322,29 @@ struct EventGrid: View {
         .accessibilityLabel("\(label) \(store.state.teamName(side)), \(count)")
     }
 
+    /// Football has one more row (Straff) than before 1.0.3, so its rows are a little lower to keep one screen.
+    private var rowHeight: CGFloat { sharedRows.count > 5 ? 46 : 50 }
+
     private func tile(_ kind: EventKind) -> some View {
         let count = store.state.count(kind, .us)
-        return Button { flow = kind == .sub ? .sub : .card(kind) } label: {
+        let label = kind.label(for: store.state.sport)
+        return Button {
+            switch kind {
+            case .sub: flow = .sub
+            case .suspension: flow = .suspension
+            default: flow = .card(kind)
+            }
+        } label: {
             VStack(spacing: 2) {
                 HStack(spacing: 5) {
-                    Image(systemName: kind.icon)
+                    Image(systemName: kind.icon(for: store.state.sport))
                         .font(.body)
                         .foregroundStyle(kind == .yellow ? .yellow : kind == .red ? .red : Theme.green)
                     Text("\(count)")
                         .font(.headline.monospacedDigit())
                         .foregroundStyle(count > 0 ? Theme.green : Color.secondary)
                 }
-                Text(kind.label)
+                Text(label)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -329,12 +356,13 @@ struct EventGrid: View {
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(kind.label) \(store.state.ourTeam), \(count)")
+        .accessibilityLabel("\(label) \(store.state.ourTeam), \(count)")
     }
 
     private func tap(_ action: Action, _ side: Side) {
         switch (action, side) {
         case (.event(.goal), .us): flow = .goal
+        case (.event(.penalty), _): flow = .penalty(side)
         case (.shot(let result), .us): flow = .shot(result)
         case (.shot(let result), .them): store.log(.shot, side: .them, shot: result)
         case (.event(let kind), _): store.log(kind, side: side)

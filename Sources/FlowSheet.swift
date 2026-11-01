@@ -7,6 +7,7 @@ struct FlowSheet: View {
 
     @State private var step = 0
     @State private var firstPlayer: UUID?
+    @State private var suspension: Suspension?
 
     var body: some View {
         NavigationStack {
@@ -34,6 +35,8 @@ struct FlowSheet: View {
         case .shot(let result): result == .onTarget ? "Skott på mål" : "Skott utanför"
         case .card(let kind): kind.label
         case .sub: "Byte"
+        case .penalty(let side): "Straff – \(store.state.teamName(side))"
+        case .suspension: "Utvisning – \(store.state.ourTeam)"
         }
     }
 
@@ -61,6 +64,34 @@ struct FlowSheet: View {
             PlayerPicker(prompt: "Vem fick kortet?", players: state.playingToday, skip: "Okänd") { id in
                 finish(kind, .us, player: id)
             }
+        case .penalty(.them):
+            PenaltyResultPicker { result in
+                store.logPenalty(side: .them, result: result)
+                dismiss()
+            }
+        case .penalty(.us):
+            if step == 0 {
+                PlayerPicker(prompt: "Vem slog straffen?", players: state.pickable, skip: "Okänd") { id in
+                    firstPlayer = id
+                    step = 1
+                }
+            } else {
+                PenaltyResultPicker { result in
+                    store.logPenalty(side: .us, player: firstPlayer, result: result)
+                    dismiss()
+                }
+            }
+        case .suspension:
+            if step == 0 {
+                SuspensionPicker { kind in
+                    suspension = kind
+                    step = 1
+                }
+            } else {
+                PlayerPicker(prompt: "Vem blev utvisad?", players: state.playingToday, skip: "Okänd") { id in
+                    finish(.suspension, .us, player: id, suspension: suspension)
+                }
+            }
         case .sub:
             if step == 0 {
                 PlayerPicker(prompt: "Vem går ut?", players: state.onField, skip: nil) { id in
@@ -75,9 +106,57 @@ struct FlowSheet: View {
         }
     }
 
-    private func finish(_ kind: EventKind, _ side: Side, player: UUID? = nil, otherPlayer: UUID? = nil, shot: ShotResult? = nil) {
-        store.log(kind, side: side, player: player, otherPlayer: otherPlayer, shot: shot)
+    private func finish(_ kind: EventKind, _ side: Side, player: UUID? = nil, otherPlayer: UUID? = nil,
+                        shot: ShotResult? = nil, suspension: Suspension? = nil) {
+        store.log(kind, side: side, player: player, otherPlayer: otherPlayer, shot: shot, suspension: suspension)
         dismiss()
+    }
+}
+
+/// Mål, Räddad or Miss for a penalty.
+struct PenaltyResultPicker: View {
+    let pick: (PenaltyResult) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Hur gick straffen?").font(.title3.bold())
+            ForEach(PenaltyResult.allCases, id: \.self) { result in
+                Button { pick(result) } label: {
+                    Label(result.label, systemImage: result.icon)
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                }
+                .buttonStyle(.bordered)
+                .tint(result == .scored ? Theme.green : .primary)
+                .accessibilityLabel("Straff: \(result.label)")
+            }
+        }
+    }
+}
+
+/// 2 min, 5 min, 10 min or Matchstraff for a floorball utvisning.
+struct SuspensionPicker: View {
+    let pick: (Suspension) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Vilken utvisning?").font(.title3.bold())
+            ForEach(Suspension.allCases) { kind in
+                Button { pick(kind) } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(kind.label).font(.headline).foregroundStyle(.primary)
+                        Text(kind.detail).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+                    .contentShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(kind.label). \(kind.detail)")
+            }
+        }
     }
 }
 

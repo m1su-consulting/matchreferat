@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The first page: logo, start or continue a match, and the user's teams.
+/// The start page for one sport: picture, start or continue a match, and the sport's teams.
 struct StartView: View {
     @Environment(MatchStore.self) private var store
     @Environment(LiveShare.self) private var live
@@ -8,12 +8,15 @@ struct StartView: View {
     @State private var confirmDelete = false
     @State private var browserPage: BrowserPage?
 
+    private var sport: Sport { store.sport ?? .football }
+
     var body: some View {
         @Bindable var store = store
+        let teams = store.teams(for: sport)
         List {
             Section {
                 VStack(spacing: 18) {
-                    Logo()
+                    SportHeader(sport: sport) { store.sport = nil }
                     Button { showNewMatch = true } label: {
                         Label("Ny match", systemImage: "plus.circle.fill")
                             .font(.title3.weight(.bold))
@@ -21,7 +24,7 @@ struct StartView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.green)
-                    .disabled(store.teams.isEmpty)
+                    .disabled(teams.isEmpty)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -44,32 +47,34 @@ struct StartView: View {
                 }
             }
 
-            Section("Mina lag") {
-                if store.teams.isEmpty {
+            Section {
+                if teams.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Lägg till ditt första lag för att kunna starta en match.")
+                        Text("Lägg till ditt första \(sport == .football ? "fotbollslag" : "innebandylag") för att kunna starta en match.")
                             .foregroundStyle(.secondary)
-                        Button("Prova med ett exempellag") { store.addExampleTeam() }
+                        Button("Prova med ett exempellag") { store.addExampleTeam(sport) }
                             .font(.subheadline)
                     }
                     .padding(.vertical, 4)
                 }
-                ForEach(store.teams) { team in
+                ForEach(teams) { team in
                     NavigationLink(value: Route.team(team.id)) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(team.name.isEmpty ? "Namnlöst lag" : team.name).font(.headline)
-                            Text("\(Team.formatLabel(team.playersOnField)) · \(team.periods) × \(team.periodLength) min · \(team.players.count) spelare")
+                            Text(team.summary)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
-                .onDelete { store.teams.remove(atOffsets: $0) }
+                .onDelete { offsets in store.deleteTeams(offsets.map { teams[$0].id }) }
                 Button {
-                    store.teams.append(Team(name: "Nytt lag"))
+                    _ = store.addTeam(sport)
                 } label: {
                     Label("Lägg till lag", systemImage: "plus")
                 }
+            } header: {
+                Text("Mina lag · \(sport.label)")
             }
 
             Section {
@@ -117,6 +122,110 @@ struct StartView: View {
         Button(role: .destructive) { confirmDelete = true } label: { Label("Ta bort match", systemImage: "trash") }
         Button { store.endMatch() } label: { Label("Avsluta match", systemImage: "flag.checkered") }
             .tint(Theme.green)
+    }
+}
+
+/// The sport's picture with the app name and a button back to the sport picker.
+struct SportHeader: View {
+    let sport: Sport
+    let changeSport: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            SportPicture(sport: sport)
+                .overlay(alignment: .topTrailing) {
+                    Button(action: changeSport) {
+                        Label("Byt sport", systemImage: "arrow.left.arrow.right")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.glass)
+                    .padding(10)
+                    .accessibilityHint("Visar sportvalet")
+                }
+            HStack(spacing: 8) {
+                Image(systemName: sport.icon)
+                    .foregroundStyle(Theme.green)
+                    .accessibilityHidden(true)
+                Text("Matchreferat")
+                    .font(.title.weight(.heavy))
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Matchreferat, \(sport.label)")
+            .accessibilityAddTraits(.isHeader)
+        }
+    }
+}
+
+/// The wide start picture for a sport, with the sport's name.
+struct SportPicture: View {
+    let sport: Sport
+    var height: CGFloat? = nil
+
+    var body: some View {
+        Image(sport.startImage)
+            .resizable()
+            .aspectRatio(1024 / 572, contentMode: .fill)
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay(alignment: .bottomLeading) {
+                Label(sport.label, systemImage: sport.icon)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.45), in: Capsule())
+                    .padding(10)
+            }
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(sport.label)
+    }
+}
+
+/// The first page on a fresh install and after "Byt sport": Fotboll or Innebandy.
+struct SportPickerView: View {
+    @Environment(MatchStore.self) private var store
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Logo()
+                Text("Vilken sport ska du referera?")
+                    .font(.title3.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                ForEach(Sport.allCases) { sport in
+                    Button { store.sport = sport } label: {
+                        VStack(alignment: .leading, spacing: 8) {
+                            SportPicture(sport: sport)
+                            Text(teamsText(sport))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .padding(.leading, 6)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(sport.label), \(teamsText(sport))")
+                    .accessibilityAddTraits(.isButton)
+                }
+                Text("Appen kommer ihåg valet. Du byter sport med Byt sport på startsidan.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                MadeBy()
+                    .padding(.top, 12)
+            }
+            .padding()
+        }
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func teamsText(_ sport: Sport) -> String {
+        let count = store.teams(for: sport).count
+        let match = store.hasMatchInProgress && store.state.sport == sport ? " · pågående match" : ""
+        return (count == 0 ? "Inga lag än" : count == 1 ? "1 lag" : "\(count) lag") + match
     }
 }
 
@@ -181,6 +290,10 @@ struct ContinueCard: View {
     var body: some View {
         let state = store.state
         HStack(spacing: 12) {
+            Image(systemName: state.sport.icon)
+                .font(.title3)
+                .foregroundStyle(Theme.green)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(state.teamName(state.homeSide)) – \(state.teamName(state.awaySide))")
                     .font(.headline)
@@ -202,6 +315,6 @@ struct ContinueCard: View {
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Fortsätt match: \(state.teamName(state.homeSide)) mot \(state.teamName(state.awaySide)), \(state.scoreText)")
+        .accessibilityLabel("Fortsätt \(state.sport.label.lowercased())match: \(state.teamName(state.homeSide)) mot \(state.teamName(state.awaySide)), \(state.scoreText)")
     }
 }

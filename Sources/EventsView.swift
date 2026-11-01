@@ -71,7 +71,7 @@ struct EventRow: View {
             Text(event.minute.text)
                 .font(.subheadline.weight(.semibold).monospacedDigit())
                 .frame(width: 48, alignment: .leading)
-            Image(systemName: event.kind.icon)
+            Image(systemName: event.kind == .goal && event.isPenalty == true ? EventKind.penalty.icon : event.kind.icon(for: store.state.sport))
                 .accessibilityHidden(true)
                 .foregroundStyle(iconColor)
                 .frame(width: 24)
@@ -91,6 +91,7 @@ struct EventRow: View {
         case .period: .secondary
         case .yellow: .yellow
         case .red: .red
+        case .suspension: .orange
         default: Theme.color(event.side)
         }
     }

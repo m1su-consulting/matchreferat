@@ -6,15 +6,21 @@ import SwiftUI
 enum PreviewData {
     static func store(_ match: MatchState = .example(), live: Bool = true) -> MatchStore {
         let store = MatchStore(container: Persistence.container(inMemory: true),
-                               legacyDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("preview"))
+                               legacyDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("preview"),
+                               defaults: UserDefaults(suiteName: "matchreferat-previews-store")!)
         var team = MatchState.exampleTeam()
         team.name = "Björkdalens IF"
+        var floorballTeam = MatchState.exampleFloorballTeam()
+        floorballTeam.name = "Björkdalens IBK"
         var state = match
-        state.ourTeam = team.name
-        store.teams = [team]
+        state.ourTeam = match.sport == .football ? team.name : floorballTeam.name
+        store.teams = [team, floorballTeam]
         store.state = state
+        store.sport = match.sport
         return store
     }
+
+    static func floorballStore() -> MatchStore { store(.exampleFloorball()) }
 
     static func liveShare(connected: Bool = true) -> LiveShare {
         let defaults = UserDefaults(suiteName: "matchreferat-previews")!
@@ -45,6 +51,13 @@ private extension View {
 // MARK: Start page
 
 #Preview("Startsida") { RootView().previewEnvironment() }
+#Preview("Startsida – innebandy") { RootView().previewEnvironment(PreviewData.floorballStore()) }
+#Preview("Sportval") {
+    let store = PreviewData.store()
+    store.sport = nil
+    return NavigationStack { SportPickerView() }.previewEnvironment(store)
+}
+#Preview("Sportbild med byt sport") { SportHeader(sport: .floorball) {}.padding() }
 #Preview("Startsida – första start") {
     let store = PreviewData.store(.empty)
     store.teams = []
@@ -58,6 +71,12 @@ private extension View {
 // MARK: Match page
 
 #Preview("Matchsida") { MatchView().previewEnvironment() }
+#Preview("Matchsida – innebandy") { MatchView().previewEnvironment(PreviewData.floorballStore()) }
+#Preview("Straff") { FlowSheet(flow: .penalty(.us)).previewEnvironment() }
+#Preview("Straff – motståndare") { FlowSheet(flow: .penalty(.them)).previewEnvironment() }
+#Preview("Utvisning") { FlowSheet(flow: .suspension).previewEnvironment(PreviewData.floorballStore()) }
+#Preview("Straffresultat") { PenaltyResultPicker { _ in }.padding() }
+#Preview("Utvisningstyp") { SuspensionPicker { _ in }.padding() }
 #Preview("Resultattavla") { ScoreboardView().padding().previewEnvironment() }
 #Preview("Resultattavla – stor text") {
     ScoreboardView().padding().previewEnvironment().environment(\.dynamicTypeSize, .accessibility2)
@@ -92,6 +111,12 @@ private extension View {
 #Preview("Redigera lag") {
     @Previewable @State var team = MatchState.exampleTeam()
     NavigationStack { TeamEditor(team: $team) }
+}
+#Preview("Spelform – innebandy") {
+    @Previewable @State var onField = 5
+    @Previewable @State var periods = 3
+    @Previewable @State var length = 15
+    Form { FormatFields(sport: .floorball, playersOnField: $onField, periods: $periods, periodLength: $length) }
 }
 #Preview("Spelform") {
     @Previewable @State var onField = 9

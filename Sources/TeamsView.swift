@@ -11,7 +11,8 @@ struct TeamEditor: View {
             Section("Lag") {
                 TextField("Lagnamn", text: $team.name)
                     .textInputAutocapitalization(.words)
-                FormatFields(playersOnField: $team.playersOnField, periods: $team.periods,
+                LabeledContent("Sport") { Label(team.sport.label, systemImage: team.sport.icon) }
+                FormatFields(sport: team.sport, playersOnField: $team.playersOnField, periods: $team.periods,
                              periodLength: $team.periodLength)
             }
 
@@ -66,8 +67,9 @@ struct TeamEditor: View {
     }
 }
 
-/// Spelform, number of halves (1–4) and minutes per half.
+/// Spelform, number of periods and minutes per period: 1–4 halvlekar in football, 2 or 3 perioder in floorball.
 struct FormatFields: View {
+    var sport: Sport = .football
     @Binding var playersOnField: Int
     @Binding var periods: Int
     @Binding var periodLength: Int
@@ -76,15 +78,33 @@ struct FormatFields: View {
 
     var body: some View {
         Picker("Spelform", selection: $playersOnField) {
-            ForEach(Team.formats, id: \.self) { Text(Team.formatLabel($0)).tag($0) }
+            ForEach(Self.options(Team.formats(sport), including: playersOnField), id: \.self) {
+                Text(Team.formatLabel($0)).tag($0)
+            }
         }
         .onChange(of: playersOnField) { _, format in
-            if suggestsLength { periodLength = Team.defaultPeriodLength(for: format) }
+            if suggestsLength { periodLength = Team.defaultPeriodLength(for: format, sport: sport) }
         }
-        Stepper("Antal halvlekar: \(periods)", value: $periods, in: 1...4)
-        Picker("Minuter per halvlek", selection: $periodLength) {
-            ForEach(Team.periodLengths, id: \.self) { Text("\($0) min").tag($0) }
+        switch sport {
+        case .football:
+            Stepper("Antal halvlekar: \(periods)", value: $periods, in: sport.periodRange)
+        case .floorball:
+            Picker("Antal perioder", selection: $periods) {
+                ForEach(Self.options(Array(sport.periodRange), including: periods), id: \.self) {
+                    Text("\($0) perioder").tag($0)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityLabel("Antal perioder")
         }
+        Picker("Minuter per \(sport.periodWord)", selection: $periodLength) {
+            ForEach(Self.options(Team.periodLengths(sport), including: periodLength), id: \.self) { Text("\($0) min").tag($0) }
+        }
+    }
+
+    /// The choices plus the current value, so a picker never shows an empty selection.
+    static func options(_ values: [Int], including current: Int) -> [Int] {
+        values.contains(current) ? values : (values + [current]).sorted()
     }
 }
 

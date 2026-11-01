@@ -42,7 +42,7 @@ struct MatchSettingsSheet: View {
                         Text("Borta").tag(false)
                     }
                     .pickerStyle(.segmented)
-                    FormatFields(playersOnField: $store.state.playersOnField, periods: $store.state.periods,
+                    FormatFields(sport: store.state.sport, playersOnField: $store.state.playersOnField, periods: $store.state.periods,
                                  periodLength: $store.state.halfLength, suggestsLength: false)
                 } header: {
                     Text(store.state.ourTeam)

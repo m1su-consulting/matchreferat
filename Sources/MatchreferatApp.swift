@@ -30,13 +30,17 @@ struct MatchreferatApp: App {
                     // Refresh the viewers' copy on launch, e.g. after the app was closed mid-match.
                     if live.isOn { live.sync(store.state) }
                     #if DEBUG
-                    // `-demoScreenshots YES` shows a fictional team mid-match (App Store screenshots).
+                    // `-demoScreenshots YES` shows a fictional team mid-match (App Store screenshots), with
+                    // `-sport floorball` a floorball team.
                     if UserDefaults.standard.bool(forKey: "demoScreenshots") {
-                        var team = MatchState.exampleTeam()
-                        team.name = "Björkdalens IF"
-                        var match = MatchState.example()
+                        let floorball = store.sport == .floorball
+                        var team = floorball ? MatchState.exampleFloorballTeam() : MatchState.exampleTeam()
+                        team.name = floorball ? "Björkdalens IBK" : "Björkdalens IF"
+                        var other = floorball ? MatchState.exampleTeam() : MatchState.exampleFloorballTeam()
+                        other.name = floorball ? "Björkdalens IF" : "Björkdalens IBK"
+                        var match = floorball ? MatchState.exampleFloorball() : MatchState.example()
                         match.ourTeam = team.name
-                        store.teams = [team]
+                        store.teams = [team, other]
                         store.state = match
                     }
                     // `-demoLive YES` starts sharing on launch (used for emulator tests).
@@ -97,22 +101,25 @@ struct RootView: View {
         @Bindable var store = store
         let showConnect = Binding(get: { live.pendingLink != nil }, set: { if !$0 { live.pendingLink = nil } })
         NavigationStack(path: $store.path) {
-            StartView()
-                .navigationDestination(for: Route.self) { route in
-                    switch route {
-                    case .match:
-                        MatchView()
-                            .toolbar(.hidden, for: .navigationBar)
-                    case .team(let id):
-                        if let index = store.teams.firstIndex(where: { $0.id == id }) {
-                            TeamEditor(team: $store.teams[index])
-                        }
-                    case .liveServer:
-                        LiveServerView()
-                    case .licenses:
-                        LicensesView()
+            Group {
+                if store.sport == nil { SportPickerView() } else { StartView() }
+            }
+            .animation(.default, value: store.sport)
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .match:
+                    MatchView()
+                        .toolbar(.hidden, for: .navigationBar)
+                case .team(let id):
+                    if let index = store.teams.firstIndex(where: { $0.id == id }) {
+                        TeamEditor(team: $store.teams[index])
                     }
+                case .liveServer:
+                    LiveServerView()
+                case .licenses:
+                    LicensesView()
                 }
+            }
         }
         .tint(Theme.green)
         .sheet(isPresented: showConnect) { NavigationStack { LiveServerView() } }
