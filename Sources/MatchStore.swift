@@ -15,6 +15,10 @@ final class MatchStore {
     var state: MatchState
     var teams: [Team]
     var toast: Toast?
+    /// The sport chosen on the first page, remembered between launches. Nil shows the sport picker.
+    var sport: Sport? {
+        didSet { defaults.set(sport?.rawValue, forKey: Self.sportKey) }
+    }
     /// The navigation stack above the start page; `-screen match` opens the match page on launch.
     var path: [Route] = LaunchArgument.string("screen") == "match" ? [.match] : []
 
@@ -22,13 +26,18 @@ final class MatchStore {
     func goToStart() { path.removeAll() }
 
     private let container: ModelContainer
+    private let defaults: UserDefaults
+    private static let sportKey = "sport"
     private var context: ModelContext { container.mainContext }
     private static let log = Logger(subsystem: "se.matchreferat.app", category: "store")
 
     /// Loads the match and teams from SwiftData. The first time, they are imported from the
     /// JSON files earlier versions wrote to `legacyDirectory`, which are kept as a backup.
-    init(container: ModelContainer, legacyDirectory: URL = Persistence.legacyDirectory) {
+    init(container: ModelContainer, legacyDirectory: URL = Persistence.legacyDirectory, defaults: UserDefaults = .standard) {
         self.container = container
+        self.defaults = defaults
+        // `-sport football|floorball` picks the sport on launch (used for screenshots and tests).
+        sport = (LaunchArgument.string("sport") ?? defaults.string(forKey: Self.sportKey)).flatMap(Sport.init(rawValue:))
         let context = container.mainContext
         let decoder = JSONDecoder()
         let storedMatch = (try? context.fetch(FetchDescriptor<StoredMatch>()))?.first
@@ -108,11 +117,26 @@ final class MatchStore {
         }
     }
 
+    /// The teams of one sport, in the order shown on the start page.
+    func teams(for sport: Sport) -> [Team] { teams.filter { $0.sport == sport } }
+
+    func addTeam(_ sport: Sport) -> Team {
+        let team = Team.new(sport)
+        teams.append(team)
+        return team
+    }
+
+    func deleteTeams(_ ids: [UUID]) {
+        teams.removeAll { ids.contains($0.id) }
+    }
+
     // MARK: Events
 
-    func log(_ kind: EventKind, side: Side, player: UUID? = nil, otherPlayer: UUID? = nil, shot: ShotResult? = nil) {
+    func log(_ kind: EventKind, side: Side, player: UUID? = nil, otherPlayer: UUID? = nil, shot: ShotResult? = nil,
+             isPenalty: Bool? = nil, suspension: Suspension? = nil) {
         let event = MatchEvent(kind: kind, side: side, minute: state.clock(at: .now), createdAt: .now,
-                               player: player, otherPlayer: otherPlayer, shot: shot)
+                               player: player, otherPlayer: otherPlayer, shot: shot, isPenalty: isPenalty,
+                               suspension: suspension)
         if kind == .sub, let out = player, let into = otherPlayer {
             setStatus(out, .bench)
             setStatus(into, .start)
@@ -122,6 +146,15 @@ final class MatchStore {
         var text = "\(event.minute.text) \(state.describe(event))"
         if side == .them && kind != .goal { text += " (\(state.opponent))" }
         toast = Toast(eventID: event.id, text: text)
+    }
+
+    /// A scored penalty is a goal (so it counts in the score); a saved or missed one is a penalty event.
+    func logPenalty(side: Side, player: UUID? = nil, result: PenaltyResult) {
+        switch result {
+        case .scored: log(.goal, side: side, player: player, isPenalty: true)
+        case .saved: log(.penalty, side: side, player: player, shot: .onTarget)
+        case .missed: log(.penalty, side: side, player: player, shot: .off)
+        }
     }
 
     func undo(_ toast: Toast) {
@@ -150,7 +183,7 @@ final class MatchStore {
         switch state.phase {
         case .notStarted: "Avspark"
         case .playing: state.isLastPeriod ? "Slutsignal" : state.intervalName
-        case .interval: "Starta \(MatchState.halfName(state.period + 1))"
+        case .interval: "Starta \(state.periodName(state.period + 1))"
         case .finished: "Ny match"
         }
     }
@@ -177,8 +210,7 @@ final class MatchStore {
         case .interval:
             state.period += 1
             startClock(now)
-            let text = state.periods == 2 ? "Andra halvlek startar" : "\(MatchState.halfName(state.period)) startar"
-            addPeriod(text, MatchMinute(minute: (state.period - 1) * state.halfLength + 1), now)
+            addPeriod(state.periodStartText(state.period), MatchMinute(minute: (state.period - 1) * state.halfLength + 1), now)
         case .finished:
             break
         }
@@ -244,7 +276,7 @@ final class MatchStore {
 
     /// Starts a fresh match for `team` with the team's settings and its last used lineup.
     func newMatch(team: Team, opponent: String, isHome: Bool) {
-        state = MatchState(teamID: team.id, ourTeam: team.name, opponent: opponent, isHome: isHome,
+        state = MatchState(sport: team.sport, teamID: team.id, ourTeam: team.name, opponent: opponent, isHome: isHome,
                            halfLength: team.periodLength, periods: team.periods, playersOnField: team.playersOnField,
                            players: team.players.sorted { $0.number < $1.number }, events: [], phase: .notStarted,
                            period: 1, isRunning: false, accumulated: 0, runningSince: nil)
@@ -271,9 +303,10 @@ final class MatchStore {
         }
     }
 
-    func addExampleTeam() {
-        if !teams.contains(where: { $0.id == MatchState.exampleTeamID }) {
-            teams.append(MatchState.exampleTeam())
+    func addExampleTeam(_ sport: Sport = .football) {
+        let team = sport == .football ? MatchState.exampleTeam() : MatchState.exampleFloorballTeam()
+        if !teams.contains(where: { $0.id == team.id }) {
+            teams.append(team)
         }
     }
 

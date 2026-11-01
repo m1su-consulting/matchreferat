@@ -4,6 +4,42 @@ enum Side: String, Codable, Hashable {
     case us, them
 }
 
+/// The sport a team plays and a match is reported in. Everything saved before 1.0.3 is football.
+enum Sport: String, Codable, CaseIterable, Identifiable, Hashable {
+    case football, floorball
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .football: "Fotboll"
+        case .floorball: "Innebandy"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .football: "soccerball"
+        case .floorball: "figure.hockey"
+        }
+    }
+
+    /// The wide picture on the sport picker and the start page.
+    var startImage: String {
+        switch self {
+        case .football: "StartFootball"
+        case .floorball: "StartFloorball"
+        }
+    }
+
+    /// "halvlek" in football, "period" in floorball.
+    var periodWord: String { self == .football ? "halvlek" : "period" }
+    var periodWordPlural: String { self == .football ? "halvlekar" : "perioder" }
+
+    /// Number of periods a team can choose.
+    var periodRange: ClosedRange<Int> { self == .football ? 1...4 : 2...3 }
+}
+
 enum PlayerStatus: String, Codable, CaseIterable, Identifiable {
     case start, bench, out
 
@@ -71,56 +107,154 @@ extension Player: Codable {
 }
 
 /// A team the user reports for, with its squad and default match settings.
-struct Team: Codable, Identifiable, Equatable, Hashable {
+struct Team: Identifiable, Equatable, Hashable {
     var id = UUID()
     var name: String
+    var sport: Sport = .football
     var playersOnField: Int = 9
     var periods: Int = 2
     var periodLength: Int = 25
     var players: [Player] = []
 
-    static let formats = [5, 7, 9, 11]
-    static let periodLengths = [10, 12, 15, 20, 25, 30, 35, 40, 45]
+    /// A new team with the usual settings for its sport: 9 mot 9, 2 × 25 in football; 5 mot 5, 3 × 15 in floorball.
+    static func new(_ sport: Sport, name: String = "Nytt lag") -> Team {
+        switch sport {
+        case .football: Team(name: name, sport: .football)
+        case .floorball: Team(name: name, sport: .floorball, playersOnField: 5, periods: 3, periodLength: 15)
+        }
+    }
 
+    static func formats(_ sport: Sport) -> [Int] { sport == .football ? [5, 7, 9, 11] : [3, 4, 5] }
+    static func periodLengths(_ sport: Sport) -> [Int] {
+        sport == .football ? [10, 12, 15, 20, 25, 30, 35, 40, 45] : [8, 10, 12, 15, 20]
+    }
+
+    /// Floorball formats count outfield players, as in "5 mot 5" plus keepers.
     static func formatLabel(_ playersOnField: Int) -> String { "\(playersOnField) mot \(playersOnField)" }
 
-    static func defaultPeriodLength(for playersOnField: Int) -> Int {
+    static func defaultPeriodLength(for playersOnField: Int, sport: Sport = .football) -> Int {
+        if sport == .floorball { return playersOnField >= 5 ? 15 : 12 }
         switch playersOnField {
-        case ...5: 15
-        case 6...7: 20
-        case 8...9: 25
-        default: 35
+        case ...5: return 15
+        case 6...7: return 20
+        case 8...9: return 25
+        default: return 35
         }
+    }
+
+    var summary: String {
+        "\(Self.formatLabel(playersOnField)) · \(periods) × \(periodLength) min · \(players.count) spelare"
+    }
+}
+
+extension Team: Codable {
+    private enum CodingKeys: String, CodingKey { case id, name, sport, playersOnField, periods, periodLength, players }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        // Teams saved before 1.0.3 have no sport and are football teams.
+        sport = try c.decodeIfPresent(Sport.self, forKey: .sport) ?? .football
+        playersOnField = try c.decode(Int.self, forKey: .playersOnField)
+        periods = try c.decode(Int.self, forKey: .periods)
+        periodLength = try c.decode(Int.self, forKey: .periodLength)
+        players = try c.decode([Player].self, forKey: .players)
     }
 }
 
 enum EventKind: String, Codable, Hashable {
-    case goal, shot, corner, freeKick, yellow, red, sub, save, period
+    /// `penalty` is a penalty that was saved or missed; a scored penalty is a `goal` with `isPenalty`.
+    /// `suspension` is a floorball utvisning.
+    case goal, shot, corner, freeKick, yellow, red, sub, save, period, penalty, suspension
 
-    var label: String {
+    var label: String { label(for: .football) }
+
+    func label(for sport: Sport) -> String {
         switch self {
         case .goal: "Mål"
         case .shot: "Skott"
         case .corner: "Hörna"
-        case .freeKick: "Frispark"
+        case .freeKick: sport == .floorball ? "Frislag" : "Frispark"
         case .yellow: "Gult kort"
         case .red: "Rött kort"
         case .sub: "Byte"
         case .save: "Räddning"
         case .period: "Period"
+        case .penalty: "Straff"
+        case .suspension: "Utvisning"
+        }
+    }
+
+    var icon: String { icon(for: .football) }
+
+    func icon(for sport: Sport) -> String {
+        switch self {
+        case .goal: sport.icon
+        case .shot: "scope"
+        case .corner: "flag.fill"
+        case .freeKick: sport == .floorball ? "arrowshape.forward.fill" : "figure.soccer"
+        case .yellow, .red: "rectangle.portrait.fill"
+        case .sub: "arrow.left.arrow.right"
+        case .save: "hand.raised.fill"
+        case .period: "stopwatch"
+        case .penalty: "target"
+        case .suspension: "timer"
+        }
+    }
+}
+
+/// How a penalty (straff) ended. A scored penalty is logged as a goal.
+enum PenaltyResult: String, CaseIterable, Hashable {
+    case scored, saved, missed
+
+    var label: String {
+        switch self {
+        case .scored: "Mål"
+        case .saved: "Räddad"
+        case .missed: "Miss"
         }
     }
 
     var icon: String {
         switch self {
-        case .goal: "soccerball"
-        case .shot: "scope"
-        case .corner: "flag.fill"
-        case .freeKick: "figure.soccer"
-        case .yellow, .red: "rectangle.portrait.fill"
-        case .sub: "arrow.left.arrow.right"
-        case .save: "hand.raised.fill"
-        case .period: "stopwatch"
+        case .scored: "checkmark.circle.fill"
+        case .saved: "hand.raised.fill"
+        case .missed: "arrow.up.right"
+        }
+    }
+}
+
+/// A floorball utvisning. Logged only for our own team, like cards in football.
+enum Suspension: String, Codable, CaseIterable, Hashable, Identifiable {
+    case two, five, ten, match
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .two: "2 min"
+        case .five: "5 min"
+        case .ten: "10 min"
+        case .match: "Matchstraff"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .two: "Lagstraff, laget spelar en färre i 2 minuter"
+        case .five: "Lagstraff, laget spelar en färre i 5 minuter"
+        case .ten: "Personligt straff, spelaren sitter 10 minuter"
+        case .match: "Spelaren utvisas resten av matchen, laget får 5 min"
+        }
+    }
+
+    /// Minutes the team plays short-handed: a match penalty also costs the team five minutes.
+    var teamMinutes: Int {
+        switch self {
+        case .two: 2
+        case .five, .match: 5
+        case .ten: 0
         }
     }
 }
@@ -172,9 +306,14 @@ struct MatchEvent: Codable, Identifiable, Equatable {
     var otherPlayer: UUID? = nil
     var shot: ShotResult? = nil
     var note: String? = nil
+    /// A goal scored from a penalty (straff). Missing in matches saved before 1.0.3.
+    var isPenalty: Bool? = nil
+    /// The kind of utvisning for a `suspension` event.
+    var suspension: Suspension? = nil
 }
 
 struct MatchState: Equatable {
+    var sport: Sport = .football
     var teamID: UUID?
     var ourTeam: String
     var opponent: String
@@ -195,12 +334,14 @@ struct MatchState: Equatable {
 
 extension MatchState: Codable {
     private enum CodingKeys: String, CodingKey {
-        case teamID, ourTeam, opponent, isHome, halfLength, periods, playersOnField, players, events
+        case sport, teamID, ourTeam, opponent, isHome, halfLength, periods, playersOnField, players, events
         case phase, period, isRunning, accumulated, runningSince
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        // Matches saved before 1.0.3 have no sport and are football matches.
+        sport = try c.decodeIfPresent(Sport.self, forKey: .sport) ?? .football
         teamID = try c.decodeIfPresent(UUID.self, forKey: .teamID)
         ourTeam = try c.decode(String.self, forKey: .ourTeam)
         opponent = try c.decode(String.self, forKey: .opponent)
@@ -226,6 +367,7 @@ extension MatchState: Codable {
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(sport, forKey: .sport)
         try c.encodeIfPresent(teamID, forKey: .teamID)
         try c.encode(ourTeam, forKey: .ourTeam)
         try c.encode(opponent, forKey: .opponent)
@@ -277,19 +419,42 @@ extension MatchState {
         }.count
     }
 
-    /// Shots include goals.
+    /// Shots include goals and penalties.
     func shots(_ side: Side) -> Int {
-        events.filter { $0.side == side && ($0.kind == .goal || $0.kind == .shot) }.count
+        events.filter { $0.side == side && ($0.kind == .goal || $0.kind == .shot || $0.kind == .penalty) }.count
     }
 
+    /// A saved penalty was on target; a missed one was not.
     func shotsOnTarget(_ side: Side) -> Int {
-        events.filter { $0.side == side && ($0.kind == .goal || ($0.kind == .shot && $0.shot == .onTarget)) }.count
+        events.filter {
+            $0.side == side && ($0.kind == .goal || (($0.kind == .shot || $0.kind == .penalty) && $0.shot == .onTarget))
+        }.count
+    }
+
+    /// All penalties taken: scored ones (goals) and saved or missed ones.
+    func penalties(_ side: Side) -> Int {
+        events.filter { $0.side == side && ($0.kind == .penalty || ($0.kind == .goal && $0.isPenalty == true)) }.count
+    }
+
+    func penaltyGoals(_ side: Side) -> Int {
+        events.filter { $0.side == side && $0.kind == .goal && $0.isPenalty == true }.count
+    }
+
+    /// Our utvisningar, optionally only one kind.
+    func suspensions(_ kind: Suspension? = nil) -> Int {
+        events.filter { $0.kind == .suspension && $0.side == .us && (kind == nil || $0.suspension == kind) }.count
     }
 
     var scoreText: String { "\(goals(homeSide))–\(goals(awaySide))" }
 
     var statsLine: String {
-        "Skott \(shots(homeSide))–\(shots(awaySide)) · På mål \(shotsOnTarget(homeSide))–\(shotsOnTarget(awaySide)) · Hörnor \(count(.corner, homeSide))–\(count(.corner, awaySide))"
+        let shotsText = "Skott \(shots(homeSide))–\(shots(awaySide)) · På mål \(shotsOnTarget(homeSide))–\(shotsOnTarget(awaySide))"
+        switch sport {
+        case .football:
+            return shotsText + " · Hörnor \(count(.corner, homeSide))–\(count(.corner, awaySide))"
+        case .floorball:
+            return shotsText + " · Utvisningar \(suspensions())"
+        }
     }
 
     func elapsed(at now: Date) -> TimeInterval {
@@ -315,14 +480,26 @@ extension MatchState {
         }
     }
 
-    /// "1:a halvlek", "3:e halvlek" – periods are always called halvlekar in the app.
-    static func halfName(_ number: Int) -> String {
-        "\(number)\(number <= 2 ? ":a" : ":e") halvlek"
+    /// "1:a halvlek", "3:e halvlek" in football; "1:a period", "3:e period" in floorball.
+    static func periodName(_ number: Int, sport: Sport = .football) -> String {
+        "\(number)\(number <= 2 ? ":a" : ":e") \(sport.periodWord)"
     }
 
-    func periodName(_ number: Int) -> String { Self.halfName(number) }
+    static func halfName(_ number: Int) -> String { periodName(number) }
 
-    var intervalName: String { periods == 2 ? "Halvtid" : "Paus" }
+    func periodName(_ number: Int) -> String { Self.periodName(number, sport: sport) }
+
+    var intervalName: String {
+        switch sport {
+        case .football: periods == 2 ? "Halvtid" : "Paus"
+        case .floorball: "Periodpaus"
+        }
+    }
+
+    /// The event text when a period after the first starts.
+    func periodStartText(_ number: Int) -> String {
+        sport == .football && periods == 2 && number == 2 ? "Andra halvlek startar" : "\(periodName(number)) startar"
+    }
 
     var periodText: String {
         switch phase {
@@ -347,10 +524,17 @@ extension MatchState {
         let who = name(e.player)
         switch e.kind {
         case .goal:
-            guard e.side == .us else { return "Mål \(opponent)" }
-            var text = "Mål! \(who ?? "Okänd målskytt")"
+            let penalty = e.isPenalty == true
+            guard e.side == .us else { return "Mål \(opponent)" + (penalty ? " (straff)" : "") }
+            var text = (penalty ? "Straffmål! " : "Mål! ") + (who ?? "Okänd målskytt")
             if let assist = name(e.otherPlayer) { text += ", assist \(assist)" }
             return text
+        case .penalty:
+            let base = e.shot == .onTarget ? "Straff räddad" : "Straff miss"
+            return base + (who.map { " – \($0)" } ?? "")
+        case .suspension:
+            let label = e.suspension.map { $0 == .match ? "Matchstraff" : "Utvisning \($0.label)" } ?? "Utvisning"
+            return label + (who.map { " – \($0)" } ?? "")
         case .shot:
             // A shot on target that isn't a goal was saved by the other team's keeper.
             let base = e.shot == .off || e.shot == .blocked ? "Skott utanför" : "Skott på mål, räddning"
@@ -362,7 +546,7 @@ extension MatchState {
         case .period:
             return e.note ?? ""
         case .corner, .freeKick, .save:
-            return e.kind.label
+            return e.kind.label(for: sport)
         }
     }
 
@@ -377,11 +561,21 @@ extension MatchState {
             lines.append(contentsOf: items)
         }
 
+        let goalEmoji = sport == .football ? "⚽" : "🥅"
         group(sorted.filter { $0.kind == .goal }.map { e in
-            guard e.side == .us else { return "⚽ \(e.minute.text) \(opponent)" }
-            var text = "⚽ \(e.minute.text) \(publicName(e.player) ?? ourTeam)"
+            let penalty = e.isPenalty == true ? " (straff)" : ""
+            guard e.side == .us else { return "\(goalEmoji) \(e.minute.text) \(opponent)\(penalty)" }
+            var text = "\(goalEmoji) \(e.minute.text) \(publicName(e.player) ?? ourTeam)\(penalty)"
             if let assist = publicName(e.otherPlayer) { text += ", assist \(assist)" }
             return text
+        })
+        group(sorted.filter { $0.kind == .penalty }.map { e in
+            let what = e.shot == .onTarget ? "Straff räddad" : "Straff miss"
+            let who = e.side == .us ? publicName(e.player) ?? ourTeam : opponent
+            return "❌ \(e.minute.text) \(what), \(who)"
+        })
+        group(sorted.filter { $0.kind == .suspension }.map { e in
+            "⛔ \(e.minute.text) \(publicName(e.player) ?? ourTeam), \(e.suspension?.label ?? "utvisning")"
         })
         group(sorted.filter { $0.kind == .yellow || $0.kind == .red }.map { e in
             let emoji = e.kind == .yellow ? "🟨" : "🟥"
@@ -454,5 +648,57 @@ extension MatchState {
                           halfLength: 25, periods: 2, playersOnField: 9, players: players, events: events,
                           phase: .playing, period: 2, isRunning: true,
                           accumulated: 0, runningSince: now.addingTimeInterval(-500))
+    }
+
+    /// Fake floorball team, also clearly marked as made up.
+    static let exampleFloorballTeamID = UUID(uuidString: "6E6F8B6A-0E1D-4C55-9D7B-3A3E2C9A1F01")!
+
+    static func exampleFloorballTeam() -> Team {
+        Team(id: exampleFloorballTeamID, name: "Ditt innebandylag (exempel)", sport: .floorball, playersOnField: 5,
+             periods: 3, periodLength: 15,
+             players: exampleFloorball().players.map { var p = $0; p.status = .bench; return p })
+    }
+
+    /// A floorball match in the second period with goals, a penalty shot and two utvisningar.
+    static func exampleFloorball(now: Date = .now) -> MatchState {
+        let roster: [(Int, String, PlayerStatus)] = [
+            (1, "Tilde Ek", .start), (3, "Agnes Holm", .start), (5, "Lova Strand", .start),
+            (7, "Ebba Lund", .start), (10, "Saga Berg", .start), (12, "Moa Dahl", .start),
+            (14, "Vera Björk", .bench), (17, "Elsa Nyström", .bench), (19, "Juni Sandberg", .bench),
+            (21, "Alice Wikström", .bench), (23, "Stella Forsberg", .out),
+        ]
+        let players = roster.map {
+            Player(id: UUID(uuidString: String(format: "6E6F8B6A-0E1D-4C55-9D7B-1000000000%02d", $0.0))!,
+                   name: $0.1, number: $0.0, status: $0.2)
+        }
+        func id(_ number: Int) -> UUID { players.first { $0.number == number }!.id }
+
+        typealias Spec = (Int, EventKind, Side, UUID?, UUID?, ShotResult?, String?, Bool?, Suspension?)
+        let specs: [Spec] = [
+            (1, .period, .us, nil, nil, nil, "Avspark", nil, nil),
+            (3, .shot, .us, id(10), nil, .onTarget, nil, nil, nil),
+            (5, .goal, .us, id(7), id(10), nil, nil, nil, nil),
+            (8, .shot, .them, nil, nil, .off, nil, nil, nil),
+            (9, .suspension, .us, id(5), nil, nil, nil, nil, .two),
+            (10, .goal, .them, nil, nil, nil, nil, nil, nil),
+            (13, .freeKick, .us, nil, nil, nil, nil, nil, nil),
+            (15, .period, .us, nil, nil, nil, "Periodpaus 1–1", nil, nil),
+            (16, .period, .us, nil, nil, nil, "2:a period startar", nil, nil),
+            (17, .sub, .us, id(12), id(14), nil, nil, nil, nil),
+            (19, .goal, .us, id(10), nil, nil, nil, true, nil),
+            (21, .shot, .them, nil, nil, .onTarget, nil, nil, nil),
+            (22, .freeKick, .them, nil, nil, nil, nil, nil, nil),
+            (24, .suspension, .us, id(3), nil, nil, nil, nil, .two),
+        ]
+        let events = specs.enumerated().map { index, s in
+            MatchEvent(kind: s.1, side: s.2, minute: MatchMinute(minute: s.0),
+                       createdAt: now.addingTimeInterval(Double(index - specs.count) * 60),
+                       player: s.3, otherPlayer: s.4, shot: s.5, note: s.6, isPenalty: s.7, suspension: s.8)
+        }
+
+        return MatchState(sport: .floorball, teamID: exampleFloorballTeamID, ourTeam: "Ditt innebandylag (exempel)",
+                          opponent: "Ekbacka IBK", isHome: true, halfLength: 15, periods: 3, playersOnField: 5,
+                          players: players, events: events, phase: .playing, period: 2, isRunning: true,
+                          accumulated: 0, runningSince: now.addingTimeInterval(-560))
     }
 }
