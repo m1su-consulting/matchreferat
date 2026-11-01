@@ -131,7 +131,19 @@ struct MadeBy: View {
             }
             .font(.caption)
             .padding(.top, 6)
+            Text("Version \(Self.version)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Appversion \(Self.version)")
         }
+    }
+
+    /// Marketing version and build number from the bundle, e.g. "1.0.2 (3)".
+    static var version: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        return "\(short) (\(build))"
     }
 }
 
