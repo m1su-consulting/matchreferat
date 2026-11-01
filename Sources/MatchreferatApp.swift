@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 @main
@@ -6,7 +7,7 @@ struct MatchreferatApp: App {
     @State private var live: LiveShare
 
     init() {
-        _store = State(initialValue: MatchStore())
+        _store = State(initialValue: MatchStore(container: Persistence.container()))
         _live = State(initialValue: LiveShare())
     }
 

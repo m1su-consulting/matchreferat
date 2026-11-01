@@ -2,7 +2,7 @@ name: Matchreferat
 options:
   bundleIdPrefix: se.matchreferat
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.0"
 targets:
   Matchreferat:
     type: application
@@ -26,9 +26,34 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         TARGETED_DEVICE_FAMILY: "1"
-        SWIFT_VERSION: "5.0"
-        MARKETING_VERSION: "1.0.1"
-        CURRENT_PROJECT_VERSION: "2"
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        MARKETING_VERSION: "1.0.2"
+        CURRENT_PROJECT_VERSION: "3"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: VNDXQRN7C3
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  MatchreferatTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [UnitTests]
+    dependencies:
+      - target: Matchreferat
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: se.matchreferat.app.tests
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Matchreferat.app/Matchreferat"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: VNDXQRN7C3
+schemes:
+  Matchreferat:
+    build:
+      targets:
+        Matchreferat: all
+        MatchreferatTests: [test]
+    test:
+      targets: [MatchreferatTests]

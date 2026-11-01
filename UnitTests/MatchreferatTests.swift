@@ -1,0 +1,202 @@
+import Foundation
+import SwiftData
+import Testing
+@testable import Matchreferat
+
+@MainActor
+private func makeStore(_ state: MatchState? = nil, legacy: URL? = nil) -> MatchStore {
+    let directory = legacy ?? FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let store = MatchStore(container: Persistence.container(inMemory: true), legacyDirectory: directory)
+    if let state { store.state = state }
+    return store
+}
+
+@Suite("Poäng och statistik")
+struct ScoreTests {
+    @Test func exampleMatchScore() {
+        let match = MatchState.example()
+        #expect(match.goals(.us) == 2)
+        #expect(match.goals(.them) == 1)
+        #expect(match.scoreText == "2–1")
+        #expect(match.shots(.us) == 3)          // shots include goals
+        #expect(match.shotsOnTarget(.them) == 2)
+        #expect(match.statsLine == "Skott 3–3 · På mål 3–2 · Hörnor 2–1")
+    }
+
+    @Test func awayMatchPutsOpponentFirst() {
+        var match = MatchState.example()
+        match.isHome = false
+        #expect(match.scoreText == "1–2")
+        #expect(match.report(at: .now).hasPrefix("Ekbacka IK – \(match.ourTeam)  1–2"))
+    }
+
+    @Test func publicNameIsFirstNameAndNumber() throws {
+        let match = MatchState.example()
+        let selma = try #require(match.players.first { $0.number == 10 })
+        #expect(match.publicName(selma.id) == "Selma (10)")
+        #expect(!match.report(at: .now).contains("Lund"))
+    }
+}
+
+@Suite("Klocka och halvlekar")
+@MainActor
+struct ClockTests {
+    @Test func threeHalvesWalkThroughBreaks() {
+        var state = MatchState.empty
+        state.periods = 3
+        state.halfLength = 15
+        let store = makeStore(state)
+
+        #expect(store.primaryTitle == "Avspark")
+        store.advancePhase()
+        #expect(store.state.phase == .playing && store.state.period == 1)
+        #expect(store.primaryTitle == "Paus")
+        store.advancePhase()
+        #expect(store.state.phase == .interval)
+        #expect(store.primaryTitle == "Starta 2:a halvlek")
+        store.advancePhase()
+        store.advancePhase()
+        #expect(store.primaryTitle == "Starta 3:e halvlek")
+        store.advancePhase()
+        #expect(store.primaryTitle == "Slutsignal")
+        store.advancePhase()
+        #expect(store.state.phase == .finished)
+        #expect(store.state.events.compactMap(\.note).contains("Andra halvlek startar") == false)
+    }
+
+    @Test func twoHalvesUseHalftime() {
+        var state = MatchState.empty
+        state.periods = 2
+        let store = makeStore(state)
+        store.advancePhase()
+        #expect(store.primaryTitle == "Halvtid")
+    }
+
+    @Test func stoppageTime() {
+        var state = MatchState.empty
+        state.phase = .playing
+        state.period = 1
+        state.halfLength = 25
+        state.isRunning = true
+        state.runningSince = Date.now.addingTimeInterval(-(26 * 60 + 10))
+        #expect(state.clock(at: .now).text == "25+2'")
+    }
+}
+
+@Suite("Händelser")
+@MainActor
+struct EventTests {
+    @Test func substitutionAndUndo() throws {
+        let store = makeStore(.example())
+        let out = try #require(store.state.onField.first)
+        let into = try #require(store.state.bench.first)
+        store.log(.sub, side: .us, player: out.id, otherPlayer: into.id)
+        #expect(store.state.players.first { $0.id == out.id }?.status == .bench)
+        #expect(store.state.players.first { $0.id == into.id }?.status == .start)
+        store.undo(try #require(store.toast))
+        #expect(store.state.players.first { $0.id == out.id }?.status == .start)
+        #expect(store.state.players.first { $0.id == into.id }?.status == .bench)
+    }
+}
+
+@Suite("Migrering")
+@MainActor
+struct MigrationTests {
+    @Test func decodesPre1_0Format() throws {
+        let json = """
+        {"ourTeam":"Ditt lag","opponent":"Ekbacka IK","isHome":true,"halfLength":25,
+         "players":[{"id":"\(UUID().uuidString)","name":"Selma Lund","number":10,"status":"start"}],
+         "events":[],"phase":"firstHalf","isRunning":false,"accumulated":0}
+        """
+        let state = try JSONDecoder().decode(MatchState.self, from: Data(json.utf8))
+        #expect(state.phase == .playing)
+        #expect(state.period == 1)
+        #expect(state.periods == 2)
+        #expect(state.players.first?.firstName == "Selma")
+        #expect(state.players.first?.lastName == "Lund")
+    }
+
+    @Test func importsJSONIntoSwiftDataOnce() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        var match = MatchState.example()
+        match.opponent = "Importerade IF"
+        try JSONEncoder().encode(match).write(to: directory.appendingPathComponent("match.json"))
+        try JSONEncoder().encode([MatchState.exampleTeam()]).write(to: directory.appendingPathComponent("teams.json"))
+
+        let container = Persistence.container(inMemory: true)
+        let first = MatchStore(container: container, legacyDirectory: directory)
+        #expect(first.state.opponent == "Importerade IF")
+        #expect(first.teams.count == 1)
+        #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent("match.json").path))
+
+        // A later launch reads SwiftData, not JSON files (here: different files in another folder).
+        let other = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
+        try JSONEncoder().encode(MatchState.empty).write(to: other.appendingPathComponent("match.json"))
+        let second = MatchStore(container: container, legacyDirectory: other)
+        #expect(second.state.opponent == "Importerade IF")
+        #expect(second.teams.map(\.id) == first.teams.map(\.id))
+    }
+
+    @Test func savesTeamsInOrder() {
+        let store = makeStore()
+        store.teams = [Team(name: "A"), Team(name: "B")]
+        store.saveTeams()
+        store.teams.reverse()
+        store.saveTeams()
+        store.teams.removeLast()
+        store.saveTeams()
+        #expect(store.teams.map(\.name) == ["B"])
+    }
+
+    @Test func movesSessionToKeychain() throws {
+        let suite = "matchreferat-tests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite); Keychain.set(nil, for: "liveSession") }
+        let legacy = Data("{\"token\":\"abc\"}".utf8)
+        defaults.set(legacy, forKey: "liveSession")
+
+        LiveShare.migrateLegacySession(defaults: defaults)
+
+        #expect(defaults.data(forKey: "liveSession") == nil)
+        #expect(Keychain.data("liveSession") == legacy)
+    }
+}
+
+@Suite("Live-server")
+struct LiveServerTests {
+    @Test func parsesAppAndWebLinks() throws {
+        let key = "AIzaTESTKEY0123456789abcdefghijklmnop"
+        let app = try #require(LiveServer.parse("matchreferat://koppla?p=mitt-lag&k=\(key)&n=Mitt%20lag"))
+        #expect(app.projectID == "mitt-lag")
+        #expect(app.name == "Mitt lag")
+        let web = try #require(LiveServer.parse("https://matchreferat.web.app/koppla#p=mitt-lag&k=\(key)"))
+        #expect(web.name == "mitt-lag")
+        #expect(web.viewerURL(matchID: "X").absoluteString.hasSuffix("/m/X#p=mitt-lag&k=\(key)"))
+        #expect(LiveServer.parse("https://example.com") == nil)
+        #expect(LiveServer.parse("matchreferat://koppla?p=A&k=short") == nil)
+    }
+
+    struct MockClient: HTTPClient {
+        let status: Int
+        let body: String
+        func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+            let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+            return (Data(body.utf8), response)
+        }
+    }
+
+    @Test func anonymousSignUp() async throws {
+        let server = LiveServer(projectID: "mitt-lag", apiKey: "AIzaTESTKEY0123456789abcdefghijklmnop", name: "Mitt lag")
+        let ok = MockClient(status: 200, body: #"{"localId":"uid1","idToken":"t","refreshToken":"r","expiresIn":"3600"}"#)
+        let session = try await AnonymousSession.signUp(server, client: ok)
+        #expect(session.uid == "uid1")
+        #expect(session.expiresAt > .now)
+
+        let disabled = MockClient(status: 400, body: #"{"error":{"message":"ADMIN_ONLY_OPERATION"}}"#)
+        await #expect(throws: AnonymousSession.Failure.self) {
+            _ = try await AnonymousSession.signUp(server, client: disabled)
+        }
+    }
+}

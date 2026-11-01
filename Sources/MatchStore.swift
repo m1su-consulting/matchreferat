@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OSLog
+import SwiftData
 
 @MainActor
 @Observable
@@ -17,16 +18,25 @@ final class MatchStore {
     /// Whether the match page is shown on top of the start page; `-screen match` opens it on launch.
     var showMatch = LaunchArgument.string("screen") == "match"
 
-    private static func fileURL(_ name: String) -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(name)
-    }
-    private static let matchURL = fileURL("match.json")
-    private static let teamsURL = fileURL("teams.json")
+    private let container: ModelContainer
+    private var context: ModelContext { container.mainContext }
+    private static let log = Logger(subsystem: "se.matchreferat.app", category: "store")
 
-    init() {
+    /// Loads the match and teams from SwiftData. The first time, they are imported from the
+    /// JSON files earlier versions wrote to `legacyDirectory`, which are kept as a backup.
+    init(container: ModelContainer, legacyDirectory: URL = Persistence.legacyDirectory) {
+        self.container = container
+        let context = container.mainContext
+        let decoder = JSONDecoder()
+        let storedMatch = (try? context.fetch(FetchDescriptor<StoredMatch>()))?.first
+        let storedTeams = (try? context.fetch(FetchDescriptor<StoredTeam>(sortBy: [SortDescriptor(\.order)]))) ?? []
+        let importing = storedMatch == nil && storedTeams.isEmpty
+
         var match = MatchState.empty
-        if let data = try? Data(contentsOf: Self.matchURL),
-           var saved = try? JSONDecoder().decode(MatchState.self, from: data) {
+        if let storedMatch, let saved = try? decoder.decode(MatchState.self, from: storedMatch.payload) {
+            match = saved
+        } else if importing, let data = try? Data(contentsOf: legacyDirectory.appendingPathComponent("match.json")),
+                  var saved = try? decoder.decode(MatchState.self, from: data) {
             // Older versions logged saves separately and had blocked shots; a save is now
             // implied by a shot on target, and blocked shots count as off target.
             saved.events.removeAll { $0.kind == .save }
@@ -36,8 +46,10 @@ final class MatchStore {
             match = saved
         }
 
-        if let data = try? Data(contentsOf: Self.teamsURL),
-           let saved = try? JSONDecoder().decode([Team].self, from: data) {
+        if !storedTeams.isEmpty {
+            teams = storedTeams.compactMap { try? decoder.decode(Team.self, from: $0.payload) }
+        } else if importing, let data = try? Data(contentsOf: legacyDirectory.appendingPathComponent("teams.json")),
+                  let saved = try? decoder.decode([Team].self, from: data) {
             teams = saved
         } else if match.teamID == MatchState.exampleTeamID {
             teams = [MatchState.exampleTeam()]
@@ -53,36 +65,43 @@ final class MatchStore {
             match.teamID = team.id
         }
         state = match
-        if !teams.isEmpty && !FileManager.default.fileExists(atPath: Self.teamsURL.path) {
-            saveTeams()
+        if importing {
             save()
+            saveTeams()
         }
     }
 
     func save() {
-        if let data = try? JSONEncoder().encode(state) { Self.write(data, to: Self.matchURL) }
+        guard let payload = try? JSONEncoder().encode(state) else { return }
+        if let stored = (try? context.fetch(FetchDescriptor<StoredMatch>()))?.first {
+            stored.payload = payload
+            stored.updatedAt = .now
+        } else {
+            context.insert(StoredMatch(payload: payload))
+        }
+        commit()
     }
 
     func saveTeams() {
-        if let data = try? JSONEncoder().encode(teams) { Self.write(data, to: Self.teamsURL) }
+        let encoder = JSONEncoder()
+        let existing = (try? context.fetch(FetchDescriptor<StoredTeam>())) ?? []
+        var byID = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for (order, team) in teams.enumerated() {
+            guard let payload = try? encoder.encode(team) else { continue }
+            if let stored = byID.removeValue(forKey: team.id) {
+                stored.order = order
+                stored.payload = payload
+            } else {
+                context.insert(StoredTeam(id: team.id, order: order, payload: payload))
+            }
+        }
+        byID.values.forEach(context.delete)
+        commit()
     }
 
-    private static let log = Logger(subsystem: "se.matchreferat.app", category: "store")
-
-    /// Atomic replace where possible; some environments refuse the rename, so fall back to a plain write.
-    private static func write(_ data: Data, to url: URL) {
-        do {
-            try data.write(to: url, options: .atomic)
-        } catch {
-            log.error("Atomic save failed: \(String(describing: error), privacy: .public)")
-            do {
-                do { try FileManager.default.removeItem(at: url) } catch {
-                    log.error("Remove failed: \(String(describing: error), privacy: .public)")
-                }
-                try data.write(to: url)
-            } catch {
-                log.error("Save failed: \(String(describing: error), privacy: .public)")
-            }
+    private func commit() {
+        do { try context.save() } catch {
+            Self.log.error("Save failed: \(String(describing: error), privacy: .public)")
         }
     }
 

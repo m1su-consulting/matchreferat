@@ -76,13 +76,13 @@ struct AnonymousSession: Codable {
         var description: String { message }
     }
 
-    static func signUp(_ server: LiveServer) async throws -> AnonymousSession {
+    static func signUp(_ server: LiveServer, client: any HTTPClient = URLSessionClient()) async throws -> AnonymousSession {
         let url = URL(string: "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=\(server.apiKey)")!
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: ["returnSecureToken": true])
-        let json = try await fetchJSON(request)
+        let json = try await fetchJSON(request, client: client)
         guard let uid = json["localId"] as? String, let token = json["idToken"] as? String,
               let refresh = json["refreshToken"] as? String else { throw Failure(message: "Oväntat svar från inloggningen") }
         let expires = Double(json["expiresIn"] as? String ?? "3600") ?? 3600
@@ -90,13 +90,13 @@ struct AnonymousSession: Codable {
                                 expiresAt: .now.addingTimeInterval(expires - 120))
     }
 
-    func refreshed(_ server: LiveServer) async throws -> AnonymousSession {
+    func refreshed(_ server: LiveServer, client: any HTTPClient = URLSessionClient()) async throws -> AnonymousSession {
         let url = URL(string: "https://securetoken.googleapis.com/v1/token?key=\(server.apiKey)")!
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = Data("grant_type=refresh_token&refresh_token=\(refreshToken)".utf8)
-        let json = try await Self.fetchJSON(request)
+        let json = try await Self.fetchJSON(request, client: client)
         guard let token = json["id_token"] as? String, let refresh = json["refresh_token"] as? String else {
             throw Failure(message: "Oväntat svar vid förnyad inloggning")
         }
@@ -105,8 +105,8 @@ struct AnonymousSession: Codable {
                                 refreshToken: refresh, expiresAt: .now.addingTimeInterval(expires - 120))
     }
 
-    private static func fetchJSON(_ request: URLRequest) async throws -> [String: Any] {
-        let (data, response) = try await URLSession.shared.data(for: request)
+    private static func fetchJSON(_ request: URLRequest, client: any HTTPClient) async throws -> [String: Any] {
+        let (data, response) = try await client.data(for: request)
         let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
         guard (200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? 0) else {
             let code = ((json["error"] as? [String: Any])?["message"] as? String) ?? "okänt fel"
@@ -138,6 +138,8 @@ final class LiveShare {
     var pendingLink: String?
     private var session: AnonymousSession?
     private var pending: Task<Void, Never>?
+    private let client: any HTTPClient
+    private let defaults: UserDefaults
 
     private static let idKey = "liveMatchID"
     private static let serverKey = "liveServer"
@@ -145,11 +147,13 @@ final class LiveShare {
     private static let log = Logger(subsystem: "se.matchreferat.app", category: "live")
     private static let lifetime: TimeInterval = 7 * 24 * 3600
 
-    init() {
-        let defaults = UserDefaults.standard
+    init(client: any HTTPClient = URLSessionClient(), defaults: UserDefaults = .standard) {
+        self.client = client
+        self.defaults = defaults
+        Self.migrateLegacySession(defaults: defaults)
         let savedServer = defaults.data(forKey: Self.serverKey).flatMap { try? JSONDecoder().decode(LiveServer.self, from: $0) }
         server = savedServer
-        session = defaults.data(forKey: Self.sessionKey).flatMap { try? JSONDecoder().decode(AnonymousSession.self, from: $0) }
+        session = Keychain.data(Self.sessionKey).flatMap { try? JSONDecoder().decode(AnonymousSession.self, from: $0) }
         if savedServer == nil {
             // Matches shared before servers were configurable can't be reached any more.
             defaults.removeObject(forKey: Self.idKey)
@@ -172,7 +176,7 @@ final class LiveShare {
 
     /// Signs in to the server to check it, then remembers it.
     func connect(_ newServer: LiveServer) async throws {
-        let newSession = try await AnonymousSession.signUp(newServer)
+        let newSession = try await AnonymousSession.signUp(newServer, client: client)
         if isOn { await stop() }
         server = newServer
         session = newSession
@@ -192,11 +196,11 @@ final class LiveShare {
     func test(_ candidate: LiveServer? = nil) async -> Result<String, AnonymousSession.Failure> {
         guard let target = candidate ?? server else { return .failure(.init(message: "Ingen server kopplad")) }
         do {
-            let testSession = try await AnonymousSession.signUp(target)
+            let testSession = try await AnonymousSession.signUp(target, client: client)
             let probe = target.documentsURL.appendingPathComponent("matches/\(Self.makeID())")
             var request = URLRequest(url: probe, timeoutInterval: 15)
             request.setValue("Bearer \(testSession.idToken)", forHTTPHeaderField: "Authorization")
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await client.data(for: request)
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
             let body = String(decoding: data, as: UTF8.self)
             switch code {
@@ -222,9 +226,14 @@ final class LiveShare {
     }
 
     private func persist() {
-        let defaults = UserDefaults.standard
         defaults.set(server.flatMap { try? JSONEncoder().encode($0) }, forKey: Self.serverKey)
-        defaults.set(session.flatMap { try? JSONEncoder().encode($0) }, forKey: Self.sessionKey)
+        Keychain.set(session.flatMap { try? JSONEncoder().encode($0) }, for: Self.sessionKey)
+    }
+
+    /// 1.0.1 kept the anonymous session (with its tokens) in UserDefaults; move it to the Keychain once.
+    static func migrateLegacySession(defaults: UserDefaults) {
+        guard let legacy = defaults.data(forKey: sessionKey) else { return }
+        if Keychain.set(legacy, for: sessionKey) { defaults.removeObject(forKey: sessionKey) }
     }
 
     // MARK: Sharing
@@ -236,7 +245,7 @@ final class LiveShare {
             let id = Self.makeID()
             try await write(state, to: id)
             matchID = id
-            UserDefaults.standard.set(id, forKey: Self.idKey)
+            defaults.set(id, forKey: Self.idKey)
             lastSynced = .now
             status = .live
         } catch {
@@ -251,7 +260,7 @@ final class LiveShare {
         pending?.cancel()
         matchID = nil
         lastSynced = nil
-        UserDefaults.standard.removeObject(forKey: Self.idKey)
+        defaults.removeObject(forKey: Self.idKey)
         status = isConfigured ? .off : .unconfigured
         guard let server else { return }
         do {
@@ -299,13 +308,13 @@ final class LiveShare {
         guard let server else { throw AnonymousSession.Failure(message: "Ingen server kopplad") }
         if let session, session.projectID == server.projectID {
             if session.expiresAt > .now { return session }
-            if let renewed = try? await session.refreshed(server) {
+            if let renewed = try? await session.refreshed(server, client: client) {
                 self.session = renewed
                 persist()
                 return renewed
             }
         }
-        let fresh = try await AnonymousSession.signUp(server)
+        let fresh = try await AnonymousSession.signUp(server, client: client)
         session = fresh
         persist()
         return fresh
@@ -321,7 +330,7 @@ final class LiveShare {
     }
 
     private func send(_ request: URLRequest) async throws {
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await client.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
             throw RequestError(status: status, body: String(decoding: data.prefix(400), as: UTF8.self))
