@@ -81,6 +81,14 @@ enum Theme {
     static func color(_ side: Side) -> Color { side == .us ? green : rust }
 }
 
+/// Screens pushed on the navigation stack above the start page.
+enum Route: Hashable {
+    case match
+    case team(UUID)
+    case liveServer
+    case licenses
+}
+
 struct RootView: View {
     @Environment(MatchStore.self) private var store
     @Environment(LiveShare.self) private var live
@@ -88,11 +96,22 @@ struct RootView: View {
     var body: some View {
         @Bindable var store = store
         let showConnect = Binding(get: { live.pendingLink != nil }, set: { if !$0 { live.pendingLink = nil } })
-        NavigationStack {
+        NavigationStack(path: $store.path) {
             StartView()
-                .navigationDestination(isPresented: $store.showMatch) {
-                    MatchView()
-                        .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                    case .match:
+                        MatchView()
+                            .toolbar(.hidden, for: .navigationBar)
+                    case .team(let id):
+                        if let index = store.teams.firstIndex(where: { $0.id == id }) {
+                            TeamEditor(team: $store.teams[index])
+                        }
+                    case .liveServer:
+                        LiveServerView()
+                    case .licenses:
+                        LicensesView()
+                    }
                 }
         }
         .tint(Theme.green)

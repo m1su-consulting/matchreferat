@@ -29,7 +29,7 @@ struct StartView: View {
 
             if store.hasMatchInProgress {
                 Section("Pågående match") {
-                    Button { store.showMatch = true } label: { ContinueCard() }
+                    Button { store.openMatch() } label: { ContinueCard() }
                         .buttonStyle(.plain)
                 }
             }
@@ -44,10 +44,8 @@ struct StartView: View {
                     }
                     .padding(.vertical, 4)
                 }
-                ForEach($store.teams) { $team in
-                    NavigationLink {
-                        TeamEditor(team: $team)
-                    } label: {
+                ForEach(store.teams) { team in
+                    NavigationLink(value: Route.team(team.id)) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(team.name.isEmpty ? "Namnlöst lag" : team.name).font(.headline)
                             Text("\(Team.formatLabel(team.playersOnField)) · \(team.periods) × \(team.periodLength) min · \(team.players.count) spelare")
@@ -65,18 +63,14 @@ struct StartView: View {
             }
 
             Section {
-                NavigationLink {
-                    LiveServerView()
-                } label: {
+                NavigationLink(value: Route.liveServer) {
                     LabeledContent {
                         Text(live.server?.name ?? "Ingen")
                     } label: {
                         Label("Live-server", systemImage: "antenna.radiowaves.left.and.right")
                     }
                 }
-                NavigationLink {
-                    LicensesView()
-                } label: {
+                NavigationLink(value: Route.licenses) {
                     Label("Licenser", systemImage: "doc.text")
                 }
             } header: {
@@ -146,6 +140,7 @@ struct MadeBy: View {
 
 struct ContinueCard: View {
     @Environment(MatchStore.self) private var store
+    @ScaledMetric(relativeTo: .title) private var scoreSize: CGFloat = 30
 
     var body: some View {
         let state = store.state
@@ -163,12 +158,14 @@ struct ContinueCard: View {
             }
             Spacer()
             Text(state.scoreText)
-                .font(.system(size: 30, weight: .heavy, design: .rounded).monospacedDigit())
+                .font(.system(size: scoreSize, weight: .heavy, design: .rounded).monospacedDigit())
                 .foregroundStyle(.primary)
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Fortsätt match: \(state.teamName(state.homeSide)) mot \(state.teamName(state.awaySide)), \(state.scoreText)")
     }
 }

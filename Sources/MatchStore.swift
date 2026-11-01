@@ -15,8 +15,11 @@ final class MatchStore {
     var state: MatchState
     var teams: [Team]
     var toast: Toast?
-    /// Whether the match page is shown on top of the start page; `-screen match` opens it on launch.
-    var showMatch = LaunchArgument.string("screen") == "match"
+    /// The navigation stack above the start page; `-screen match` opens the match page on launch.
+    var path: [Route] = LaunchArgument.string("screen") == "match" ? [.match] : []
+
+    func openMatch() { path = [.match] }
+    func goToStart() { path.removeAll() }
 
     private let container: ModelContainer
     private var context: ModelContext { container.mainContext }
@@ -230,7 +233,7 @@ final class MatchStore {
                            players: team.players.sorted { $0.number < $1.number }, events: [], phase: .notStarted,
                            period: 1, isRunning: false, accumulated: 0, runningSince: nil)
         toast = nil
-        showMatch = true
+        openMatch()
     }
 
     /// Remembers today's Start/Bänk/Ej med as the team's lineup for next time.

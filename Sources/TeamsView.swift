@@ -20,13 +20,16 @@ struct TeamEditor: View {
                     HStack(spacing: 10) {
                         TextField("Nr", value: $player.number, format: .number)
                             .keyboardType(.numberPad)
+                            .accessibilityLabel("Tröjnummer för \(player.firstName)")
                             .multilineTextAlignment(.center)
                             .frame(width: 40)
                             .padding(.vertical, 6)
                             .background(Theme.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
                         TextField("Förnamn", text: $player.firstName)
                             .textInputAutocapitalization(.words)
+                            .accessibilityLabel("Förnamn, nummer \(player.number)")
                         TextField("Efternamn", text: $player.lastName)
+                            .accessibilityLabel("Efternamn för \(player.firstName)")
                             .textInputAutocapitalization(.words)
                             .foregroundStyle(.secondary)
                     }

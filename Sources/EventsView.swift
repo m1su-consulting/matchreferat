@@ -72,6 +72,7 @@ struct EventRow: View {
                 .font(.subheadline.weight(.semibold).monospacedDigit())
                 .frame(width: 48, alignment: .leading)
             Image(systemName: event.kind.icon)
+                .accessibilityHidden(true)
                 .foregroundStyle(iconColor)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {

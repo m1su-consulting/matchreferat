@@ -24,7 +24,7 @@ struct MatchView: View {
             ScrollView {
                 VStack(spacing: 10) {
                     HStack(spacing: 8) {
-                        Button { store.showMatch = false } label: {
+                        Button { store.goToStart() } label: {
                             Image(systemName: "chevron.left")
                                 .font(.title3.weight(.semibold))
                                 .frame(width: 30, height: 34)
@@ -37,7 +37,7 @@ struct MatchView: View {
                             Button { showSettings = true } label: { Label("Matchinställningar", systemImage: "slider.horizontal.3") }
                             Divider()
                             Button { showNewMatch = true } label: { Label("Ny match", systemImage: "plus.circle") }
-                            Button { store.showMatch = false } label: { Label("Till startsidan", systemImage: "house") }
+                            Button { store.goToStart() } label: { Label("Till startsidan", systemImage: "house") }
                         } label: {
                             Image(systemName: "ellipsis.circle")
                                 .font(.title2)
@@ -94,6 +94,9 @@ struct MatchView: View {
 
 struct ScoreboardView: View {
     @Environment(MatchStore.self) private var store
+    /// Score and clock grow with Dynamic Type, from these sizes at the default setting.
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 50
+    @ScaledMetric(relativeTo: .title) private var clockSize: CGFloat = 26
 
     var body: some View {
         let state = store.state
@@ -101,7 +104,7 @@ struct ScoreboardView: View {
             HStack(alignment: .center, spacing: 8) {
                 team(state.homeSide)
                 Text("\(state.goals(state.homeSide))–\(state.goals(state.awaySide))")
-                    .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+                    .font(.system(size: scoreSize, weight: .heavy, design: .rounded).monospacedDigit())
                     .foregroundStyle(.white)
                     .fixedSize()
                 team(state.awaySide)
@@ -109,7 +112,7 @@ struct ScoreboardView: View {
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(state.clock(at: context.date).text)
-                        .font(.system(size: 26, weight: .heavy, design: .rounded).monospacedDigit())
+                        .font(.system(size: clockSize, weight: .heavy, design: .rounded).monospacedDigit())
                         .foregroundStyle(Theme.clock)
                     Text(state.periodText)
                         .font(.subheadline.weight(.medium))
@@ -126,6 +129,15 @@ struct ScoreboardView: View {
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity)
         .background(Theme.slab, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilitySummary)
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    private var accessibilitySummary: String {
+        let s = store.state
+        return "\(s.teamName(s.homeSide)) \(s.goals(s.homeSide)), \(s.teamName(s.awaySide)) \(s.goals(s.awaySide)). "
+            + "\(s.clock(at: .now).text.replacingOccurrences(of: "'", with: "")) minuter, \(s.periodText). \(s.statsLine)"
     }
 
     private func team(_ side: Side) -> some View {

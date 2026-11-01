@@ -137,5 +137,8 @@ struct PlayerChip: View {
         .frame(maxWidth: .infinity, minHeight: 62)
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
         .contentShape(RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(player.name), nummer \(player.number)")
+        .accessibilityAddTraits(.isButton)
     }
 }

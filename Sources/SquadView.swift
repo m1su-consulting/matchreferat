@@ -82,6 +82,7 @@ struct PlayerRow: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            .accessibilityLabel("Status för \(player.name), nummer \(player.number)")
         }
         .padding(.vertical, 4)
     }
