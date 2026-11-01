@@ -25,6 +25,7 @@
 		7A7E1985C92B29FA1C1109B9 /* FlowSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5415F7129D343D5CA9E5C815 /* FlowSheet.swift */; };
 		841C9CC01EE715845D144924 /* Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B619018374C6792E417EDFA9 /* Previews.swift */; };
 		97AE9ED9D7D57BD4FEDBB532 /* EventsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52264AC78ACDFA24DCD35037 /* EventsView.swift */; };
+		BBFB031CD5584AA7A424D132 /* SportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E3311B0DA1EADF1BE9F345A /* SportTests.swift */; };
 		CFC718D2AC7A54701381AF2F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 671AFD78B8019A05E17A26E0 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -39,6 +40,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0E3311B0DA1EADF1BE9F345A /* SportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SportTests.swift; sourceTree = "<group>"; };
 		2145666CD07F6062F9EF1659 /* LicensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicensesView.swift; sourceTree = "<group>"; };
 		2226A5DD1AAD795DC85C8C7B /* Apache-2.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Apache-2.0.txt"; sourceTree = "<group>"; };
 		3B0C41D402F1023B67BCB754 /* LiveShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveShare.swift; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 			isa = PBXGroup;
 			children = (
 				6C72B0887DF613CCE83218F1 /* MatchreferatTests.swift */,
+				0E3311B0DA1EADF1BE9F345A /* SportTests.swift */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -243,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				081E96D6100226F0F10C0B98 /* MatchreferatTests.swift in Sources */,
+				BBFB031CD5584AA7A424D132 /* SportTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,7 +407,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = VNDXQRN7C3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/Info.plist;
@@ -417,7 +421,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = se.matchreferat.app;
 				PRODUCT_NAME = Matchreferat;
 				SDKROOT = iphoneos;
@@ -454,7 +458,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = VNDXQRN7C3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/Info.plist;
@@ -468,7 +472,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = se.matchreferat.app;
 				PRODUCT_NAME = Matchreferat;
 				SDKROOT = iphoneos;

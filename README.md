@@ -1,6 +1,6 @@
 # Matchreferat
 
-iOS-app (SwiftUI) för föräldrar som vill referera ungdomsfotbollsmatcher live när matchen inte sänds, i stället för att skriva i Messenger.
+iOS-app (SwiftUI) för föräldrar som vill referera ungdomsmatcher i fotboll och innebandy live när matchen inte sänds, i stället för att skriva i Messenger.
 
 - Lag med trupp, spelform (5–11 mot), antal halvlekar och minuter.
 - Ny match: välj lag, motståndare och hemma/borta.

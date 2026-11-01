@@ -1,6 +1,6 @@
 # App Store-metadata – Matchreferat
 
-Klistra in i App Store Connect → Matchreferat → version 1.0.2 (tidigare 1.0/1.0.1). Teckengränser inom parentes.
+Klistra in i App Store Connect → Matchreferat → version 1.0.3 (tidigare 1.0–1.0.2). Teckengränser inom parentes.
 
 ## Appinformation
 
@@ -60,7 +60,16 @@ fotboll,referat,live,match,resultat,ungdomsfotboll,barnfotboll,förälder,ledare
 ```
 (96 tecken)
 
-**Nyheter i den här versionen** (1.0.2)
+**Nyheter i den här versionen** (1.0.3)
+```
+• Innebandy: referera innebandymatcher med 2 eller 3 perioder, frislag, straffar och utvisningar
+• Välj Fotboll eller Innebandy på första sidan – appen kommer ihåg valet och du byter sport med ett tryck
+• Straff i fotboll: logga straffmål, räddade och missade straffar för båda lagen
+• Lag och matcher sparas per sport, och Pågår nu visar sportikon
+• Ny startbild
+```
+
+**Nyheter i 1.0.2** (inskickad tidigare, sparas som referens)
 ```
 • Pågår nu: se matcher som andra delar live via samma live-server, direkt på startsidan
 • Avsluta eller ta bort en pågående match från menyn eller startsidan
