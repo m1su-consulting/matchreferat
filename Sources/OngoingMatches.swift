@@ -14,6 +14,7 @@ struct OngoingMatch: Identifiable, Equatable, Sendable {
     var clockLabel: String
     var updatedAt: Date
     var expireAt: Date
+    var sport: Sport = .football
 
     /// Matches nobody has touched for this long are treated as abandoned.
     static let staleAfter: TimeInterval = 6 * 3600
@@ -46,9 +47,17 @@ struct OngoingMatch: Identifiable, Equatable, Sendable {
               let homeScore = int("homeScore"), let awayScore = int("awayScore"),
               let phase = string("phase").flatMap(Phase.init(rawValue:)),
               let updated = date("updatedAt"), let expires = date("expireAt") else { return nil }
+        let periodText = string("periodText") ?? ""
         return OngoingMatch(id: id, ownerUid: owner, homeName: home, awayName: away, homeScore: homeScore,
-                            awayScore: awayScore, phase: phase, periodText: string("periodText") ?? "",
-                            clockLabel: string("clockLabel") ?? "", updatedAt: updated, expireAt: expires)
+                            awayScore: awayScore, phase: phase, periodText: periodText,
+                            clockLabel: string("clockLabel") ?? "", updatedAt: updated, expireAt: expires,
+                            sport: sport(string("sport"), periodText: periodText))
+    }
+
+    /// The `sport` field, or – from servers whose rules predate it – the period text ("2:a period", "Periodpaus").
+    static func sport(_ field: String?, periodText: String) -> Sport {
+        if let sport = field.flatMap(Sport.init(rawValue:)) { return sport }
+        return periodText.lowercased().contains("period") ? .floorball : .football
     }
 
     /// Firestore timestamps can have up to nine fractional digits, which `ISO8601DateFormatter` rejects.
@@ -114,6 +123,11 @@ struct OngoingRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            Image(systemName: match.sport.icon)
+                .font(.title3)
+                .foregroundStyle(Theme.green)
+                .frame(width: 28)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     if match.phase == .playing {
@@ -135,7 +149,7 @@ struct OngoingRow: View {
         .padding(.vertical, 4)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(match.title), \(match.homeScore) mot \(match.awayScore), \(match.statusText)")
+        .accessibilityLabel("\(match.sport.label): \(match.title), \(match.homeScore) mot \(match.awayScore), \(match.statusText)")
         .accessibilityHint("Öppnar livesidan")
         .accessibilityAddTraits(.isButton)
     }
@@ -166,6 +180,9 @@ extension OngoingMatch {
         OngoingMatch(id: "ZyXwVuTsRqPoNmLkJiHgFe98", ownerUid: "per", homeName: "Björkdalens IF F12", awayName: "Sjövik FF",
                      homeScore: 0, awayScore: 0, phase: .interval, periodText: "Halvtid", clockLabel: "25'",
                      updatedAt: .now, expireAt: .now.addingTimeInterval(7 * 86400)),
+        OngoingMatch(id: "QwErTyUiOpAsDfGhJkLzXc45", ownerUid: "lena", homeName: "Sjövik IBK", awayName: "Björkdalens IBK F13",
+                     homeScore: 4, awayScore: 2, phase: .playing, periodText: "3:e period", clockLabel: "38'",
+                     updatedAt: .now, expireAt: .now.addingTimeInterval(7 * 86400), sport: .floorball),
     ]
 }
 

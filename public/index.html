@@ -120,7 +120,7 @@
 <body>
   <main>
     <div class="topline">
-      <span>Matchreferat</span>
+      <span id="brand">Matchreferat</span>
       <span id="badge" class="badge off"><span class="dot"></span><span id="badge-text">ANSLUTER</span></span>
     </div>
 
@@ -149,7 +149,11 @@
 
   <script type="module">
     const FIREBASE = "https://www.gstatic.com/firebasejs/13.1.0";
-    const ICONS = { goal: "⚽", shot: "🎯", corner: "🚩", freeKick: "🦶", yellow: "🟨", red: "🟥", sub: "🔁", save: "🧤", period: "⏱" };
+    const ICONS = { goal: "⚽", shot: "🎯", corner: "🚩", freeKick: "🦶", yellow: "🟨", red: "🟥", sub: "🔁", save: "🧤", period: "⏱",
+                    penalty: "❌", suspension: "⛔" };
+    // Floorball (innebandy) from 1.0.3 has its own goal and free-hit icons.
+    const FLOORBALL_ICONS = { ...ICONS, goal: "🥅", freeKick: "🏑" };
+    const SPORTS = { football: "Fotboll", floorball: "Innebandy" };
     const $ = (id) => document.getElementById(id);
     const params = new URLSearchParams(location.search);
     const matchId = params.get("m") || (location.pathname.match(/^\/m\/([A-Za-z0-9]{22,64})\/?$/) || [])[1];
@@ -172,6 +176,14 @@
       const full = base + Math.floor(elapsed / 60) + 1;
       const limit = base + len;
       return full > limit ? `${limit}+${full - limit}'` : `${full}'`;
+    }
+
+    // `sport` is missing for football and on servers whose rules predate 1.0.3; floorball then
+    // still shows in the texts, which say "period" instead of "halvlek".
+    function sportOf(d) {
+      if (SPORTS[d.sport]) return d.sport;
+      const floorball = /period/i.test(d.periodText || "") || (d.events || []).some((e) => e.type === "suspension");
+      return floorball ? "floorball" : "football";
     }
 
     function showMessage(text) {
@@ -204,10 +216,13 @@
       $("score").textContent = `${d.homeScore}–${d.awayScore}`;
       $("period").textContent = d.periodText;
       $("stats").textContent = d.stats;
-      document.title = `${d.homeName} – ${d.awayName} ${d.homeScore}–${d.awayScore} · Matchreferat`;
+      const sport = sportOf(d);
+      const icons = sport === "floorball" ? FLOORBALL_ICONS : ICONS;
+      $("brand").textContent = `Matchreferat · ${SPORTS[sport]}`;
+      document.title = `${d.homeName} – ${d.awayName} ${d.homeScore}–${d.awayScore} · ${SPORTS[sport]} · Matchreferat`;
 
       const live = d.phase === "playing";
-      const pause = (d.periods || 2) === 2 ? "HALVTID" : "PAUS";
+      const pause = sport === "floorball" ? "PERIODPAUS" : (d.periods || 2) === 2 ? "HALVTID" : "PAUS";
       setBadge(live, live ? "LIVE" : d.phase === "finished" ? "SLUT" : d.phase === "interval" ? pause : "EJ STARTAD");
 
       const list = $("timeline");
@@ -227,7 +242,7 @@
         minute.textContent = e.m;
         const icon = document.createElement("span");
         icon.className = "icon";
-        icon.textContent = ICONS[e.type] || "•";
+        icon.textContent = icons[e.type] || "•";
         const text = document.createElement("span");
         text.className = `text type-${e.type}`;
         text.textContent = e.text;
@@ -254,6 +269,30 @@
     function demoMatch() {
       const now = Date.now();
       const ev = (m, type, side, text, team) => ({ m, type, side, text, team });
+      if (params.get("demo") === "innebandy") {
+        return {
+          sport: "floorball", homeName: "Ditt lag", awayName: "Ekbacka IBK", isHome: true, homeScore: 2, awayScore: 1,
+          phase: "playing", period: 2, periods: 3, running: true, startedAt: now - 560000, accumulated: 0, halfLength: 15,
+          periodText: "2:a period", stats: "Skott 3–3 · På mål 3–2 · Utvisningar 2",
+          updatedAt: now - 20000, expireAt: now + 7 * 864e5,
+          events: [
+            ev("1'", "period", "us", "Avspark", "Match"),
+            ev("3'", "shot", "us", "Skott på mål, räddning – Saga (10)", "Ditt lag"),
+            ev("5'", "goal", "us", "Mål! Ebba (7), assist Saga (10)", "Ditt lag"),
+            ev("8'", "shot", "them", "Skott utanför", "Ekbacka IBK"),
+            ev("9'", "suspension", "us", "Utvisning 2 min – Lova (5)", "Ditt lag"),
+            ev("10'", "goal", "them", "Mål Ekbacka IBK", "Ekbacka IBK"),
+            ev("13'", "freeKick", "us", "Frislag", "Ditt lag"),
+            ev("15'", "period", "us", "Periodpaus 1–1", "Match"),
+            ev("16'", "period", "us", "2:a period startar", "Match"),
+            ev("17'", "sub", "us", "Byte: Moa (12) ut, Vera (14) in", "Ditt lag"),
+            ev("19'", "goal", "us", "Straffmål! Saga (10)", "Ditt lag"),
+            ev("21'", "shot", "them", "Skott på mål, räddning", "Ekbacka IBK"),
+            ev("22'", "freeKick", "them", "Frislag", "Ekbacka IBK"),
+            ev("24'", "suspension", "us", "Utvisning 2 min – Agnes (3)", "Ditt lag"),
+          ],
+        };
+      }
       return {
         homeName: "Ditt lag", awayName: "Ekbacka IK", isHome: true, homeScore: 2, awayScore: 1,
         phase: "playing", period: 2, periods: 2, running: true, startedAt: now - 500000, accumulated: 0, halfLength: 25,

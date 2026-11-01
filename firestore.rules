@@ -54,13 +54,19 @@ service cloud.firestore {
       return value is string && value.size() <= max;
     }
 
+    // Added in 1.0.3 and optional: a missing sport means football, as in 1.0.2.
+    function validSport(d) {
+      return !('sport' in d) || d.sport in ['football', 'floorball'];
+    }
+
     function validMatch(d) {
       return d.keys().hasAll(['v', 'ownerUid', 'ourTeam', 'opponent', 'isHome', 'homeName', 'awayName',
                               'homeScore', 'awayScore', 'phase', 'running', 'accumulated', 'halfLength',
                               'period', 'periods', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
         && d.keys().hasOnly(['v', 'ownerUid', 'ourTeam', 'opponent', 'isHome', 'homeName', 'awayName',
                              'homeScore', 'awayScore', 'phase', 'running', 'startedAt', 'accumulated',
-                             'halfLength', 'period', 'periods', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
+                             'halfLength', 'period', 'periods', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt',
+                             'sport'])
         && d.v == 1
         && shortString(d.ourTeam, 60) && shortString(d.opponent, 60)
         && shortString(d.homeName, 60) && shortString(d.awayName, 60)
@@ -71,6 +77,7 @@ service cloud.firestore {
         && d.periods is int && d.periods >= 1 && d.periods <= 4
         && d.period is int && d.period >= 1 && d.period <= d.periods
         && (!('startedAt' in d) || d.startedAt is timestamp)
+        && validSport(d)
         && d.accumulated is number && d.accumulated >= 0
         && d.halfLength is int && d.halfLength > 0 && d.halfLength <= 60
         && shortString(d.periodText, 40) && shortString(d.clockLabel, 12) && shortString(d.stats, 120)
@@ -81,7 +88,8 @@ service cloud.firestore {
 
     function validOngoing(d) {
       return d.keys().hasOnly(['v', 'ownerUid', 'homeName', 'awayName', 'homeScore', 'awayScore',
-                               'phase', 'periodText', 'clockLabel', 'updatedAt', 'expireAt'])
+                               'phase', 'periodText', 'clockLabel', 'updatedAt', 'expireAt', 'sport'])
+        && validSport(d)
         && d.keys().hasAll(['v', 'ownerUid', 'homeName', 'awayName', 'homeScore', 'awayScore',
                             'phase', 'periodText', 'clockLabel', 'updatedAt', 'expireAt'])
         && d.v == 1

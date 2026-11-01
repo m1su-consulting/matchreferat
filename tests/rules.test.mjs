@@ -166,3 +166,23 @@ test("pågående match: spelare, händelser, avslutad match och fel fält nekas"
   await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { expireAt: Timestamp.fromMillis(Date.now() + 30 * 864e5) })));
   await assertFails(setDoc(doc(db("alice"), "ongoing", "kort"), ongoing("alice")));
 });
+
+// Sport, added in 1.0.3: optional so 1.0.2 apps (which never send it) keep working.
+
+test("innebandymatch med sport och perioder godkänns, fotboll utan sport som förut", async () => {
+  const floorball = { sport: "floorball", periods: 3, period: 2, halfLength: 15, periodText: "2:a period",
+    stats: "Skott 3–3 · På mål 3–2 · Utvisningar 2",
+    events: [{ m: "9'", type: "suspension", side: "us", text: "Utvisning 2 min – Lova (5)", team: "Ditt lag" },
+             { m: "19'", type: "goal", side: "us", text: "Straffmål! Saga (10)", team: "Ditt lag" }] };
+  await assertSucceeds(setDoc(doc(db("alice"), "matches", ID), match("alice", floorball)));
+  await assertSucceeds(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { sport: "floorball", periodText: "2:a period" })));
+  await assertSucceeds(setDoc(doc(db("alice"), "matches", ID), match("alice", { sport: "football" })));
+  await assertSucceeds(setDoc(doc(db("alice"), "matches", ID), match("alice")));
+  await assertSucceeds(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice")));
+});
+
+test("okänd sport eller fel typ nekas", async () => {
+  await assertFails(setDoc(doc(db("alice"), "matches", ID), match("alice", { sport: "tennis" })));
+  await assertFails(setDoc(doc(db("alice"), "matches", ID), match("alice", { sport: 1 })));
+  await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { sport: "handboll" })));
+});

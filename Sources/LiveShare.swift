@@ -142,6 +142,8 @@ final class LiveShare {
     private var pending: Task<Void, Never>?
     /// False once the server has refused the `ongoing` summary (its rules predate it), so sharing keeps working.
     private var ongoingSupported = true
+    /// False once the server has refused the `sport` field (rules from before 1.0.3). Football never sends it.
+    private var sportSupported = true
     private let client: any HTTPClient
     private let defaults: UserDefaults
 
@@ -185,6 +187,7 @@ final class LiveShare {
         server = newServer
         session = newSession
         ongoingSupported = true
+        sportSupported = true
         ongoing = .loading
         persist()
         status = .off
@@ -301,16 +304,30 @@ final class LiveShare {
         guard let server else { return }
         let current = try await validSession()
         let stamp = [["fieldPath": "updatedAt", "setToServerValue": "REQUEST_TIME"]]
+        let withSport = sportSupported && state.sport != .football
         let match: [String: Any] = [
-            "update": ["name": server.documentName(id), "fields": payload(state, owner: current.uid).mapValues(Self.value)],
+            "update": ["name": server.documentName(id),
+                       "fields": Self.payload(state, owner: current.uid, sport: withSport).mapValues(Self.value)],
             "updateTransforms": stamp,
         ]
         let summary: [String: Any] = state.phase == .finished
             ? ["delete": server.documentName(id, in: "ongoing")]
             : ["update": ["name": server.documentName(id, in: "ongoing"),
-                          "fields": Self.summary(state).merging(["ownerUid": current.uid]) { $1 }.mapValues(Self.value)],
+                          "fields": Self.summary(state, sport: withSport).merging(["ownerUid": current.uid]) { $1 }
+                              .mapValues(Self.value)],
                "updateTransforms": stamp]
-        try await commit(match, ongoing: summary)
+        let hadOngoing = ongoingSupported
+        do {
+            try await commit(match, ongoing: summary)
+        } catch let error as RequestError where error.status == 403 && withSport {
+            // The refusal was about the sport field, not about `ongoing`.
+            ongoingSupported = hadOngoing
+            // Rules from before 1.0.3 allow only the fields 1.0.2 sends. The texts already use the
+            // right terms, so the viewer still works without knowing the sport.
+            Self.log.info("Server rules don't know the sport field; sharing without it")
+            sportSupported = false
+            try await write(state, to: id)
+        }
     }
 
     /// Commits the match write together with the `ongoing` write. A server whose rules don't know
@@ -396,7 +413,7 @@ final class LiveShare {
 
     /// Everything a viewer sees. Players appear only as first name and shirt number,
     /// and the opponent only as a team name. `updatedAt` is added by the server.
-    private func payload(_ s: MatchState, owner: String) -> [String: Any] {
+    static func payload(_ s: MatchState, owner: String, sport: Bool = true) -> [String: Any] {
         let events = s.events.sorted { $0.createdAt < $1.createdAt }.suffix(200).map { e -> [String: Any] in
             [
                 "m": e.minute.text,
@@ -431,13 +448,15 @@ final class LiveShare {
         if s.isRunning, let since = s.runningSince {
             data["startedAt"] = since
         }
+        // Optional, so 1.0.2 apps and servers with older rules keep working; missing means football.
+        if sport && s.sport != .football { data["sport"] = s.sport.rawValue }
         return data
     }
 
     /// The public summary in `ongoing`: team names, score and clock only. `ownerUid` and
     /// `updatedAt` are added when writing.
-    static func summary(_ s: MatchState) -> [String: Any] {
-        [
+    static func summary(_ s: MatchState, sport: Bool = true) -> [String: Any] {
+        var data: [String: Any] = [
             "v": 1,
             "homeName": s.teamName(s.homeSide),
             "awayName": s.teamName(s.awaySide),
@@ -448,6 +467,8 @@ final class LiveShare {
             "clockLabel": s.clock(at: .now).text,
             "expireAt": Date.now.addingTimeInterval(lifetime),
         ]
+        if sport && s.sport != .football { data["sport"] = s.sport.rawValue }
+        return data
     }
 
     private static let timestampFormatter: ISO8601DateFormatter = {
