@@ -214,6 +214,22 @@ final class MatchStore {
         state.events.append(MatchEvent(kind: .period, side: .us, minute: minute, createdAt: now, note: text))
     }
 
+    /// Ends the match at the current score, like Slutsignal, from any phase.
+    func endMatch() {
+        guard state.phase != .finished else { return }
+        let now = Date.now
+        let minute = state.phase == .playing ? state.clock(at: now) : MatchMinute(minute: max(1, (state.period - 1) * state.halfLength))
+        stopClock(.finished)
+        addPeriod("Slutsignal \(state.scoreText)", minute, now)
+    }
+
+    /// Throws the current match away. Stop live sharing first so the server copy is deleted.
+    func discardMatch() {
+        state = .empty
+        toast = nil
+        goToStart()
+    }
+
     // MARK: Squad
 
     /// Whether starting a new match would throw away a match that is under way.

@@ -16,6 +16,7 @@ struct MatchView: View {
     @State private var showSettings = false
     @State private var showEvents = false
     @State private var showNewMatch = false
+    @State private var confirmDelete = false
 
     var body: some View {
         // Sized to fit one screen above the tab bar on current iPhones; scrolls on smaller ones.
@@ -35,6 +36,11 @@ struct MatchView: View {
                             Button { showEvents = true } label: { Label("Händelser och referat", systemImage: "list.bullet.rectangle") }
                             Button { showSquad = true } label: { Label("Dagens trupp", systemImage: "person.2") }
                             Button { showSettings = true } label: { Label("Matchinställningar", systemImage: "slider.horizontal.3") }
+                            Divider()
+                            if store.state.phase != .finished {
+                                Button { store.endMatch() } label: { Label("Avsluta match", systemImage: "flag.checkered") }
+                            }
+                            Button(role: .destructive) { confirmDelete = true } label: { Label("Ta bort match", systemImage: "trash") }
                             Divider()
                             Button { showNewMatch = true } label: { Label("Ny match", systemImage: "plus.circle") }
                             Button { store.goToStart() } label: { Label("Till startsidan", systemImage: "house") }
@@ -78,16 +84,39 @@ struct MatchView: View {
                 .presentationDetents([.medium, .large])
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: store.state.events.count)
+        .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
         .onAppear {
             // `-demoSheet goal|squad|newMatch` opens that sheet (used for screenshots).
             switch LaunchArgument.string("demoSheet") {
             case "goal": flow = .goal
+            case "shot": flow = .shot(.onTarget)
             case "squad": showSquad = true
             case "settings": showSettings = true
             case "events": showEvents = true
             case "newMatch": showNewMatch = true
             default: break
             }
+        }
+    }
+}
+
+/// Asks before throwing the match away, then stops live sharing (deleting the server copy) and discards it.
+struct DeleteMatchConfirmation: ViewModifier {
+    @Environment(MatchStore.self) private var store
+    @Environment(LiveShare.self) private var live
+    @Binding var isPresented: Bool
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog("Ta bort matchen?", isPresented: $isPresented, titleVisibility: .visible) {
+            Button("Ta bort match", role: .destructive) {
+                Task {
+                    await live.stop()
+                    store.discardMatch()
+                }
+            }
+            Button("Avbryt", role: .cancel) {}
+        } message: {
+            Text("Matchen och alla händelser raderas. Om den delas live slutar länken att fungera.")
         }
     }
 }

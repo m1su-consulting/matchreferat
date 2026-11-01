@@ -5,6 +5,7 @@ struct StartView: View {
     @Environment(MatchStore.self) private var store
     @Environment(LiveShare.self) private var live
     @State private var showNewMatch = false
+    @State private var confirmDelete = false
 
     var body: some View {
         @Bindable var store = store
@@ -31,6 +32,8 @@ struct StartView: View {
                 Section("Pågående match") {
                     Button { store.openMatch() } label: { ContinueCard() }
                         .buttonStyle(.plain)
+                        .contextMenu { matchActions }
+                        .swipeActions { matchActions }
                 }
             }
 
@@ -86,10 +89,18 @@ struct StartView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
+        .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
         .onAppear {
             // `-demoSheet newMatch` opens the new match sheet (used for screenshots).
             if LaunchArgument.string("demoSheet") == "newMatch" { showNewMatch = true }
         }
+    }
+
+    /// End or delete the ongoing match without opening it.
+    @ViewBuilder private var matchActions: some View {
+        Button(role: .destructive) { confirmDelete = true } label: { Label("Ta bort match", systemImage: "trash") }
+        Button { store.endMatch() } label: { Label("Avsluta match", systemImage: "flag.checkered") }
+            .tint(Theme.green)
     }
 }
 

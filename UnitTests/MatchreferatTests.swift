@@ -59,6 +59,28 @@ struct ScoreTests {
 @Suite("Klocka och halvlekar")
 @MainActor
 struct ClockTests {
+    @Test func endMatchStopsAtCurrentScore() {
+        let store = makeStore(.example())
+        #expect(store.hasMatchInProgress)
+        store.endMatch()
+        #expect(store.state.phase == .finished)
+        #expect(!store.state.isRunning)
+        #expect(store.state.events.last?.note == "Slutsignal 2–1")
+        #expect(!store.hasMatchInProgress)
+        let count = store.state.events.count
+        store.endMatch()
+        #expect(store.state.events.count == count)
+    }
+
+    @Test func discardMatchRemovesIt() {
+        let store = makeStore(.example())
+        store.openMatch()
+        store.discardMatch()
+        #expect(store.state.events.isEmpty)
+        #expect(!store.hasMatchInProgress)
+        #expect(store.path.isEmpty)
+    }
+
     @Test func threeHalvesWalkThroughBreaks() {
         var state = MatchState.empty
         state.periods = 3
