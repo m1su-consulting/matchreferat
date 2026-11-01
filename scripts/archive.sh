@@ -1,7 +1,7 @@
 #!/bin/bash
 # Usage: scripts/archive.sh            -> builds a Release archive and opens Xcode Organizer
 #        scripts/archive.sh --upload   -> builds and uploads straight to App Store Connect
-# Requires: Sources/GoogleService-Info.plist and the Apple account for team VNDXQRN7C3 in Xcode.
+# Requires the Apple account for team VNDXQRN7C3 in Xcode.
 set -e
 
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -13,10 +13,6 @@ UPLOAD=false
 TEAM_ID="VNDXQRN7C3"
 ARCHIVE_PATH="$PROJECT_DIR/build/Archive/Matchreferat.xcarchive"
 
-if [ ! -f Sources/GoogleService-Info.plist ]; then
-  echo "⚠️  Sources/GoogleService-Info.plist saknas – livelänken fungerar inte utan den."
-  exit 1
-fi
 
 rm -rf Matchreferat.xcodeproj && xcodegen generate
 VERSION=$(grep -m1 'MARKETING_VERSION' project.yml | sed -E 's/.*"(.*)".*/\1/')

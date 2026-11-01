@@ -3,6 +3,7 @@ import SwiftUI
 /// The first page: logo, start or continue a match, and the user's teams.
 struct StartView: View {
     @Environment(MatchStore.self) private var store
+    @Environment(LiveShare.self) private var live
     @State private var showNewMatch = false
 
     var body: some View {
@@ -61,6 +62,25 @@ struct StartView: View {
                 } label: {
                     Label("Lägg till lag", systemImage: "plus")
                 }
+            }
+
+            Section {
+                NavigationLink {
+                    LiveServerView()
+                } label: {
+                    LabeledContent {
+                        Text(live.server?.name ?? "Ingen")
+                    } label: {
+                        Label("Live-server", systemImage: "antenna.radiowaves.left.and.right")
+                    }
+                }
+                NavigationLink {
+                    LicensesView()
+                } label: {
+                    Label("Licenser", systemImage: "doc.text")
+                }
+            } header: {
+                Text("Inställningar")
             }
 
             Section {

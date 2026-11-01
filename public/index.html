@@ -278,7 +278,11 @@
       };
     }
 
+    // Links name their live server in the fragment (#p=project&k=apiKey), which is never sent
+    // to this web server. Older links without it use Matchreferat's own project.
     async function firebaseConfig() {
+      const hash = new URLSearchParams(location.hash.slice(1));
+      if (hash.get("p") && hash.get("k")) return { projectId: hash.get("p"), apiKey: hash.get("k") };
       try {
         const response = await fetch("/__/firebase/init.json");
         if (response.ok) return await response.json();
@@ -302,9 +306,7 @@
           import(`${FIREBASE}/firebase-firestore.js`),
         ]);
         const config = await firebaseConfig();
-        if (isLocal) config.projectId = "demo-matchreferat";
         const db = fs.getFirestore(initializeApp(config));
-        if (isLocal) fs.connectFirestoreEmulator(db, "127.0.0.1", 8080);
         fs.onSnapshot(
           fs.doc(db, "matches", matchId),
           (snap) => (snap.exists() ? render(snap.data()) : showMessage("Matchen finns inte längre. Den som refererar kan ha stängt av live-delningen.")),

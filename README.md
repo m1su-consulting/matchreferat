@@ -22,7 +22,12 @@ Projektet genereras från `project.yml`, så ändra inställningar där och kör
 
 ## Livelänk
 
-Appen fungerar utan Firebase. För att aktivera livelänken, se [FIREBASE.md](FIREBASE.md). Konfigurationsfilen `Sources/GoogleService-Info.plist` checkas inte in.
+Appen har ingen inbyggd server och inga tredjepartsbibliotek. Livelänken använder en **live-server** som användaren kopplar själv: ett eget gratis Firebase-projekt, eller en kopplingslänk från någon som har ett. Appen loggar in anonymt och skriver matchen via Firebase REST-API:erna.
+
+- Guide för föräldrar: [docs/EGEN-SERVER.md](docs/EGEN-SERVER.md) (även på https://matchreferat.web.app/egen-server).
+- Kopplingslänkar skapas på https://matchreferat.web.app/koppla. Formatet är `matchreferat://koppla?p=<projectId>&k=<webApiKey>&n=<namn>`.
+- Livelänkar har servern i fragmentet: `https://matchreferat.web.app/m/<id>#p=<projectId>&k=<apiKey>`.
+- Webbsidor och regler för M1SU:s eget projekt: se [FIREBASE.md](FIREBASE.md).
 
 ## Struktur
 

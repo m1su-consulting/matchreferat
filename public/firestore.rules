@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // One document per live match. The id is a long random string that works as the
+    // link's secret: anyone holding it may read that single document, but nobody may
+    // list or query the collection. Only the anonymous user who created it may write.
+    match /matches/{matchId} {
+      allow get: if validId(matchId);
+      allow list: if false;
+
+      allow create: if validId(matchId)
+        && request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && validMatch(request.resource.data);
+
+      allow update: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && validMatch(request.resource.data);
+
+      allow delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    function validId(id) {
+      return id.size() >= 22 && id.size() <= 64 && id.matches('^[A-Za-z0-9]+$');
+    }
+
+    function shortString(value, max) {
+      return value is string && value.size() <= max;
+    }
+
+    function validMatch(d) {
+      return d.keys().hasAll(['v', 'ownerUid', 'ourTeam', 'opponent', 'isHome', 'homeName', 'awayName',
+                              'homeScore', 'awayScore', 'phase', 'running', 'accumulated', 'halfLength',
+                              'period', 'periods', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
+        && d.keys().hasOnly(['v', 'ownerUid', 'ourTeam', 'opponent', 'isHome', 'homeName', 'awayName',
+                             'homeScore', 'awayScore', 'phase', 'running', 'startedAt', 'accumulated',
+                             'halfLength', 'period', 'periods', 'periodText', 'clockLabel', 'stats', 'events', 'updatedAt', 'expireAt'])
+        && d.v == 1
+        && shortString(d.ourTeam, 60) && shortString(d.opponent, 60)
+        && shortString(d.homeName, 60) && shortString(d.awayName, 60)
+        && d.isHome is bool && d.running is bool
+        && d.homeScore is int && d.homeScore >= 0 && d.homeScore < 100
+        && d.awayScore is int && d.awayScore >= 0 && d.awayScore < 100
+        && d.phase in ['notStarted', 'playing', 'interval', 'finished']
+        && d.periods is int && d.periods >= 1 && d.periods <= 4
+        && d.period is int && d.period >= 1 && d.period <= d.periods
+        && (!('startedAt' in d) || d.startedAt is timestamp)
+        && d.accumulated is number && d.accumulated >= 0
+        && d.halfLength is int && d.halfLength > 0 && d.halfLength <= 60
+        && shortString(d.periodText, 40) && shortString(d.clockLabel, 12) && shortString(d.stats, 120)
+        && d.events is list && d.events.size() <= 200
+        && d.updatedAt == request.time
+        && d.expireAt is timestamp && d.expireAt <= request.time + duration.value(8, 'd');
+    }
+  }
+}

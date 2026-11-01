@@ -6,7 +6,6 @@ struct MatchreferatApp: App {
     @State private var live: LiveShare
 
     init() {
-        LiveBackend.configure()
         _store = State(initialValue: MatchStore())
         _live = State(initialValue: LiveShare())
     }
@@ -22,6 +21,10 @@ struct MatchreferatApp: App {
                     live.sync(store.state)
                 }
                 .onChange(of: store.teams) { store.saveTeams() }
+                // matchreferat://koppla?p=…&k=…&n=… connects a live server.
+                .onOpenURL { url in
+                    if url.scheme == "matchreferat" { live.pendingLink = url.absoluteString }
+                }
                 .task {
                     // Refresh the viewers' copy on launch, e.g. after the app was closed mid-match.
                     if live.isOn { live.sync(store.state) }
@@ -79,9 +82,11 @@ enum Theme {
 
 struct RootView: View {
     @Environment(MatchStore.self) private var store
+    @Environment(LiveShare.self) private var live
 
     var body: some View {
         @Bindable var store = store
+        let showConnect = Binding(get: { live.pendingLink != nil }, set: { if !$0 { live.pendingLink = nil } })
         NavigationStack {
             StartView()
                 .navigationDestination(isPresented: $store.showMatch) {
@@ -90,5 +95,6 @@ struct RootView: View {
                 }
         }
         .tint(Theme.green)
+        .sheet(isPresented: showConnect) { NavigationStack { LiveServerView() } }
     }
 }

@@ -1,0 +1,73 @@
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><style>:root{--bg:#fff;--text:#14181d;--muted:#5d636b;--accent:#1f8a49}@media (prefers-color-scheme:dark){:root{--bg:#000;--text:#f2f2f7;--muted:#9a9ca3;--accent:#39b36a}}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}main{max-width:680px;margin:0 auto;padding:32px 16px 48px}h1{font-size:28px;margin:0 0 4px}h2{font-size:19px;margin:28px 0 6px}p,li{color:var(--text)}.muted{color:var(--muted);font-size:14px}a{color:var(--accent)}hr{border:0;border-top:1px solid #8884;margin:36px 0}</style><style>.box{background:#8881;border-radius:12px;padding:16px;margin:16px 0}label{display:block;font-weight:600;margin:12px 0 4px}input{width:100%;box-sizing:border-box;font:inherit;padding:10px;border-radius:10px;border:1px solid #8886;background:var(--bg);color:var(--text)}.btn{display:inline-block;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px 20px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer;margin:8px 8px 0 0}.btn.secondary{background:#8883;color:var(--text)}code,pre{font-family:ui-monospace,Menlo,monospace;font-size:13px}pre{white-space:pre-wrap;word-break:break-all;background:#8881;border-radius:10px;padding:12px;max-height:340px;overflow:auto}#qr{background:#fff;display:inline-block;padding:12px;border-radius:12px}#qr img{display:block;width:220px;height:220px;image-rendering:pixelated}ol li{margin:6px 0}</style><title>Egen live-server – Matchreferat</title></head><body><main>
+<h1>Skapa en egen live-server</h1>
+<p class="muted">Matchreferat · tar cirka 15 minuter · gratis</p>
+
+<p>Livelänken i Matchreferat behöver en plats där matchen kan lagras medan andra tittar. Den platsen är en gratis databas hos Google Firebase som <strong>du</strong> äger. Ingen annan kan läsa dina matcher utan länken, och allt raderas automatiskt.</p>
+<p>Du behöver ett Google-konto. Gratisnivån (Spark) räcker gott, och du behöver inte ange något kort.</p>
+
+<h2>1. Skapa ett Firebase-projekt</h2>
+<ol>
+<li>Gå till <a href="https://console.firebase.google.com/">console.firebase.google.com</a> och logga in med ditt Google-konto.</li>
+<li>Klicka <strong>Skapa ett projekt</strong> (Create a project), ge det ett namn, till exempel <em>mitt-lag-live</em>.</li>
+<li>Google Analytics behövs inte – stäng av det. Klicka <strong>Skapa</strong>.</li>
+</ol>
+
+<h2>2. Slå på anonym inloggning</h2>
+<ol>
+<li>I vänstermenyn: <strong>Security → Authentication</strong>. Klicka <strong>Get started</strong> om knappen visas.</li>
+<li>Fliken <strong>Sign-in method</strong> → <strong>Anonymous</strong> → slå på <strong>Enable</strong> → <strong>Save</strong>.</li>
+</ol>
+<p class="muted">Ingen behöver skapa konto. Den anonyma inloggningen gör bara att endast din telefon kan ändra din match.</p>
+
+<h2>3. Skapa databasen</h2>
+<ol>
+<li>I vänstermenyn: <strong>Databases &amp; Storage → Firestore</strong> → <strong>Create database</strong>.</li>
+<li>Välj en plats i Europa, till exempel <strong>europe-north1 (Finland)</strong> eller <strong>eur3</strong>. Den går inte att ändra senare.</li>
+<li>Välj <strong>Start in production mode</strong> → <strong>Create</strong>.</li>
+</ol>
+
+<h2>4. Lägg in säkerhetsreglerna</h2>
+<ol>
+<li>I Firestore, öppna fliken <strong>Rules</strong>.</li>
+<li>Ta bort allt som står där och klistra in reglerna nedan. Klicka <strong>Publish</strong>.</li>
+</ol>
+<button class="btn secondary" id="copy-rules" type="button">Kopiera reglerna</button>
+<pre id="rules">Laddar reglerna…</pre>
+<p class="muted">Reglerna gör att vem som helst med en länk kan läsa just den matchen, men ingen kan lista matcher och bara den som skapade matchen kan ändra den.</p>
+
+<h2>5. Automatisk radering (rekommenderas)</h2>
+<ol>
+<li>I Firestore, öppna fliken <strong>Time-to-live (TTL)</strong> → <strong>Create policy</strong>.</li>
+<li>Collection group: <code>matches</code>, Timestamp field: <code>expireAt</code> → <strong>Create</strong>.</li>
+</ol>
+<p class="muted">Då raderas matcher automatiskt sju dagar efter senaste uppdateringen. Matchen raderas också direkt när du stänger av "Dela live".</p>
+
+<h2>6. Hämta uppgifterna för appen</h2>
+<ol>
+<li>Klicka på kugghjulet → <strong>Project settings</strong>.</li>
+<li>Under <strong>Your apps</strong>, klicka på webbikonen <strong>&lt;/&gt;</strong> för att lägga till en webbapp. Ge den valfritt namn. Firebase Hosting behövs inte.</li>
+<li>Du ser nu en kodruta med <code>firebaseConfig</code>. Där står <code>apiKey</code> (börjar med <em>AIza</em>) och <code>projectId</code>. Det är de två du behöver.</li>
+</ol>
+<p class="muted">API-nyckeln för webben är inte hemlig – den identifierar bara projektet. Det är säkerhetsreglerna som skyddar datan.</p>
+
+<h2>7. Koppla appen</h2>
+<ol>
+<li>Gå till <a href="/koppla">matchreferat.web.app/koppla</a>, fyll i projekt-id och API-nyckel och klicka <strong>Skapa kopplingslänk</strong>.</li>
+<li>Öppna länken på telefonen (eller skanna QR-koden) och tryck <strong>Öppna i Matchreferat</strong>. Appen testar anslutningen och kopplas.</li>
+<li>Klart! Nu fungerar <strong>Dela live</strong> på matchsidan. Du kan dela kopplingslänken med andra föräldrar du litar på.</li>
+</ol>
+
+<h2>Om något inte fungerar</h2>
+<p>Gå till <strong>Inställningar → Live-server → Testa anslutningen</strong> i appen. Den talar om vad som saknas: anonym inloggning, databasen eller säkerhetsreglerna.</p>
+
+<hr>
+<p class="muted"><a href="/support">Support</a> · <a href="/integritet">Integritetspolicy</a></p>
+</main>
+<script>
+  fetch("/firestore.rules").then(r => r.text()).then(t => { document.getElementById("rules").textContent = t; });
+  document.getElementById("copy-rules").onclick = async () => {
+    await navigator.clipboard.writeText(document.getElementById("rules").textContent);
+    document.getElementById("copy-rules").textContent = "Kopierat!";
+  };
+</script>
+</body></html>

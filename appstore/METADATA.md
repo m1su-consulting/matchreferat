@@ -115,6 +115,8 @@ Förklaring: bara när användaren slår på "Dela live" skickas lagnamn, hände
 
 Inloggning krävs: **Nej**
 
+Från version 1.0.1 har appen ingen inbyggd server. Granskaren behöver en kopplingslänk för att testa Dela live. **Klistra in Mikaels kopplingslänk i App Store Connect, inte här** – repot är publikt och länken ger tillgång till hans Firebase-projekt.
+
 ```
 Matchreferat lets a parent log events of a youth football match and optionally share a live link.
 
@@ -122,10 +124,13 @@ How to test (no login needed):
 1. On the start page, tap "Prova med ett exempellag" (adds a team with fictional players), or "Lägg till lag" to create your own.
 2. Tap "Ny match", choose the team, type any opponent name and tap "Starta".
 3. Tap "Avspark" to start the clock, then use the buttons (Mål, Skott på mål, Hörna, Gult kort, Byte …). Each event can be undone from the toast at the bottom.
-4. Tap "Dela live" at the top right and switch it on to get a link and QR code. Open the link in Safari to see the live page update as you log events. Switching it off deletes the shared match from the server.
-5. "⋯" opens the timeline and a text report (Kopiera/Dela), today's squad and match settings.
+4. Live sharing needs a live server (a Firebase project the user owns or is given access to). To connect our test server, open this link on the device:
+   <KOPPLINGSLÄNK>
+   (or paste it under Inställningar → Live-server). The app tests the connection and confirms.
+5. Go back to the match, tap "Dela live" at the top right and switch it on to get a link and QR code. Open the link in Safari to see the live page update as you log events. Switching it off deletes the shared match from the server.
+6. "⋯" opens the timeline and a text report (Kopiera/Dela), today's squad and match settings. Licenses are under Inställningar → Licenser.
 
-Privacy: no account. Only team names, events and players as first name + shirt number are uploaded, and only when live sharing is on. Shared matches are deleted when sharing stops or after 7 days. Privacy policy: https://matchreferat.web.app/integritet
+Privacy: no account. Only team names, events and players as first name + shirt number are uploaded, and only to the live server the user has connected, and only when live sharing is on. Shared matches are deleted when sharing stops or after 7 days. Privacy policy: https://matchreferat.web.app/integritet
 ```
 
 Kontaktuppgifter för granskning: ditt namn, telefon och e-post.

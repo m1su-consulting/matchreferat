@@ -6,7 +6,7 @@ Appen fungerar helt utan Firebase. Live-delningen aktiveras när du har gjort st
 
 Projektet `matchreferat` är uppsatt: anonym inloggning, Firestore, iOS-appen och Hosting finns, och regler och webbsida är publicerade. Länkarna ser ut så här: `https://matchreferat.web.app/m/<24 tecken>`.
 
-Appen använder Firebase SDK bara för anonym inloggning. Matchen skrivs med Firestore REST API, med användarens ID-token, eftersom Firestore-SDK:ns egen nätverksstack aldrig fick kontakt från den här Macen.
+Från version 1.0.1 innehåller appen inget Firebase-SDK och ingen inbyggd server. Användaren kopplar en live-server med en kopplingslänk (se [docs/EGEN-SERVER.md](docs/EGEN-SERVER.md)). Projektet `matchreferat` är M1SU:s egen server, och dess kopplingslänk delas bara med personer Mikael litar på. Webbsidorna (livesida, `/koppla`, `/egen-server`, integritetspolicy) ligger på Hosting i det här projektet och fungerar för alla servrar.
 
 ## Vad som delas
 
@@ -22,7 +22,7 @@ Appen använder Firebase SDK bara för anonym inloggning. Matchen skrivs med Fir
 2. **Slå på anonym inloggning.** Gå till *Build → Authentication → Kom igång → Sign-in method → Anonymous → Aktivera*.
 3. **Skapa databasen.** Gå till *Build → Firestore Database → Skapa databas*. Välj region `eur3 (europe-west)` eller `europe-north1`, och välj produktionsläge.
 4. **Radera gamla matcher automatiskt** (rekommenderas). Gå till *Firestore → TTL → Skapa policy*, med samlingsgrupp `matches` och fält `expireAt`. Om TTL inte är tillgängligt i ditt prisplan döljer webbsidan ändå utgångna matcher, och appen raderar matchen när du stänger av live-delningen.
-5. **Lägg till iOS-appen.** Klicka på kugghjulet, välj *Projektinställningar → Lägg till app → iOS* och ange bundle-ID `se.matchreferat.app`. Ladda ner **GoogleService-Info.plist** och lägg filen i `~/Developer/matchreferat/Sources/`. Filen är git-ignorerad.
+5. **Lägg till en webbapp** (kugghjulet → Projektinställningar → Lägg till app → Webb) för att få `apiKey` och `projectId` till kopplingslänken. Någon GoogleService-Info.plist behövs inte längre.
 6. **Aktivera hosting.** Gå till *Build → Hosting → Kom igång*. Du kan klicka förbi stegen, eftersom de redan är gjorda i det här projektet.
 7. **Logga in och koppla projektet** i Terminal:
    ```bash
@@ -50,11 +50,7 @@ npm run test:rules   # regeltester: listning nekas, andra användare kan inte sk
 npm run emulators    # Auth 9099, Firestore 8080, webbsida http://127.0.0.1:5002
 ```
 
-Starta appen i simulatorn mot emulatorn:
-
-```bash
-xcrun simctl launch booted se.matchreferat.app -liveEmulator YES -demoLive YES
-```
+Emulatorerna används bara för regeltesterna. Appen pratar alltid med en riktig live-server.
 
 Webbsidan med exempeldata, utan backend: `public/index.html?demo=1`.
 

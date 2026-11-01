@@ -1,0 +1,64 @@
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><style>:root{--bg:#fff;--text:#14181d;--muted:#5d636b;--accent:#1f8a49}@media (prefers-color-scheme:dark){:root{--bg:#000;--text:#f2f2f7;--muted:#9a9ca3;--accent:#39b36a}}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}main{max-width:680px;margin:0 auto;padding:32px 16px 48px}h1{font-size:28px;margin:0 0 4px}h2{font-size:19px;margin:28px 0 6px}p,li{color:var(--text)}.muted{color:var(--muted);font-size:14px}a{color:var(--accent)}hr{border:0;border-top:1px solid #8884;margin:36px 0}</style><style>.box{background:#8881;border-radius:12px;padding:16px;margin:16px 0}label{display:block;font-weight:600;margin:12px 0 4px}input{width:100%;box-sizing:border-box;font:inherit;padding:10px;border-radius:10px;border:1px solid #8886;background:var(--bg);color:var(--text)}.btn{display:inline-block;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px 20px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer;margin:8px 8px 0 0}.btn.secondary{background:#8883;color:var(--text)}code,pre{font-family:ui-monospace,Menlo,monospace;font-size:13px}pre{white-space:pre-wrap;word-break:break-all;background:#8881;border-radius:10px;padding:12px;max-height:340px;overflow:auto}#qr{background:#fff;display:inline-block;padding:12px;border-radius:12px}#qr img{display:block;width:220px;height:220px;image-rendering:pixelated}ol li{margin:6px 0}</style><title>Koppla live-server – Matchreferat</title><meta name="robots" content="noindex"></head><body><main>
+<h1>Koppla live-server</h1>
+<p class="muted">Matchreferat</p>
+
+<section id="link-view" hidden>
+  <p>Den här länken kopplar Matchreferat till live-servern <strong id="server-name"></strong>. Öppna den på telefonen där appen finns, eller skanna QR-koden med telefonens kamera.</p>
+  <a class="btn" id="open-app" href="#">Öppna i Matchreferat</a>
+  <button class="btn secondary" id="copy-link" type="button">Kopiera länken</button>
+  <div class="box" style="text-align:center"><div id="qr"></div></div>
+  <p class="muted">Har du inte appen? Hämta Matchreferat i App Store och öppna sedan länken igen. Du kan också klistra in länken under Inställningar → Live-server i appen.</p>
+</section>
+
+<section id="form-view" hidden>
+  <p>Har du skapat en egen Firebase-databas? Fyll i uppgifterna från Firebase så får du en kopplingslänk och en QR-kod. Inget sparas, allt sker i din webbläsare. Se <a href="/egen-server">guiden</a> om du inte har gjort det än.</p>
+  <form id="form" class="box">
+    <label for="p">Projekt-id (projectId)</label>
+    <input id="p" required pattern="[a-z0-9-]{4,40}" placeholder="t.ex. mitt-lag-live" autocomplete="off" autocapitalize="none">
+    <label for="k">Webb-API-nyckel (apiKey)</label>
+    <input id="k" required pattern="[A-Za-z0-9_-]{20,60}" placeholder="AIza…" autocomplete="off" autocapitalize="none">
+    <label for="n">Namn som visas i appen (frivilligt)</label>
+    <input id="n" maxlength="40" placeholder="t.ex. Björkdalens IF">
+    <button class="btn" type="submit">Skapa kopplingslänk</button>
+  </form>
+</section>
+
+<hr>
+<p class="muted">Den som kopplar appen till en live-server sparar sina delade matcher där. Ge bara länken till personer du litar på. <a href="/integritet">Integritetspolicy</a> · <a href="/egen-server">Guide</a></p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const valid = (p, k) => /^[a-z0-9-]{4,40}$/.test(p || "") && /^[A-Za-z0-9_-]{20,60}$/.test(k || "");
+
+  function show(p, k, n) {
+    const name = n || p;
+    const web = location.origin + "/koppla#p=" + p + "&k=" + k + "&n=" + encodeURIComponent(name);
+    const app = "matchreferat://koppla?p=" + p + "&k=" + k + "&n=" + encodeURIComponent(name);
+    document.getElementById("server-name").textContent = name;
+    document.getElementById("open-app").href = app;
+    document.getElementById("copy-link").onclick = async () => {
+      await navigator.clipboard.writeText(web);
+      document.getElementById("copy-link").textContent = "Kopierad!";
+    };
+    const qr = qrcode(0, "M");
+    qr.addData(web);
+    qr.make();
+    document.getElementById("qr").innerHTML = qr.createImgTag(6, 0);
+    if (location.hash.slice(1) !== web.split("#")[1]) history.replaceState(null, "", web);
+    document.getElementById("form-view").hidden = true;
+    document.getElementById("link-view").hidden = false;
+  }
+
+  if (valid(hash.get("p"), hash.get("k"))) {
+    show(hash.get("p"), hash.get("k"), hash.get("n"));
+  } else {
+    document.getElementById("form-view").hidden = false;
+    document.getElementById("form").onsubmit = (e) => {
+      e.preventDefault();
+      const p = document.getElementById("p").value.trim(), k = document.getElementById("k").value.trim();
+      if (valid(p, k)) show(p, k, document.getElementById("n").value.trim());
+    };
+  }
+</script>
+</body></html>
