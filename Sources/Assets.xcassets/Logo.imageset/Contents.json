@@ -1,6 +1,6 @@
 {
   "images" : [
-    { "filename" : "logo.jpg", "idiom" : "universal" }
+    { "filename" : "m1su-logo.png", "idiom" : "universal" }
   ],
   "info" : { "author" : "xcode", "version" : 1 }
 }

@@ -110,23 +110,20 @@ struct Logo: View {
     }
 }
 
-/// Small "Utvecklad av" credit with Mikael's M1SU Consulting logo. The logo is a JPG with a
-/// white background, so it sits on a white card that also looks deliberate in dark mode.
+/// Small "Utvecklad av" credit with Mikael's M1SU Consulting logo.
 struct MadeBy: View {
     var body: some View {
         VStack(spacing: 8) {
             Text("Utvecklad av")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            // The logo has its own metal frame on white, so it only needs rounded corners and a soft shadow.
             Image("Logo")
                 .resizable()
                 .scaledToFit()
-                .frame(height: 40)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(.white, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.primary.opacity(0.08)))
-                .opacity(0.9)
+                .frame(height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
                 .accessibilityLabel("M1SU Consulting")
             HStack(spacing: 16) {
                 Link("Integritetspolicy", destination: URL(string: "https://matchreferat.web.app/integritet")!)
