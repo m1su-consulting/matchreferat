@@ -74,7 +74,7 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 • Straff i fotboll: logga straffmål, räddade och missade straffar för båda lagen
 • Lag och matcher sparas per sport, och Pågår nu visar sportikon
 • Inställningar: håll skärmen tänd under match, vibration av eller på, vilken sport appen öppnar med
-• Ny startbild
+• Ny appikon och nya startbilder
 ```
 
 **Nyheter i 1.0.2** (inskickad tidigare, sparas som referens)

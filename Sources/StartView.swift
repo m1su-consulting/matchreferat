@@ -272,20 +272,12 @@ struct SportPickerView: View {
     }
 }
 
-/// The app logo (a girl kicking a football) with the app name.
+/// The app name as the sport picker's heading.
 struct Logo: View {
     var body: some View {
-        VStack(spacing: 10) {
-            Image("AppLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 120, height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                .accessibilityHidden(true)
-            Text("Matchreferat")
-                .font(.title.weight(.heavy))
-        }
+        Text("Matchreferat")
+            .font(.largeTitle.weight(.heavy))
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
