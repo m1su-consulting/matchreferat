@@ -2,7 +2,7 @@
 <h1>Skapa en egen live-server</h1>
 <p class="muted">Matchreferat · tar cirka 15 minuter · gratis</p>
 
-<p>Livelänken i Matchreferat behöver en plats där matchen kan lagras medan andra tittar. Den platsen är en gratis databas hos Google Firebase som <strong>du</strong> äger. Ingen annan kan läsa dina matcher utan länken, och allt raderas automatiskt.</p>
+<p>Livelänken i Matchreferat behöver en plats där matchen kan lagras medan andra tittar. Den platsen är en gratis databas hos Google Firebase som <strong>du</strong> äger. Ingen annan kan läsa dina matcher utan länken, och gamla matcher går inte att läsa efter sju dagar.</p>
 <p>Du behöver ett Google-konto. Gratisnivån (Spark) räcker gott, och du behöver inte ange något kort.</p>
 
 <h2>1. Skapa ett Firebase-projekt</h2>
@@ -34,15 +34,11 @@
 <button class="btn secondary" id="copy-rules" type="button">Kopiera reglerna</button>
 <pre id="rules">Laddar reglerna…</pre>
 <p class="muted">Reglerna gör att vem som helst med en livelänk kan läsa just den matchen, men ingen kan lista matcherna och bara den som skapade matchen kan ändra den. Alla som har kopplat appen till servern (med kopplingslänken) ser dessutom en lista "Pågår nu" med lagnamn, ställning och matchminut för matcher som delas live. Spelare och händelser syns bara på livesidan.</p>
-<p class="muted"><strong>Har du redan en server?</strong> Klistra in reglerna igen när du uppdaterar appen till 1.0.2, annars visas inte "Pågår nu". Livedelningen fungerar ändå med de gamla reglerna.</p>
+<p class="muted"><strong>Har du redan en server?</strong> Klistra in reglerna igen när du uppdaterar appen, till exempel till 1.0.2 (annars visas inte "Pågår nu") och 1.0.3 (som stoppar utgångna matcher). Livedelningen fungerar ändå med de gamla reglerna.</p>
 
-<h2>5. Automatisk radering (rekommenderas)</h2>
-<ol>
-<li>I Firestore, öppna fliken <strong>Time-to-live (TTL)</strong> → <strong>Create policy</strong>.</li>
-<li>Collection group: <code>matches</code>, Timestamp field: <code>expireAt</code> → <strong>Create</strong>.</li>
-<li>Skapa en policy till med Collection group: <code>ongoing</code>, Timestamp field: <code>expireAt</code>.</li>
-</ol>
-<p class="muted">Då raderas matcher automatiskt sju dagar efter senaste uppdateringen. Matchen raderas också direkt när du stänger av "Dela live".</p>
+<h2>5. Radering av gamla matcher</h2>
+<p>Det här sköts av reglerna och appen, så du behöver inte göra något. Matchen raderas direkt när du stänger av "Dela live". Har en match inte uppdaterats på sju dagar går den inte längre att läsa, och appen raderar den från servern nästa gång den öppnas.</p>
+<p class="muted"><strong>Har du betalplanen Blaze?</strong> Då kan du låta Firebase radera utgångna matcher själv: i Firestore, öppna fliken <strong>Time-to-live (TTL)</strong> → <strong>Create policy</strong>, med Collection group <code>matches</code> och Timestamp field <code>expireAt</code>, och en policy till för <code>ongoing</code>. På gratisnivån Spark finns inte TTL.</p>
 
 <h2>6. Hämta uppgifterna för appen</h2>
 <ol>

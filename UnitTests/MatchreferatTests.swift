@@ -323,5 +323,36 @@ struct LiveServerTests {
         // The first commit (match + summary) is refused and retried alone; later commits skip the summary.
         #expect(client.writeCounts == [2, 1, 1])
     }
-}
 
+    @Test func findsExpiredMatchesToDelete() {
+        let now = Date.now
+        func match(_ id: String, expires: TimeInterval) -> OngoingMatch {
+            OngoingMatch(id: id, ownerUid: "anna", homeName: "A", awayName: "B", homeScore: 0, awayScore: 0,
+                         phase: .playing, periodText: "", clockLabel: "", updatedAt: now - 8 * 86400, expireAt: now + expires)
+        }
+        let all = [match("live", expires: 86400), match("justNow", expires: -60), match("old", expires: -7200),
+                   match("mine", expires: -7200)]
+        #expect(OngoingMatch.expired(all, ownMatch: "mine", now: now) == ["old"])
+    }
+
+    @MainActor
+    @Test func expiredShareIsDeletedOnLaunch() async throws {
+        let suite = "matchreferat-tests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let server = LiveServer(projectID: "utgangen", apiKey: "AIzaTESTKEY0123456789abcdefghijklmnop", name: "Test")
+        defaults.set(try JSONEncoder().encode(server), forKey: "liveServer")
+        defaults.set("AbCdEfGhIjKlMnOpQrStUv12", forKey: "liveMatchID")
+        let live = LiveShare(client: OldRulesServer(), defaults: defaults)
+        #expect(live.isOn)
+
+        // Shared with 1.0.2: no expiry saved yet, so it starts counting now.
+        await live.expireIfNeeded()
+        #expect(live.isOn)
+        await live.expireIfNeeded(now: .now.addingTimeInterval(6 * 86400))
+        #expect(live.isOn)
+        await live.expireIfNeeded(now: .now.addingTimeInterval(8 * 86400))
+        #expect(!live.isOn)
+        #expect(defaults.string(forKey: "liveMatchID") == nil)
+    }
+}

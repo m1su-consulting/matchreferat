@@ -349,7 +349,8 @@
         fs.onSnapshot(
           fs.doc(db, "matches", matchId),
           (snap) => (snap.exists() ? render(snap.data()) : showMessage("Matchen finns inte längre. Den som refererar kan ha stängt av live-delningen.")),
-          () => showMessage("Kunde inte hämta matchen. Kontrollera länken eller försök igen senare."),
+          // The rules refuse a match whose link has expired (after 7 days), so that is the likely cause.
+          () => showMessage("Kunde inte hämta matchen. Länken kan ha gått ut (efter 7 dagar), eller så är den fel."),
         );
       } catch {
         showMessage("Kunde inte ansluta. Kontrollera nätet och ladda om sidan.");

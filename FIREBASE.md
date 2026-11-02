@@ -14,14 +14,14 @@ Från version 1.0.1 innehåller appen inget Firebase-SDK och ingen inbyggd serve
 - Händelser med spelare som **förnamn + tröjnummer**, till exempel "Mål! Selma (10), assist Wilma (8)". Efternamn lämnar aldrig telefonen.
 - Motståndaren är bara ett lagnamn. Inga uppgifter om deras spelare sparas eller visas.
 - Länken innehåller en slumpkod på 24 tecken. Den går inte att gissa, och ingen kan lista matcher.
-- Matchen raderas när du stänger av "Dela live". Annars slutar länken fungera 7 dagar efter senaste uppdateringen.
+- Matchen raderas när du stänger av "Dela live". Annars slutar länken fungera 7 dagar efter senaste uppdateringen: reglerna nekar läsning efter `expireAt`, och appen raderar sin utgångna delning nästa gång den öppnas. Inloggade får radera andras utgångna matcher, så appar som hittar dem i `ongoing` städar bort dem.
 
 ## Engångsuppsättning
 
 1. **Skapa projektet.** Gå till https://console.firebase.google.com, välj *Lägg till projekt* och döp det till exempel till `matchreferat`. Google Analytics behövs inte, så stäng av det.
 2. **Slå på anonym inloggning.** Gå till *Build → Authentication → Kom igång → Sign-in method → Anonymous → Aktivera*.
 3. **Skapa databasen.** Gå till *Build → Firestore Database → Skapa databas*. Välj region `eur3 (europe-west)` eller `europe-north1`, och välj produktionsläge.
-4. **Radera gamla matcher automatiskt** (rekommenderas). Gå till *Firestore → TTL → Skapa policy*, med samlingsgrupp `matches` och fält `expireAt`. Om TTL inte är tillgängligt i ditt prisplan döljer webbsidan ändå utgångna matcher, och appen raderar matchen när du stänger av live-delningen.
+4. **TTL (bara Blaze).** TTL kräver betalplan, så M1SU:s projekt använder det inte. Med Blaze kan du lägga till policyer under *Firestore → TTL* för `matches` och `ongoing` med fältet `expireAt`.
 5. **Lägg till en webbapp** (kugghjulet → Projektinställningar → Lägg till app → Webb) för att få `apiKey` och `projectId` till kopplingslänken. Någon GoogleService-Info.plist behövs inte längre.
 6. **Aktivera hosting.** Gå till *Build → Hosting → Kom igång*. Du kan klicka förbi stegen, eftersom de redan är gjorda i det här projektet.
 7. **Logga in och koppla projektet** i Terminal:

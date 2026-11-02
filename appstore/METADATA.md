@@ -58,7 +58,7 @@ INTEGRITET
 • Inget konto och ingen reklam
 • Bara förnamn och tröjnummer delas – efternamn lämnar aldrig telefonen
 • Motståndarlaget anges bara med namn
-• Delade matcher raderas när du stänger av delningen, annars efter 7 dagar
+• Delade matcher raderas när du stänger av delningen och slutar visas efter 7 dagar
 ```
 
 **Nyckelord (100)**
@@ -156,7 +156,7 @@ How to test (no login needed):
 7. When logging a shot ("Skott på mål"/"Skott utanför") you can pick the shooter or tap "Hoppa över"; a player is never required.
 8. New in 1.0.2: when a live server is connected, the start page shows "Pågår nu", a list of matches that other people are sharing live on the same server (team names, score and minute only). To test it, share a match from one device and look at the start page on another device connected with the same link; tapping a match opens its live page. With nothing shared it shows "Inga matcher pågår just nu". Your own match is not listed there, it appears under "Pågående match".
 
-Privacy: no account. Only team names, events and players as first name + shirt number are uploaded, and only to the live server the user has connected, and only when live sharing is on. Users connected to the same server see team names, score and minute of ongoing shared matches in "Pågår nu"; players and events are only on the live page. Shared matches are deleted when sharing stops or after 7 days. Privacy policy: https://matchreferat.web.app/integritet
+Privacy: no account. Only team names, events and players as first name + shirt number are uploaded, and only to the live server the user has connected, and only when live sharing is on. Users connected to the same server see team names, score and minute of ongoing shared matches in "Pågår nu"; players and events are only on the live page. Shared matches are deleted when sharing stops. After 7 days without an update the Firestore rules refuse to read them, and the app deletes them from the server the next time it opens (Firestore TTL needs a paid plan, so the rules and the app enforce expiry instead). Privacy policy: https://matchreferat.web.app/integritet
 ```
 
 Kontaktuppgifter för granskning: ditt namn, telefon och e-post.

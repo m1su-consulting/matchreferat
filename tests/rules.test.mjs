@@ -186,3 +186,28 @@ test("okänd sport eller fel typ nekas", async () => {
   await assertFails(setDoc(doc(db("alice"), "matches", ID), match("alice", { sport: 1 })));
   await assertFails(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { sport: "handboll" })));
 });
+
+// Firestore TTL needs a paid plan, so the rules enforce `expireAt` themselves.
+const past = () => Timestamp.fromMillis(Date.now() - 3600e3);
+
+test("en utgången match går inte att läsa, och en som saknas ger inget fel", async () => {
+  await assertSucceeds(setDoc(doc(db("alice"), "matches", ID), match("alice", { expireAt: past() })));
+  await assertFails(getDoc(doc(db(null), "matches", ID)));
+  await assertFails(getDoc(doc(db("alice"), "matches", ID)));
+  await assertSucceeds(getDoc(doc(db(null), "matches", "SaknasSaknasSaknasSaknas")));
+});
+
+test("vem som helst inloggad kan radera en utgången match och sammanfattning", async () => {
+  await assertSucceeds(setDoc(doc(db("alice"), "matches", ID), match("alice", { expireAt: past() })));
+  await assertSucceeds(setDoc(doc(db("alice"), "ongoing", ID), ongoing("alice", { expireAt: past() })));
+  await assertFails(deleteDoc(doc(db(null), "matches", ID)));
+  await assertSucceeds(deleteDoc(doc(db("bob"), "matches", ID)));
+  await assertSucceeds(deleteDoc(doc(db("bob"), "ongoing", ID)));
+});
+
+test("en match som inte har gått ut kan bara ägaren radera", async () => {
+  await seed();
+  await seedOngoing();
+  await assertFails(deleteDoc(doc(db("bob"), "matches", ID)));
+  await assertFails(deleteDoc(doc(db("bob"), "ongoing", ID)));
+});

@@ -12,6 +12,7 @@ Senast uppdaterad 2026-11-02.
   - Inställningar: skärm tänd, vibration, sport vid start, live-server och om appen.
   - Ny appikon och ny första sida.
   - Live: valfritt fält `sport` i Firestore-reglerna och webbvisare för innebandy.
+  - Utgångna delningar (7 dagar utan uppdatering) går inte att läsa och raderas av appen.
 
 ## Nästa steg
 
@@ -23,12 +24,9 @@ Senast uppdaterad 2026-11-02.
 6. Uppdatera `appstore/METADATA.md` för 1.0.3: nyheter, undertitel, nyckelord (innebandy) och granskningsanteckningar.
 7. Bygg och ladda upp med `scripts/archive.sh --upload`, och skicka in 1.0.3 för granskning.
 
-## Öppna frågor
-
-- **Radering efter 7 dagar.** Integritetspolicyn, App Store-texten och guiden lovar att delade matcher raderas senast 7 dagar efter senaste uppdateringen. Appen sätter fältet `expireAt` sju dagar fram, men själva raderingen kräver en TTL-policy i Firebase-projektet (för `matches` och `ongoing`). M1SU:s eget projekt har ingen sådan policy. Antingen slår vi på TTL där, eller så ändrar vi texterna så att de stämmer.
-
 ## Att komma ihåg
 
+- Radering efter 7 dagar utan betalplan (TTL kräver Blaze): reglerna nekar läsning efter `expireAt` och låter vem som helst inloggad radera utgångna matcher. Appen raderar sin egen utgångna delning vid start och städar utgångna matcher den hittar i Pågår nu. Texterna i integritetspolicyn, guiden, supporten och App Store säger samma sak.
 - Ingen lista över tidigare matcher behövs. Referatet i slutet av matchen räcker, och appen är till för live.
 - Repot har en LICENSE med "alla rättigheter förbehållna" (beslutat 2026-11-02). Koden får läsas men inte återanvändas.
 - Lägg aldrig in kopplingslänken till M1SU:s eget Firebase-projekt i repot. Den finns bara i granskningsanteckningarna i App Store Connect.

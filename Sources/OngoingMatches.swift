@@ -66,6 +66,12 @@ struct OngoingMatch: Identifiable, Equatable, Sendable {
         return ISO8601DateFormatter().date(from: whole)
     }
 
+    /// Matches whose `expireAt` passed over an hour ago (a margin for a phone clock that runs fast),
+    /// for the app to delete from the server. Never the match this phone is sharing.
+    static func expired(_ all: [OngoingMatch], ownMatch: String?, now: Date) -> [String] {
+        all.filter { $0.id != ownMatch && $0.expireAt < now.addingTimeInterval(-3600) }.prefix(100).map(\.id)
+    }
+
     /// Other people's matches that are still live, most recently updated first.
     static func visible(_ all: [OngoingMatch], excludingOwner uid: String?, ownMatch: String?, now: Date) -> [OngoingMatch] {
         all.filter { match in

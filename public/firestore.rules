@@ -6,8 +6,10 @@ service cloud.firestore {
     // One document per live match. The id is a long random string that works as the
     // link's secret: anyone holding it may read that single document, but nobody may
     // list or query the collection. Only the anonymous user who created it may write.
+    // Firestore TTL needs a paid plan, so `expireAt` is enforced here instead: an expired match
+    // can't be read, and anyone signed in may delete it, so any app that finds it cleans it up.
     match /matches/{matchId} {
-      allow get: if validId(matchId);
+      allow get: if validId(matchId) && (resource == null || !expired(resource.data));
       allow list: if false;
 
       allow create: if validId(matchId)
@@ -21,7 +23,7 @@ service cloud.firestore {
         && validMatch(request.resource.data);
 
       allow delete: if request.auth != null
-        && resource.data.ownerUid == request.auth.uid;
+        && (resource == null || resource.data.ownerUid == request.auth.uid || expired(resource.data));
     }
 
     // A small public summary of each ongoing shared match, so people connected to the same
@@ -41,9 +43,14 @@ service cloud.firestore {
         && request.resource.data.ownerUid == resource.data.ownerUid
         && validOngoing(request.resource.data);
 
-      // Deleting a summary that is already gone is allowed, so the app can always clean up.
+      // Deleting a summary that is already gone is allowed, so the app can always clean up, and so
+      // is deleting someone else's expired summary.
       allow delete: if request.auth != null
-        && (resource == null || resource.data.ownerUid == request.auth.uid);
+        && (resource == null || resource.data.ownerUid == request.auth.uid || expired(resource.data));
+    }
+
+    function expired(d) {
+      return d.expireAt < request.time;
     }
 
     function validId(id) {

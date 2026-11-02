@@ -5,6 +5,7 @@ import SwiftUI
 struct MatchreferatApp: App {
     @State private var store: MatchStore
     @State private var live: LiveShare
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         _store = State(initialValue: MatchStore(container: Persistence.container()))
@@ -22,12 +23,17 @@ struct MatchreferatApp: App {
                 }
                 .onChange(of: store.teams) { store.saveTeams() }
                 // matchreferat://koppla?p=…&k=…&n=… connects a live server.
+                .onChange(of: scenePhase) {
+                    if scenePhase == .active { Task { await live.expireIfNeeded() } }
+                }
                 .onOpenURL { url in
                     if url.scheme == "matchreferat" { live.pendingLink = url.absoluteString }
                 }
                 .task {
-                    // Refresh the viewers' copy on launch, e.g. after the app was closed mid-match.
-                    if live.isOn { live.sync(store.state) }
+                    // A share older than 7 days is deleted. Otherwise refresh the viewers' copy, e.g. after
+                    // the app was closed mid-match; a finished match isn't refreshed, so it still expires.
+                    await live.expireIfNeeded()
+                    if live.isOn && store.state.phase != .finished { live.sync(store.state) }
                     #if DEBUG
                     // `-demoScreenshots YES` shows a fictional team mid-match (App Store screenshots), with
                     // `-sport floorball` a floorball team.

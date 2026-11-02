@@ -150,6 +150,7 @@ final class LiveShare {
     private static let idKey = "liveMatchID"
     private static let serverKey = "liveServer"
     private static let sessionKey = "liveSession"
+    private static let expiresKey = "liveExpires"
     private static let log = Logger(subsystem: "se.matchreferat.app", category: "live")
     private static let lifetime: TimeInterval = 7 * 24 * 3600
 
@@ -270,6 +271,7 @@ final class LiveShare {
         matchID = nil
         lastSynced = nil
         defaults.removeObject(forKey: Self.idKey)
+        defaults.removeObject(forKey: Self.expiresKey)
         status = isConfigured ? .off : .unconfigured
         guard let server else { return }
         do {
@@ -278,6 +280,20 @@ final class LiveShare {
         } catch {
             Self.log.error("Delete failed: \(String(describing: error), privacy: .public)")
         }
+    }
+
+    /// Stops a share that has passed its `expireAt`, which deletes it from the server. Firestore TTL
+    /// needs a paid plan, so this is what removes a share someone forgot to turn off.
+    func expireIfNeeded(now: Date = .now) async {
+        guard isOn else { return }
+        guard let expires = defaults.object(forKey: Self.expiresKey) as? Date else {
+            // Shared with 1.0.2, which didn't remember when; count from now.
+            defaults.set(now.addingTimeInterval(Self.lifetime), forKey: Self.expiresKey)
+            return
+        }
+        guard expires < now else { return }
+        Self.log.info("Live share expired; deleting it from the server")
+        await stop()
     }
 
     /// Sends the whole public snapshot, debounced so a burst of taps becomes one write.
@@ -319,6 +335,7 @@ final class LiveShare {
         let hadOngoing = ongoingSupported
         do {
             try await commit(match, ongoing: summary)
+            defaults.set(Date.now.addingTimeInterval(Self.lifetime), forKey: Self.expiresKey)
         } catch let error as RequestError where error.status == 403 && withSport {
             // The refusal was about the sport field, not about `ongoing`.
             ongoingSupported = hadOngoing
@@ -366,6 +383,7 @@ final class LiveShare {
             guard (200..<300).contains(code) else { throw RequestError(status: code, body: "") }
             let all = OngoingMatch.parseList(data)
             ongoing = .loaded(OngoingMatch.visible(all, excludingOwner: current.uid, ownMatch: matchID, now: .now))
+            await deleteExpired(OngoingMatch.expired(all, ownMatch: matchID, now: .now))
         } catch let error as RequestError where error.status == 403 {
             ongoing = .failed("Servern har inte de senaste säkerhetsreglerna, så pågående matcher kan inte visas.")
         } catch is CancellationError {
@@ -374,6 +392,22 @@ final class LiveShare {
             Self.log.error("Listing ongoing failed: \(String(describing: error), privacy: .public)")
             if case .loaded = ongoing { return }    // keep the last list on a brief network hiccup
             ongoing = .failed("Kunde inte hämta pågående matcher. Dra nedåt för att försöka igen.")
+        }
+    }
+
+    /// Deletes other people's expired matches and their summaries, which the rules allow once
+    /// `expireAt` has passed. Best effort: a server with older rules refuses, and that's fine.
+    private func deleteExpired(_ ids: [String]) async {
+        guard let server, !ids.isEmpty, let url = URL(string: server.documentsURL.absoluteString + ":commit") else { return }
+        let writes = ids.flatMap { id in
+            [["delete": server.documentName(id)], ["delete": server.documentName(id, in: "ongoing")]]
+        }
+        do {
+            var request = try await authorizedRequest(url, method: "POST")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["writes": writes])
+            try await send(request)
+        } catch {
+            Self.log.info("Could not delete expired matches: \(String(describing: error), privacy: .public)")
         }
     }
 
