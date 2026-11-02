@@ -80,6 +80,12 @@ enum OngoingList: Equatable {
     case loading
     case loaded([OngoingMatch])
     case failed(String)
+
+    /// Only the matches in one sport; each sport's start page lists its own.
+    func filtered(_ sport: Sport) -> OngoingList {
+        guard case .loaded(let matches) = self else { return self }
+        return .loaded(matches.filter { $0.sport == sport })
+    }
 }
 
 /// "Pågår nu" on the start page: matches others share live on the same server.

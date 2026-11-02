@@ -267,6 +267,24 @@ struct SportFilterTests {
         #expect(MatchStore(container: container, legacyDirectory: directory, defaults: defaults).sport == nil)
     }
 
+    @Test func matchInProgressShowsOnlyInItsSport() {
+        let store = makeStore(MatchState.exampleFloorball())
+        #expect(store.hasMatchInProgress(in: .floorball))
+        #expect(!store.hasMatchInProgress(in: .football))
+        store.state = .example()
+        #expect(store.hasMatchInProgress(in: .football))
+        #expect(!store.hasMatchInProgress(in: .floorball))
+    }
+
+    @Test func ongoingListIsFilteredBySport() {
+        let list = OngoingList.loaded(OngoingMatch.examples)
+        guard case .loaded(let football) = list.filtered(.football),
+              case .loaded(let floorball) = list.filtered(.floorball) else { Issue.record("inte laddad"); return }
+        #expect(football.count == 2 && football.allSatisfy { $0.sport == .football })
+        #expect(floorball.map(\.homeName) == ["Sjövik IBK"])
+        #expect(OngoingList.loading.filtered(.floorball) == .loading)
+    }
+
     @Test func ongoingSportFromFieldOrPeriodText() {
         #expect(OngoingMatch.sport("floorball", periodText: "Halvtid") == .floorball)
         #expect(OngoingMatch.sport(nil, periodText: "2:a period") == .floorball)

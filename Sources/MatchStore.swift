@@ -274,6 +274,11 @@ final class MatchStore {
         state.phase != .finished && (state.phase != .notStarted || !state.events.isEmpty)
     }
 
+    /// The match in progress, if it is in `sport`: each sport's start page shows only its own.
+    func hasMatchInProgress(in sport: Sport) -> Bool {
+        hasMatchInProgress && state.sport == sport
+    }
+
     /// Starts a fresh match for `team` with the team's settings and its last used lineup.
     func newMatch(team: Team, opponent: String, isHome: Bool) {
         state = MatchState(sport: team.sport, teamID: team.id, ourTeam: team.name, opponent: opponent, isHome: isHome,

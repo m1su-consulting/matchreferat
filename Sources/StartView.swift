@@ -32,17 +32,27 @@ struct StartView: View {
                 .listRowInsets(EdgeInsets())
             }
 
-            if store.hasMatchInProgress {
+            if store.hasMatchInProgress(in: sport) {
                 Section("Pågående match") {
                     Button { store.openMatch() } label: { ContinueCard() }
                         .buttonStyle(.plain)
                         .contextMenu { matchActions }
                         .swipeActions { matchActions }
                 }
+            } else if store.hasMatchInProgress {
+                // Only one match at a time: say discreetly that the other sport has one.
+                Section {
+                    Button { store.sport = store.state.sport } label: {
+                        Label("Pågående \(store.state.sport.label.lowercased())match – tryck för att byta sport",
+                              systemImage: store.state.sport.icon)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             if let server = live.server {
-                OngoingSection(list: live.ongoing, serverName: server.name) { match in
+                OngoingSection(list: live.ongoing.filtered(sport), serverName: server.name) { match in
                     browserPage = BrowserPage(url: server.viewerURL(matchID: match.id))
                 }
             }
@@ -224,7 +234,7 @@ struct SportPickerView: View {
 
     private func teamsText(_ sport: Sport) -> String {
         let count = store.teams(for: sport).count
-        let match = store.hasMatchInProgress && store.state.sport == sport ? " · pågående match" : ""
+        let match = store.hasMatchInProgress(in: sport) ? " · pågående match" : ""
         return (count == 0 ? "Inga lag än" : count == 1 ? "1 lag" : "\(count) lag") + match
     }
 }
