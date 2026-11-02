@@ -116,11 +116,11 @@ struct Team: Identifiable, Equatable, Hashable {
     var periodLength: Int = 25
     var players: [Player] = []
 
-    /// A new team with the usual settings for its sport: 9 mot 9, 2 × 25 in football; 5 mot 5, 3 × 15 in floorball.
+    /// A new team with the usual settings for its sport: 9 mot 9, 2 × 25 in football; 5 mot 5, 3 × 20 in floorball.
     static func new(_ sport: Sport, name: String = "Nytt lag") -> Team {
         switch sport {
         case .football: Team(name: name, sport: .football)
-        case .floorball: Team(name: name, sport: .floorball, playersOnField: 5, periods: 3, periodLength: 15)
+        case .floorball: Team(name: name, sport: .floorball, playersOnField: 5, periods: 3, periodLength: 20)
         }
     }
 
@@ -133,7 +133,7 @@ struct Team: Identifiable, Equatable, Hashable {
     static func formatLabel(_ playersOnField: Int) -> String { "\(playersOnField) mot \(playersOnField)" }
 
     static func defaultPeriodLength(for playersOnField: Int, sport: Sport = .football) -> Int {
-        if sport == .floorball { return playersOnField >= 5 ? 15 : 12 }
+        if sport == .floorball { return playersOnField >= 5 ? 20 : 15 }
         switch playersOnField {
         case ...5: return 15
         case 6...7: return 20
@@ -248,6 +248,18 @@ enum Suspension: String, Codable, CaseIterable, Hashable, Identifiable {
         case .match: "Spelaren utvisas resten av matchen, laget får 5 min"
         }
     }
+
+    /// Utvisningsminuter in the summary. A match penalty counts as the team's five minutes.
+    var minutes: Int {
+        switch self {
+        case .two: 2
+        case .five, .match: 5
+        case .ten: 10
+        }
+    }
+
+    /// Short label for the segmented picker.
+    var shortLabel: String { self == .match ? "Match" : label }
 
     /// Minutes the team plays short-handed: a match penalty also costs the team five minutes.
     var teamMinutes: Int {
@@ -445,6 +457,14 @@ extension MatchState {
         events.filter { $0.kind == .suspension && $0.side == .us && (kind == nil || $0.suspension == kind) }.count
     }
 
+    /// Utvisningsminuter for our team; utvisningar without a kind (none so far) count as 2 minutes.
+    var suspensionMinutes: Int {
+        events.filter { $0.kind == .suspension && $0.side == .us }.reduce(0) { $0 + ($1.suspension ?? .two).minutes }
+    }
+
+    /// "Utvisningar 2 (4 min)".
+    var suspensionsText: String { "Utvisningar \(suspensions()) (\(suspensionMinutes) min)" }
+
     var scoreText: String { "\(goals(homeSide))–\(goals(awaySide))" }
 
     var statsLine: String {
@@ -453,7 +473,7 @@ extension MatchState {
         case .football:
             return shotsText + " · Hörnor \(count(.corner, homeSide))–\(count(.corner, awaySide))"
         case .floorball:
-            return shotsText + " · Utvisningar \(suspensions())"
+            return shotsText + " · " + suspensionsText
         }
     }
 

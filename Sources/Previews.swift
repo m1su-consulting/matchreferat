@@ -76,7 +76,10 @@ private extension View {
 #Preview("Straff – motståndare") { FlowSheet(flow: .penalty(.them)).previewEnvironment() }
 #Preview("Utvisning") { FlowSheet(flow: .suspension).previewEnvironment(PreviewData.floorballStore()) }
 #Preview("Straffresultat") { PenaltyResultPicker { _ in }.padding() }
-#Preview("Utvisningstyp") { SuspensionPicker { _ in }.padding() }
+#Preview("Utvisningstyp") {
+    @Previewable @State var kind = Suspension.two
+    SuspensionPicker(selection: $kind).padding()
+}
 #Preview("Resultattavla") { ScoreboardView().padding().previewEnvironment() }
 #Preview("Resultattavla – stor text") {
     ScoreboardView().padding().previewEnvironment().environment(\.dynamicTypeSize, .accessibility2)

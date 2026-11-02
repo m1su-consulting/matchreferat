@@ -7,7 +7,7 @@ Klistra in i App Store Connect → Matchreferat → version 1.0.3 (tidigare 1.0�
 | Fält | Värde |
 |---|---|
 | Namn (30) | `Matchreferat` |
-| Undertitel (30) | `Livereferat av fotbollsmatcher` |
+| Undertitel (30) | `Livereferat fotboll/innebandy` |
 | Bundle ID | `se.matchreferat.app` |
 | SKU | `matchreferat` |
 | Primärt språk | Svenska |
@@ -23,21 +23,28 @@ Klistra in i App Store Connect → Matchreferat → version 1.0.3 (tidigare 1.0�
 
 **Reklamtext (170)**
 ```
-Referera barnens fotbollsmatcher live – mål, skott, hörnor, kort och byten med ett tryck. Dela en länk så kan mor- och farföräldrar följa matchen i realtid.
+Referera barnens matcher i fotboll och innebandy live – mål, skott, straffar och byten med ett tryck. Dela en länk så kan mor- och farföräldrar följa matchen i realtid.
 ```
 
 **Beskrivning**
 ```
 Matchreferat är gjord för föräldrar och ledare som vill berätta hur det går när matchen inte sänds. I stället för att skriva i en chatt loggar du händelserna med stora knappar, och alla som har länken ser resultatet och tidslinjen i realtid.
 
+FOTBOLL OCH INNEBANDY
+• Välj sport på första sidan – appen kommer ihåg valet och du byter med ett tryck
+• Fotboll: 5, 7, 9 eller 11 mot, halvlekar och minuter
+• Innebandy: 3, 4 eller 5 mot 5, 2 eller 3 perioder och minuter
+
 LAG OCH TRUPP
-• Lägg in ett eller flera lag med spelform (5, 7, 9 eller 11 mot), antal halvlekar och minuter
+• Lägg in ett eller flera lag per sport
 • Trupp med förnamn och tröjnummer – senaste uppställningen kommer ihåg
 • Ändra dagens trupp och matchinställningar när som helst under matchen
 
 UNDER MATCHEN
-• Klocka med halvlekar, halvtid och tilläggstid (t.ex. 25+2')
-• Logga mål med målskytt och assist, skott på mål och utanför, hörnor, frisparkar, gula och röda kort och byten
+• Klocka med halvlekar eller perioder, pauser och tilläggstid (t.ex. 25+2')
+• Logga mål med målskytt och assist, skott på mål och utanför, straffar och byten
+• Fotboll: hörnor, frisparkar, gula och röda kort
+• Innebandy: frislag och utvisningar (2, 5, 10 min eller matchstraff) med antal och minuter
 • Ångra direkt om du tryckte fel
 • Avsluta eller ta bort en match när du vill
 • Allt får plats på en skärm – byggt för att användas med en hand vid sidlinjen
@@ -56,7 +63,7 @@ INTEGRITET
 
 **Nyckelord (100)**
 ```
-fotboll,referat,live,match,resultat,ungdomsfotboll,barnfotboll,förälder,ledare,lag,mål,statistik
+fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,lag,mål,statistik
 ```
 (96 tecken)
 

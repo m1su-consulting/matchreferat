@@ -7,7 +7,8 @@ struct FlowSheet: View {
 
     @State private var step = 0
     @State private var firstPlayer: UUID?
-    @State private var suspension: Suspension?
+    /// 2 min unless another kind is chosen.
+    @State private var suspension: Suspension = .two
 
     var body: some View {
         NavigationStack {
@@ -82,12 +83,8 @@ struct FlowSheet: View {
                 }
             }
         case .suspension:
-            if step == 0 {
-                SuspensionPicker { kind in
-                    suspension = kind
-                    step = 1
-                }
-            } else {
+            VStack(alignment: .leading, spacing: 18) {
+                SuspensionPicker(selection: $suspension)
                 PlayerPicker(prompt: "Vem blev utvisad?", players: state.playingToday, skip: "Okänd") { id in
                     finish(.suspension, .us, player: id, suspension: suspension)
                 }
@@ -134,28 +131,20 @@ struct PenaltyResultPicker: View {
     }
 }
 
-/// 2 min, 5 min, 10 min or Matchstraff for a floorball utvisning.
+/// 2 min (preselected), 5 min, 10 min or Matchstraff for a floorball utvisning.
 struct SuspensionPicker: View {
-    let pick: (Suspension) -> Void
+    @Binding var selection: Suspension
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Vilken utvisning?").font(.title3.bold())
-            ForEach(Suspension.allCases) { kind in
-                Button { pick(kind) } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(kind.label).font(.headline).foregroundStyle(.primary)
-                        Text(kind.detail).font(.footnote).foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
-                    .contentShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(kind.label). \(kind.detail)")
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Utvisning").font(.title3.bold())
+            Picker("Utvisning", selection: $selection) {
+                ForEach(Suspension.allCases) { Text($0.shortLabel).tag($0) }
             }
+            .pickerStyle(.segmented)
+            Text(selection.detail)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 }

@@ -31,7 +31,7 @@ struct FloorballTests {
         let team = Team.new(.floorball)
         #expect(team.sport == .floorball)
         #expect(team.periods == 3)
-        #expect(team.periodLength == 15)
+        #expect(team.periodLength == 20)
         #expect(team.playersOnField == 5)
         #expect(Sport.floorball.periodRange == 2...3)
     }
@@ -86,7 +86,7 @@ struct FloorballTests {
         #expect(match.shots(.us) == 3)
         #expect(match.shotsOnTarget(.them) == 2)
         #expect(match.suspensions() == 2)
-        #expect(match.statsLine == "Skott 3–3 · På mål 3–2 · Utvisningar 2")
+        #expect(match.statsLine == "Skott 3–3 · På mål 3–2 · Utvisningar 2 (4 min)")
         #expect(match.statsLine.count <= 120)   // the Firestore rules allow 120 characters
     }
 
@@ -105,6 +105,10 @@ struct FloorballTests {
         #expect(store.state.describe(five) == "Utvisning 5 min – Saga Berg")
         #expect(store.state.report(at: .now).contains("⛔ \(event.minute.text) Saga (10), Matchstraff"))
         #expect(!store.state.report(at: .now).contains("Berg"))
+        #expect(store.state.suspensionMinutes == 4 + 5 + 5)
+        #expect(store.state.statsLine.hasSuffix("Utvisningar 4 (14 min)"))
+        #expect(store.state.report(at: .now).contains("Utvisningar 4 (14 min)"))
+        #expect(Suspension.ten.minutes == 10)
         #expect(Suspension.two.teamMinutes == 2 && Suspension.ten.teamMinutes == 0 && Suspension.match.teamMinutes == 5)
     }
 
