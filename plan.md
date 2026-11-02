@@ -25,12 +25,12 @@ Senast uppdaterad 2026-11-02.
 
 ## Öppna frågor
 
-- **Licens för repot.** Repot är publikt men saknar en `LICENSE`-fil, vilket betyder att ingen får återanvända koden. Bestäm om det ska vara så, eller välj till exempel MIT.
 - **Matchhistorik.** Appen visar i dag pågående match men ingen lista över tidigare matcher. Ska avslutade matcher sparas och gå att bläddra bland, och hur länge? Live-data på servern raderas inte automatiskt (ingen TTL, medvetet val), men lokalt i appen kan historiken leva vidare.
 - **Radering på servern.** Ska gamla matcher på live-servern tas bort automatiskt efter en tid, eller räcker det att användaren tar bort dem själv?
 
 ## Att komma ihåg
 
+- Repot har en LICENSE med "alla rättigheter förbehållna" (beslutat 2026-11-02). Koden får läsas men inte återanvändas.
 - Lägg aldrig in kopplingslänken till M1SU:s eget Firebase-projekt i repot. Den finns bara i granskningsanteckningarna i App Store Connect.
 - Bumpa `CURRENT_PROJECT_VERSION` i `project.yml` före varje uppladdning och kör `xcodegen generate`.
 - Inga personuppgifter, lagnamn eller riktiga namn i ikoner eller skärmdumpar.
