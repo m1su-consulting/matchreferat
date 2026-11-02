@@ -135,34 +135,65 @@ struct StartView: View {
     }
 }
 
-/// The sport's picture with the app name and a button back to the sport picker.
+/// The sport's picture with the app name and a button back to the sport picker. The button sits
+/// beside the name, not on the picture, so it is easy to see whatever the picture shows.
 struct SportHeader: View {
     let sport: Sport
     let changeSport: () -> Void
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             SportPicture(sport: sport)
-                .overlay(alignment: .topTrailing) {
-                    Button(action: changeSport) {
-                        Label("Byt sport", systemImage: "arrow.left.arrow.right")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .buttonStyle(.glass)
-                    .padding(10)
-                    .accessibilityHint("Visar sportvalet")
+            // With the largest text sizes the button goes under the name, so neither is cut off.
+            if typeSize.isAccessibilitySize {
+                VStack(spacing: 10) {
+                    title
+                    changeButton
                 }
-            HStack(spacing: 8) {
-                Image(systemName: sport.icon)
-                    .foregroundStyle(Theme.green)
-                    .accessibilityHidden(true)
-                Text("Matchreferat")
-                    .font(.title.weight(.heavy))
+            } else {
+                HStack(spacing: 12) {
+                    title
+                    Spacer(minLength: 8)
+                    changeButton
+                }
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Matchreferat, \(sport.label)")
-            .accessibilityAddTraits(.isHeader)
         }
+    }
+
+    private var title: some View {
+        HStack(spacing: 8) {
+            Image(systemName: sport.icon)
+                .foregroundStyle(Theme.green)
+                .accessibilityHidden(true)
+            Text("Matchreferat")
+                .font(.title.weight(.heavy))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Matchreferat, \(sport.label)")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var changeButton: some View {
+        Button(action: changeSport) {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.left.arrow.right")
+                Text("Byt sport").lineLimit(1)
+            }
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(Theme.green)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 44)
+            // Same style as "Dela live" on the match page; Ny match below stays the only filled button.
+            .background(Theme.green.opacity(0.14), in: Capsule())
+            .overlay(Capsule().strokeBorder(Theme.green.opacity(0.5), lineWidth: 1))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .fixedSize(horizontal: true, vertical: false)
+        .accessibilityHint("Visar sportvalet")
     }
 }
 
