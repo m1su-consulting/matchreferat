@@ -25,11 +25,11 @@ Senast uppdaterad 2026-11-02.
 
 ## Öppna frågor
 
-- **Matchhistorik.** Appen visar i dag pågående match men ingen lista över tidigare matcher. Ska avslutade matcher sparas och gå att bläddra bland, och hur länge? Live-data på servern raderas inte automatiskt (ingen TTL, medvetet val), men lokalt i appen kan historiken leva vidare.
-- **Radering på servern.** Ska gamla matcher på live-servern tas bort automatiskt efter en tid, eller räcker det att användaren tar bort dem själv?
+- **Radering efter 7 dagar.** Integritetspolicyn, App Store-texten och guiden lovar att delade matcher raderas senast 7 dagar efter senaste uppdateringen. Appen sätter fältet `expireAt` sju dagar fram, men själva raderingen kräver en TTL-policy i Firebase-projektet (för `matches` och `ongoing`). M1SU:s eget projekt har ingen sådan policy. Antingen slår vi på TTL där, eller så ändrar vi texterna så att de stämmer.
 
 ## Att komma ihåg
 
+- Ingen lista över tidigare matcher behövs. Referatet i slutet av matchen räcker, och appen är till för live.
 - Repot har en LICENSE med "alla rättigheter förbehållna" (beslutat 2026-11-02). Koden får läsas men inte återanvändas.
 - Lägg aldrig in kopplingslänken till M1SU:s eget Firebase-projekt i repot. Den finns bara i granskningsanteckningarna i App Store Connect.
 - Bumpa `CURRENT_PROJECT_VERSION` i `project.yml` före varje uppladdning och kör `xcodegen generate`.
