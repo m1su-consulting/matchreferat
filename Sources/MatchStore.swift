@@ -19,8 +19,12 @@ final class MatchStore {
     var sport: Sport? {
         didSet { defaults.set(sport?.rawValue, forKey: Self.sportKey) }
     }
-    /// The navigation stack above the start page; `-screen match` opens the match page on launch.
-    var path: [Route] = LaunchArgument.string("screen") == "match" ? [.match] : []
+    /// The navigation stack above the start page; `-screen match|settings` opens that page on launch.
+    var path: [Route] = switch LaunchArgument.string("screen") {
+    case "match": [.match]
+    case "settings": [.settings]
+    default: []
+    }
 
     func openMatch() { path = [.match] }
     func goToStart() { path.removeAll() }
@@ -37,7 +41,12 @@ final class MatchStore {
         self.container = container
         self.defaults = defaults
         // `-sport football|floorball` picks the sport on launch (used for screenshots and tests).
-        sport = (LaunchArgument.string("sport") ?? defaults.string(forKey: Self.sportKey)).flatMap(Sport.init(rawValue:))
+        let last = defaults.string(forKey: Self.sportKey).flatMap(Sport.init(rawValue:))
+        if let argument = LaunchArgument.string("sport") {
+            sport = Sport(rawValue: argument)
+        } else {
+            sport = AppSettings.launchSport(defaults, last: last)
+        }
         let context = container.mainContext
         let decoder = JSONDecoder()
         let storedMatch = (try? context.fetch(FetchDescriptor<StoredMatch>()))?.first

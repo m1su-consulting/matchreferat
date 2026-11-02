@@ -95,8 +95,8 @@ struct StartView: View {
                         Label("Live-server", systemImage: "antenna.radiowaves.left.and.right")
                     }
                 }
-                NavigationLink(value: Route.licenses) {
-                    Label("Licenser", systemImage: "doc.text")
+                NavigationLink(value: Route.settings) {
+                    Label("Inställningar", systemImage: "gearshape")
                 }
             } header: {
                 Text("Inställningar")
@@ -255,6 +255,8 @@ struct SportPickerView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                SettingsLink()
+                    .padding(.top, 4)
                 MadeBy()
                     .padding(.top, 12)
             }

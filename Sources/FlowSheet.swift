@@ -7,6 +7,7 @@ struct FlowSheet: View {
 
     @State private var step = 0
     @State private var firstPlayer: UUID?
+    @AppStorage(AppSettings.hapticsKey) private var haptics = true
     /// 2 min unless another kind is chosen.
     @State private var suspension: Suspension = .two
 
@@ -27,7 +28,7 @@ struct FlowSheet: View {
                 }
             }
         }
-        .sensoryFeedback(.selection, trigger: step)
+        .sensoryFeedback(.selection, trigger: step) { _, _ in haptics }
     }
 
     private var title: String {

@@ -16,7 +16,6 @@ struct MatchreferatApp: App {
             RootView()
                 .environment(store)
                 .environment(live)
-                .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
                 .onChange(of: store.state) {
                     store.save()
                     live.sync(store.state)
@@ -91,6 +90,7 @@ enum Route: Hashable {
     case team(UUID)
     case liveServer
     case licenses
+    case settings
 }
 
 struct RootView: View {
@@ -118,6 +118,8 @@ struct RootView: View {
                     LiveServerView()
                 case .licenses:
                     LicensesView()
+                case .settings:
+                    SettingsView()
                 }
             }
         }

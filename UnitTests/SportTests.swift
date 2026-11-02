@@ -317,3 +317,41 @@ struct SportFilterTests {
         #expect(events.contains { $0["text"] as? String == "Straffmål! Saga (10)" })
     }
 }
+
+@Suite("Inställningar")
+@MainActor
+struct SettingsTests {
+    private func defaults() -> UserDefaults { UserDefaults(suiteName: "matchreferat-settings-\(UUID().uuidString)")! }
+
+    @Test func screenAndHapticsAreOnByDefault() {
+        let d = defaults()
+        #expect(AppSettings.keepScreenOn(d))
+        #expect(AppSettings.haptics(d))
+        d.set(false, forKey: AppSettings.hapticsKey)
+        d.set(false, forKey: AppSettings.keepScreenOnKey)
+        #expect(!AppSettings.haptics(d))
+        #expect(!AppSettings.keepScreenOn(d))
+    }
+
+    @Test func startSportIsLastUsedUnlessFixed() {
+        let d = defaults()
+        #expect(AppSettings.launchSport(d, last: .floorball) == .floorball)
+        #expect(AppSettings.launchSport(d, last: nil) == nil)
+        d.set("football", forKey: AppSettings.startSportKey)
+        #expect(AppSettings.launchSport(d, last: .floorball) == .football)
+        d.set("floorball", forKey: AppSettings.startSportKey)
+        #expect(AppSettings.launchSport(d, last: nil) == .floorball)
+        d.set("last", forKey: AppSettings.startSportKey)
+        #expect(AppSettings.launchSport(d, last: .football) == .football)
+    }
+
+    @Test func storeOpensTheFixedStartSport() {
+        let d = defaults()
+        d.set("floorball", forKey: "sport")              // last used
+        d.set("football", forKey: AppSettings.startSportKey)
+        let store = MatchStore(container: Persistence.container(inMemory: true),
+                               legacyDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+                               defaults: d)
+        #expect(store.sport == .football)
+    }
+}

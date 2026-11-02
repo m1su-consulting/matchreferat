@@ -19,6 +19,11 @@ struct MatchView: View {
     @State private var showEvents = false
     @State private var showNewMatch = false
     @State private var confirmDelete = false
+    @AppStorage(AppSettings.keepScreenOnKey) private var keepScreenOn = true
+    @AppStorage(AppSettings.hapticsKey) private var haptics = true
+
+    /// The screen stays on while this page is open and the match isn't over, if the setting allows.
+    private var screenStaysOn: Bool { keepScreenOn && store.state.phase != .finished }
 
     var body: some View {
         // Sized to fit one screen above the tab bar on current iPhones; scrolls on smaller ones.
@@ -85,7 +90,10 @@ struct MatchView: View {
             FlowSheet(flow: flow)
                 .presentationDetents([.medium, .large])
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: store.state.events.count)
+        .sensoryFeedback(.impact(weight: .medium), trigger: store.state.events.count) { _, _ in haptics }
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = screenStaysOn }
+        .onChange(of: screenStaysOn) { _, on in UIApplication.shared.isIdleTimerDisabled = on }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
         .onAppear {
             // `-demoSheet goal|squad|newMatch` opens that sheet (used for screenshots).

@@ -143,4 +143,6 @@ private extension View {
     NavigationStack { LiveServerView() }.previewEnvironment(live: PreviewData.liveShare(connected: false))
 }
 #Preview("Licenser") { NavigationStack { LicensesView() } }
+#Preview("Inställningar") { NavigationStack { SettingsView() }.previewEnvironment() }
+#Preview("Inställningsknapp") { NavigationStack { SettingsLink() } }
 #endif
