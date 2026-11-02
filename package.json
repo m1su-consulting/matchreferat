@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "emulators": "firebase emulators:start --only auth,firestore,hosting --project demo-matchreferat",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-matchreferat \"node --test tests/\"",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-matchreferat \"node --test tests/rules.test.mjs\"",
     "deploy": "firebase deploy --only firestore:rules,hosting"
   },
   "devDependencies": {
