@@ -273,10 +273,10 @@
         return {
           sport: "floorball", homeName: "Ditt lag", awayName: "Ekbacka IBK", isHome: true, homeScore: 2, awayScore: 1,
           phase: "playing", period: 2, periods: 3, running: true, startedAt: now - 560000, accumulated: 0, halfLength: 15,
-          periodText: "2:a period", stats: "Skott 3–3 · På mål 3–2 · Utvisningar 2 (4 min)",
+          periodText: "Period 2", stats: "Skott 3–3 · På mål 3–2 · Utvisningar 2 (4 min)",
           updatedAt: now - 20000, expireAt: now + 7 * 864e5,
           events: [
-            ev("1'", "period", "us", "Avspark", "Match"),
+            ev("1'", "period", "us", "Start period 1", "Match"),
             ev("3'", "shot", "us", "Skott på mål, räddning – Saga (10)", "Ditt lag"),
             ev("5'", "goal", "us", "Mål! Ebba (7), assist Saga (10)", "Ditt lag"),
             ev("8'", "shot", "them", "Skott utanför", "Ekbacka IBK"),
@@ -284,7 +284,7 @@
             ev("10'", "goal", "them", "Mål Ekbacka IBK", "Ekbacka IBK"),
             ev("13'", "freeKick", "us", "Frislag", "Ditt lag"),
             ev("15'", "period", "us", "Periodpaus 1–1", "Match"),
-            ev("16'", "period", "us", "2:a period startar", "Match"),
+            ev("16'", "period", "us", "Start period 2", "Match"),
             ev("17'", "sub", "us", "Byte: Moa (12) ut, Vera (14) in", "Ditt lag"),
             ev("19'", "goal", "us", "Straffmål! Saga (10)", "Ditt lag"),
             ev("21'", "shot", "them", "Skott på mål, räddning", "Ekbacka IBK"),

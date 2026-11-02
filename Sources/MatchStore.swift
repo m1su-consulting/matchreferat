@@ -181,9 +181,10 @@ final class MatchStore {
 
     var primaryTitle: String {
         switch state.phase {
-        case .notStarted: "Avspark"
+        case .notStarted: state.periodStartText(1)
         case .playing: state.isLastPeriod ? "Slutsignal" : state.intervalName
-        case .interval: "Starta \(state.periodName(state.period + 1))"
+        case .interval:
+            state.sport == .football ? "Starta \(state.periodName(state.period + 1))" : state.periodStartText(state.period + 1)
         case .finished: "Ny match"
         }
     }
@@ -202,7 +203,7 @@ final class MatchStore {
         case .notStarted:
             state.period = 1
             startClock(now)
-            addPeriod("Avspark", MatchMinute(minute: 1), now)
+            addPeriod(state.periodStartText(1), MatchMinute(minute: 1), now)
         case .playing:
             let minute = state.clock(at: now)
             stopClock(state.isLastPeriod ? .finished : .interval)

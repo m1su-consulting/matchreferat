@@ -47,18 +47,19 @@ struct FloorballTests {
     @Test(arguments: [2, 3])
     func periodsRunInOrder(periods: Int) {
         let store = makeStore(floorballMatch(periods: periods))
-        #expect(store.primaryTitle == "Avspark")
+        #expect(store.primaryTitle == "Start period 1")
         store.advancePhase()
-        #expect(store.state.periodText == "1:a period")
+        #expect(store.state.periodText == "Period 1")
+        #expect(store.state.events.last?.note == "Start period 1")
         for next in 2...periods {
             #expect(store.primaryTitle == "Periodpaus")
             store.advancePhase()
             #expect(store.state.phase == .interval)
             #expect(store.state.periodText == "Periodpaus")
-            #expect(store.primaryTitle == "Starta \(next == 2 ? "2:a" : "3:e") period")
+            #expect(store.primaryTitle == "Start period \(next)")
             store.advancePhase()
-            #expect(store.state.periodText == "\(next == 2 ? "2:a" : "3:e") period")
-            #expect(store.state.events.last?.note == "\(next == 2 ? "2:a" : "3:e") period startar")
+            #expect(store.state.periodText == "Period \(next)")
+            #expect(store.state.events.last?.note == "Start period \(next)")
         }
         #expect(store.state.isLastPeriod)
         #expect(store.primaryTitle == "Slutsignal")
@@ -67,6 +68,7 @@ struct FloorballTests {
         // Never "halvlek" anywhere in a floorball match.
         #expect(!store.state.events.contains { $0.note?.contains("halvlek") == true })
         #expect(!store.state.report(at: .now).contains("halvlek"))
+        #expect(!store.state.events.contains { $0.note?.contains("Avspark") == true })
     }
 
     @Test func eventsUseFloorballTerms() {
@@ -75,7 +77,7 @@ struct FloorballTests {
         #expect(EventKind.freeKick.label(for: .football) == "Frispark")
         let freeKick = match.events.first { $0.kind == .freeKick }!
         #expect(match.describe(freeKick) == "Frislag")
-        #expect(MatchState.periodName(3, sport: .floorball) == "3:e period")
+        #expect(MatchState.periodName(3, sport: .floorball) == "Period 3")
     }
 
     @Test func exampleScoreAndStats() {
@@ -174,6 +176,7 @@ struct PenaltyTests {
         #expect(match.periodName(2) == "2:a halvlek")
         #expect(match.intervalName == "Halvtid")
         #expect(match.periodStartText(2) == "Andra halvlek startar")
+        #expect(match.periodStartText(1) == "Avspark")
         #expect(MatchState.halfName(3) == "3:e halvlek")
         #expect(match.penalties(.us) == 0)
     }
@@ -291,7 +294,7 @@ struct SportFilterTests {
 
     @Test func ongoingSportFromFieldOrPeriodText() {
         #expect(OngoingMatch.sport("floorball", periodText: "Halvtid") == .floorball)
-        #expect(OngoingMatch.sport(nil, periodText: "2:a period") == .floorball)
+        #expect(OngoingMatch.sport(nil, periodText: "Period 2") == .floorball)
         #expect(OngoingMatch.sport(nil, periodText: "Periodpaus") == .floorball)
         #expect(OngoingMatch.sport(nil, periodText: "2:a halvlek") == .football)
         #expect(OngoingMatch.sport("tennis", periodText: "Halvtid") == .football)
@@ -304,7 +307,7 @@ struct SportFilterTests {
 
         let floorball = LiveShare.payload(.exampleFloorball(), owner: "u")
         #expect(floorball["sport"] as? String == "floorball")
-        #expect(floorball["periodText"] as? String == "2:a period")
+        #expect(floorball["periodText"] as? String == "Period 2")
         #expect(LiveShare.summary(.exampleFloorball())["sport"] as? String == "floorball")
         // Without the field for servers whose rules predate it.
         #expect(LiveShare.payload(.exampleFloorball(), owner: "u", sport: false)["sport"] == nil)

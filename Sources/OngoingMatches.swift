@@ -54,7 +54,7 @@ struct OngoingMatch: Identifiable, Equatable, Sendable {
                             sport: sport(string("sport"), periodText: periodText))
     }
 
-    /// The `sport` field, or – from servers whose rules predate it – the period text ("2:a period", "Periodpaus").
+    /// The `sport` field, or – from servers whose rules predate it – the period text ("Period 2", "Periodpaus").
     static func sport(_ field: String?, periodText: String) -> Sport {
         if let sport = field.flatMap(Sport.init(rawValue:)) { return sport }
         return periodText.lowercased().contains("period") ? .floorball : .football
@@ -187,7 +187,7 @@ extension OngoingMatch {
                      homeScore: 0, awayScore: 0, phase: .interval, periodText: "Halvtid", clockLabel: "25'",
                      updatedAt: .now, expireAt: .now.addingTimeInterval(7 * 86400)),
         OngoingMatch(id: "QwErTyUiOpAsDfGhJkLzXc45", ownerUid: "lena", homeName: "Sjövik IBK", awayName: "Björkdalens IBK F13",
-                     homeScore: 4, awayScore: 2, phase: .playing, periodText: "3:e period", clockLabel: "38'",
+                     homeScore: 4, awayScore: 2, phase: .playing, periodText: "Period 3", clockLabel: "38'",
                      updatedAt: .now, expireAt: .now.addingTimeInterval(7 * 86400), sport: .floorball),
     ]
 }

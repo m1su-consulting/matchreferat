@@ -500,9 +500,12 @@ extension MatchState {
         }
     }
 
-    /// "1:a halvlek", "3:e halvlek" in football; "1:a period", "3:e period" in floorball.
+    /// "1:a halvlek", "3:e halvlek" in football; "Period 1", "Period 3" in floorball.
     static func periodName(_ number: Int, sport: Sport = .football) -> String {
-        "\(number)\(number <= 2 ? ":a" : ":e") \(sport.periodWord)"
+        switch sport {
+        case .football: "\(number)\(number <= 2 ? ":a" : ":e") halvlek"
+        case .floorball: "Period \(number)"
+        }
     }
 
     static func halfName(_ number: Int) -> String { periodName(number) }
@@ -516,9 +519,14 @@ extension MatchState {
         }
     }
 
-    /// The event text when a period after the first starts.
+    /// The button and event text when a period starts: "Avspark" and "Andra halvlek startar" in football,
+    /// "Start period 1", "Start period 2" in floorball.
     func periodStartText(_ number: Int) -> String {
-        sport == .football && periods == 2 && number == 2 ? "Andra halvlek startar" : "\(periodName(number)) startar"
+        switch sport {
+        case .football where number == 1: "Avspark"
+        case .football: periods == 2 && number == 2 ? "Andra halvlek startar" : "\(periodName(number)) startar"
+        case .floorball: "Start period \(number)"
+        }
     }
 
     var periodText: String {
@@ -695,7 +703,7 @@ extension MatchState {
 
         typealias Spec = (Int, EventKind, Side, UUID?, UUID?, ShotResult?, String?, Bool?, Suspension?)
         let specs: [Spec] = [
-            (1, .period, .us, nil, nil, nil, "Avspark", nil, nil),
+            (1, .period, .us, nil, nil, nil, "Start period 1", nil, nil),
             (3, .shot, .us, id(10), nil, .onTarget, nil, nil, nil),
             (5, .goal, .us, id(7), id(10), nil, nil, nil, nil),
             (8, .shot, .them, nil, nil, .off, nil, nil, nil),
@@ -703,7 +711,7 @@ extension MatchState {
             (10, .goal, .them, nil, nil, nil, nil, nil, nil),
             (13, .freeKick, .us, nil, nil, nil, nil, nil, nil),
             (15, .period, .us, nil, nil, nil, "Periodpaus 1–1", nil, nil),
-            (16, .period, .us, nil, nil, nil, "2:a period startar", nil, nil),
+            (16, .period, .us, nil, nil, nil, "Start period 2", nil, nil),
             (17, .sub, .us, id(12), id(14), nil, nil, nil, nil),
             (19, .goal, .us, id(10), nil, nil, nil, true, nil),
             (21, .shot, .them, nil, nil, .onTarget, nil, nil, nil),
