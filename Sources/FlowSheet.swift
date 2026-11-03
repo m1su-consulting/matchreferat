@@ -91,15 +91,25 @@ struct FlowSheet: View {
                 }
             }
         case .sub:
+            // Normally Start goes out and Bänk comes in. If either list is empty (no lineup set),
+            // everyone playing today can be picked instead of leaving an empty sheet.
             if step == 0 {
-                PlayerPicker(prompt: "Vem går ut?", players: state.onField, skip: nil) { id in
+                PlayerPicker(prompt: "Vem går ut?", players: state.onField.isEmpty ? state.playingToday : state.onField,
+                             skip: nil) { id in
                     firstPlayer = id
                     step = 1
                 }
             } else {
-                PlayerPicker(prompt: "Vem kommer in?", players: state.bench, skip: nil) { id in
+                PlayerPicker(prompt: "Vem kommer in?",
+                             players: state.bench.isEmpty ? state.playingToday.filter { $0.id != firstPlayer } : state.bench,
+                             skip: nil) { id in
                     finish(.sub, .us, player: firstPlayer, otherPlayer: id)
                 }
+            }
+            if state.onField.isEmpty || state.bench.isEmpty {
+                Text("Vilka som startar och sitter på bänken väljer du under ⋯ → Dagens trupp.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
         }
     }

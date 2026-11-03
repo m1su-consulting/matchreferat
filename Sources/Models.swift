@@ -111,12 +111,12 @@ struct Team: Identifiable, Equatable, Hashable {
     var id = UUID()
     var name: String
     var sport: Sport = .football
-    var playersOnField: Int = 9
+    var playersOnField: Int = 11
     var periods: Int = 2
-    var periodLength: Int = 25
+    var periodLength: Int = 35
     var players: [Player] = []
 
-    /// A new team with the usual settings for its sport: 9 mot 9, 2 × 25 in football; 5 mot 5, 3 × 20 in floorball.
+    /// A new team with the usual settings for its sport: 11 mot 11, 2 × 35 in football; 5 mot 5, 3 × 20 in floorball.
     static func new(_ sport: Sport, name: String = "Nytt lag") -> Team {
         switch sport {
         case .football: Team(name: name, sport: .football)

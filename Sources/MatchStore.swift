@@ -291,9 +291,17 @@ final class MatchStore {
 
     /// Starts a fresh match for `team` with the team's settings and its last used lineup.
     func newMatch(team: Team, opponent: String, isHome: Bool) {
+        var players = team.players.sorted { $0.number < $1.number }
+        if !players.contains(where: { $0.status == .start }) {
+            // No lineup yet (new players are on the bench): the lowest numbers start, so Byte has someone to take off.
+            for index in players.indices where players[index].status != .out {
+                players[index].status = players[..<index].filter { $0.status == .start }.count < team.playersOnField
+                    ? .start : .bench
+            }
+        }
         state = MatchState(sport: team.sport, teamID: team.id, ourTeam: team.name, opponent: opponent, isHome: isHome,
                            halfLength: team.periodLength, periods: team.periods, playersOnField: team.playersOnField,
-                           players: team.players.sorted { $0.number < $1.number }, events: [], phase: .notStarted,
+                           players: players, events: [], phase: .notStarted,
                            period: 1, isRunning: false, accumulated: 0, runningSince: nil)
         toast = nil
         openMatch()

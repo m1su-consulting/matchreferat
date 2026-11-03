@@ -44,6 +44,22 @@ struct FloorballTests {
         #expect(store.state.periods == 3)
     }
 
+    @Test func newFootballTeamIsElevenASide() {
+        let team = Team.new(.football)
+        #expect(team.playersOnField == 11)
+        #expect(team.periods == 2)
+    }
+
+    @Test func newMatchWithoutLineupStartsLowestNumbers() {
+        let store = makeStore()
+        var team = Team.new(.floorball)
+        team.players = [Player(firstName: "Bea", number: 7), Player(firstName: "Ada", number: 3)]
+        store.newMatch(team: team, opponent: "Sjövik IBK", isHome: true)
+        // Two new players (on the bench by default) in 5 mot 5: both start, so Byte can pick who goes out.
+        #expect(store.state.onField.map(\.firstName) == ["Ada", "Bea"])
+        #expect(store.state.bench.isEmpty)
+    }
+
     @Test(arguments: [2, 3])
     func periodsRunInOrder(periods: Int) {
         let store = makeStore(floorballMatch(periods: periods))

@@ -75,6 +75,8 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 • Lag och matcher sparas per sport, och Pågår nu visar sportikon
 • Inställningar: håll skärmen tänd under match, vibration av eller på, vilken sport appen öppnar med
 • Ny appikon och nya startbilder
+• Nya lag får 11 mot 11 som standard
+• Byte fungerar även innan du valt startelva, och utan lag ber Ny match dig skapa ett först
 ```
 
 **Nyheter i 1.0.2** (inskickad tidigare, sparas som referens)
