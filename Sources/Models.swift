@@ -484,6 +484,8 @@ extension MatchState {
 
     var isLastPeriod: Bool { period >= periods }
 
+    static let maxAddedMinutes = 15
+
     func clock(at now: Date) -> MatchMinute {
         switch phase {
         case .notStarted:
@@ -496,7 +498,9 @@ extension MatchState {
             let base = (period - 1) * halfLength
             let full = base + Int(elapsed(at: now) / 60) + 1
             let limit = base + halfLength
-            return full > limit ? MatchMinute(minute: limit, added: full - limit) : MatchMinute(minute: full)
+            // A clock left running (a forgotten match) stops at +15 instead of counting for days.
+            return full > limit ? MatchMinute(minute: limit, added: min(full - limit, Self.maxAddedMinutes))
+                                : MatchMinute(minute: full)
         }
     }
 

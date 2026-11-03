@@ -42,11 +42,10 @@ struct TeamEditor: View {
                     }
                 }
                 .onDelete { team.players.remove(atOffsets: $0) }
-                .onMove { team.players.move(fromOffsets: $0, toOffset: $1) }
             } header: {
                 Text("Trupp · \(team.players.count) spelare")
             } footer: {
-                Text("Efternamn är frivilligt och visas bara i appen. Det som delas visar förnamn och nummer.")
+                Text("Svep åt vänster för att ta bort en spelare. Efternamn är frivilligt och visas bara i appen. Det som delas visar förnamn och nummer.")
             }
 
             Section("Lägg till spelare") {
@@ -60,6 +59,8 @@ struct TeamEditor: View {
                     team.players.append(Player(firstName: newFirstName.trimmingCharacters(in: .whitespaces),
                                                lastName: newLastName.trimmingCharacters(in: .whitespaces),
                                                number: Int(newNumber) ?? 0))
+                    // Matches list players by number, so the squad does too.
+                    team.players.sort { $0.number < $1.number }
                     newFirstName = ""
                     newLastName = ""
                     newNumber = ""
@@ -69,7 +70,6 @@ struct TeamEditor: View {
         }
         .navigationTitle(team.name.isEmpty ? "Lag" : team.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { EditButton() }
     }
 }
 

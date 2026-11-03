@@ -121,6 +121,16 @@ struct ClockTests {
         state.runningSince = Date.now.addingTimeInterval(-(26 * 60 + 10))
         #expect(state.clock(at: .now).text == "25+2'")
     }
+
+    @Test func forgottenClockStopsAtMaxAddedTime() {
+        var state = MatchState.empty
+        state.phase = .playing
+        state.period = 2
+        state.halfLength = 25
+        state.isRunning = true
+        state.runningSince = Date.now.addingTimeInterval(-3 * 24 * 3600)
+        #expect(state.clock(at: .now).text == "50+15'")
+    }
 }
 
 @Suite("Händelser")

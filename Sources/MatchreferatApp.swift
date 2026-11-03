@@ -74,7 +74,8 @@ struct MatchreferatApp: App {
 enum LaunchArgument {
     static func string(_ key: String) -> String? {
         #if DEBUG
-        UserDefaults.standard.string(forKey: key)
+        // Only the launch arguments, not saved settings that share the key (the remembered sport is "sport").
+        UserDefaults.standard.volatileDomain(forName: UserDefaults.argumentDomain)[key] as? String
         #else
         nil
         #endif
