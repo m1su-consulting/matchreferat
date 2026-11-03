@@ -11,7 +11,13 @@ struct TeamEditor: View {
             Section("Lag") {
                 TextField("Lagnamn", text: $team.name)
                     .textInputAutocapitalization(.words)
-                LabeledContent("Sport") { Label(team.sport.label, systemImage: team.sport.icon) }
+                LabeledContent("Sport") {
+                    // A Label here gets a tall empty row on iOS 27, so icon and text are laid out by hand.
+                    HStack(spacing: 6) {
+                        Image(systemName: team.sport.icon).foregroundStyle(Theme.green)
+                        Text(team.sport.label)
+                    }
+                }
                 FormatFields(sport: team.sport, playersOnField: $team.playersOnField, periods: $team.periods,
                              periodLength: $team.periodLength)
             }

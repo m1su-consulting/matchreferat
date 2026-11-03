@@ -1,6 +1,7 @@
 name: Matchreferat
 options:
   bundleIdPrefix: se.matchreferat
+  developmentLanguage: sv
   deploymentTarget:
     iOS: "26.0"
 targets:
@@ -11,6 +12,7 @@ targets:
     info:
       path: Sources/Info.plist
       properties:
+        CFBundleLocalizations: [sv]
         CFBundleURLTypes:
           - CFBundleURLName: se.matchreferat.app
             CFBundleURLSchemes: [matchreferat]
@@ -29,7 +31,7 @@ targets:
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete
         MARKETING_VERSION: "1.0.3"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: VNDXQRN7C3
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

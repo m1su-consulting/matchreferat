@@ -5,6 +5,7 @@ struct StartView: View {
     @Environment(MatchStore.self) private var store
     @Environment(LiveShare.self) private var live
     @State private var showNewMatch = false
+    @State private var showNeedsTeam = false
     @State private var confirmDelete = false
     @State private var browserPage: BrowserPage?
 
@@ -17,14 +18,13 @@ struct StartView: View {
             Section {
                 VStack(spacing: 18) {
                     SportHeader(sport: sport) { store.sport = nil }
-                    Button { showNewMatch = true } label: {
+                    Button { if teams.isEmpty { showNeedsTeam = true } else { showNewMatch = true } } label: {
                         Label("Ny match", systemImage: "plus.circle.fill")
                             .font(.title3.weight(.bold))
                             .frame(maxWidth: .infinity, minHeight: 52)
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(Theme.green)
-                    .disabled(teams.isEmpty)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -120,6 +120,13 @@ struct StartView: View {
         }
         .sheet(item: $browserPage) { page in SafariView(url: page.url).ignoresSafeArea() }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
+        .alert("Skapa ett lag först", isPresented: $showNeedsTeam) {
+            Button("Lägg till lag") { store.path.append(.team(store.addTeam(sport).id)) }
+            Button("Prova med ett exempellag") { store.addExampleTeam(sport) }
+            Button("Avbryt", role: .cancel) {}
+        } message: {
+            Text("En match spelas av ett av dina lag. Lägg till \(sport == .football ? "ett fotbollslag" : "ett innebandylag") med spelarnas förnamn och tröjnummer, eller prova med ett exempellag.")
+        }
         .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
         .onAppear {
             // `-demoSheet newMatch` opens the new match sheet (used for screenshots).
