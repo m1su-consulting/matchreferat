@@ -48,6 +48,7 @@ struct FloorballTests {
         let team = Team.new(.football)
         #expect(team.playersOnField == 11)
         #expect(team.periods == 2)
+        #expect(team.periodLength == 45)
     }
 
     @Test func newMatchWithoutLineupStartsLowestNumbers() {

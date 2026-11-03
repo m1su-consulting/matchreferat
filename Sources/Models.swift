@@ -113,10 +113,10 @@ struct Team: Identifiable, Equatable, Hashable {
     var sport: Sport = .football
     var playersOnField: Int = 11
     var periods: Int = 2
-    var periodLength: Int = 35
+    var periodLength: Int = 45
     var players: [Player] = []
 
-    /// A new team with the usual settings for its sport: 11 mot 11, 2 × 35 in football; 5 mot 5, 3 × 20 in floorball.
+    /// A new team with the usual settings for its sport: 11 mot 11, 2 × 45 in football; 5 mot 5, 3 × 20 in floorball.
     static func new(_ sport: Sport, name: String = "Nytt lag") -> Team {
         switch sport {
         case .football: Team(name: name, sport: .football)
@@ -138,7 +138,7 @@ struct Team: Identifiable, Equatable, Hashable {
         case ...5: return 15
         case 6...7: return 20
         case 8...9: return 25
-        default: return 35
+        default: return 45
         }
     }
 
