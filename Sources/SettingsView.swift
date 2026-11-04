@@ -112,7 +112,7 @@ struct SettingsLink: View {
                 .padding(.horizontal, 6)
                 .frame(minHeight: 36)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.glass)
         .tint(Theme.accent)
     }
 }

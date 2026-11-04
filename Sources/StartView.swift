@@ -227,7 +227,7 @@ struct SportPicture: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.black.opacity(0.45), in: Capsule())
+                    .glassEffect(.regular.tint(.black.opacity(0.35)), in: Capsule())
                     .padding(10)
             }
             .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
