@@ -171,8 +171,8 @@ struct SportHeader: View {
 
     private var buttons: some View {
         HStack(spacing: 8) {
-            changeButton
             settingsButton
+            changeButton
         }
     }
 
