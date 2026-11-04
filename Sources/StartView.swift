@@ -171,22 +171,9 @@ struct SportHeader: View {
 
     private var buttons: some View {
         HStack(spacing: 8) {
-            settingsButton
+            SettingsButton(action: openSettings)
             changeButton
         }
-    }
-
-    private var settingsButton: some View {
-        Button(action: openSettings) {
-            Image(systemName: "gearshape")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(Theme.accent)
-                .frame(width: 44, height: 44)
-                .contentShape(Circle())
-                .glassEffect(.regular.interactive(), in: Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Inställningar")
     }
 
     private var changeButton: some View {
@@ -242,14 +229,18 @@ struct SportPickerView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                Logo()
+            VStack(spacing: 14) {
+                HStack {
+                    Logo()
+                    Spacer(minLength: 8)
+                    SettingsButton { store.path.append(.settings) }
+                }
                 Text("Vilken sport ska du referera?")
                     .font(.title3.weight(.semibold))
                     .multilineTextAlignment(.center)
                 ForEach(Sport.allCases) { sport in
                     Button { store.sport = sport } label: {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 4) {
                             SportPicture(sport: sport)
                             Text(teamsText(sport))
                                 .font(.subheadline)
@@ -263,17 +254,14 @@ struct SportPickerView: View {
                     .accessibilityLabel("\(sport.label), \(teamsText(sport))")
                     .accessibilityAddTraits(.isButton)
                 }
-                Text("Appen kommer ihåg valet. Du byter sport med Byt sport på startsidan.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                SettingsLink()
+                MadeBy(logoHeight: 40)
                     .padding(.top, 4)
-                MadeBy()
-                    .padding(.top, 12)
             }
-            .padding()
+            .padding(.horizontal)
+            .padding(.bottom)
         }
+        // Everything fits on one screen, and only scrolls with large text.
+        .scrollBounceBehavior(.basedOnSize)
         .toolbar(.hidden, for: .navigationBar)
     }
 
@@ -284,17 +272,39 @@ struct SportPickerView: View {
     }
 }
 
+/// The round gear that opens the settings, on the sport picker and the start page.
+struct SettingsButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "gearshape")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Theme.accent)
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+                .glassEffect(.regular.interactive(), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Inställningar")
+    }
+}
+
 /// The app name as the sport picker's heading.
 struct Logo: View {
     var body: some View {
         Text("Matchreferat")
             .font(.largeTitle.weight(.heavy))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
             .accessibilityAddTraits(.isHeader)
     }
 }
 
 /// Small "Utvecklad av" credit with Mikael's M1SU Consulting logo.
 struct MadeBy: View {
+    var logoHeight: CGFloat = 72
+
     var body: some View {
         VStack(spacing: 8) {
             Text("Utvecklad av")
@@ -304,7 +314,7 @@ struct MadeBy: View {
             Image("Logo")
                 .resizable()
                 .scaledToFit()
-                .frame(height: 72)
+                .frame(height: logoHeight)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
                 .accessibilityLabel("M1SU Consulting")

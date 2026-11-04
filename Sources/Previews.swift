@@ -144,5 +144,5 @@ private extension View {
 }
 #Preview("Licenser") { NavigationStack { LicensesView() } }
 #Preview("Inställningar") { NavigationStack { SettingsView() }.previewEnvironment() }
-#Preview("Inställningsknapp") { NavigationStack { SettingsLink() } }
+#Preview("Inställningsknapp") { SettingsButton {} }
 #endif

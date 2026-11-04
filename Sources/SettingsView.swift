@@ -102,17 +102,3 @@ struct SettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
-
-/// A gear button that opens the settings.
-struct SettingsLink: View {
-    var body: some View {
-        NavigationLink(value: Route.settings) {
-            Label("Inställningar", systemImage: "gearshape")
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 6)
-                .frame(minHeight: 36)
-        }
-        .buttonStyle(.glass)
-        .tint(Theme.accent)
-    }
-}
