@@ -57,7 +57,7 @@ private extension View {
     store.sport = nil
     return NavigationStack { SportPickerView() }.previewEnvironment(store)
 }
-#Preview("Sportbild med byt sport") { SportHeader(sport: .floorball) {}.padding() }
+#Preview("Sportbild med byt sport") { SportHeader(sport: .floorball, changeSport: {}, openSettings: {}).padding() }
 #Preview("Startsida – första start") {
     let store = PreviewData.store(.empty)
     store.teams = []

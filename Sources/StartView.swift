@@ -17,7 +17,7 @@ struct StartView: View {
         List {
             Section {
                 VStack(spacing: 18) {
-                    SportHeader(sport: sport) { store.sport = nil }
+                    SportHeader(sport: sport, changeSport: { store.sport = nil }, openSettings: { store.path.append(.settings) })
                     Button { if teams.isEmpty { showNeedsTeam = true } else { showNewMatch = true } } label: {
                         Label("Ny match", systemImage: "plus.circle.fill")
                             .font(.title3.weight(.bold))
@@ -88,21 +88,6 @@ struct StartView: View {
             }
 
             Section {
-                NavigationLink(value: Route.liveServer) {
-                    LabeledContent {
-                        Text(live.server?.name ?? "Ingen")
-                    } label: {
-                        Label("Live-server", systemImage: "antenna.radiowaves.left.and.right")
-                    }
-                }
-                NavigationLink(value: Route.settings) {
-                    Label("Inställningar", systemImage: "gearshape")
-                }
-            } header: {
-                Text("Inställningar")
-            }
-
-            Section {
                 MadeBy()
                     .frame(maxWidth: .infinity)
                     .listRowBackground(Color.clear)
@@ -142,27 +127,28 @@ struct StartView: View {
     }
 }
 
-/// The sport's picture with the app name and a button back to the sport picker. The button sits
-/// beside the name, not on the picture, so it is easy to see whatever the picture shows.
+/// The sport's picture with the app name, a button back to the sport picker and the settings gear.
+/// The buttons sit beside the name, not on the picture, so they are easy to see whatever the picture shows.
 struct SportHeader: View {
     let sport: Sport
     let changeSport: () -> Void
+    let openSettings: () -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         VStack(spacing: 12) {
             SportPicture(sport: sport)
-            // With the largest text sizes the button goes under the name, so neither is cut off.
+            // With the largest text sizes the buttons go under the name, so nothing is cut off.
             if typeSize.isAccessibilitySize {
                 VStack(spacing: 10) {
                     title
-                    changeButton
+                    buttons
                 }
             } else {
                 HStack(spacing: 12) {
                     title
                     Spacer(minLength: 8)
-                    changeButton
+                    buttons
                 }
             }
         }
@@ -181,6 +167,27 @@ struct SportHeader: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Matchreferat, \(sport.label)")
         .accessibilityAddTraits(.isHeader)
+    }
+
+    private var buttons: some View {
+        HStack(spacing: 8) {
+            changeButton
+            settingsButton
+        }
+    }
+
+    private var settingsButton: some View {
+        Button(action: openSettings) {
+            Image(systemName: "gearshape")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Theme.green)
+                .frame(width: 44, height: 44)
+                .background(Theme.green.opacity(0.14), in: Circle())
+                .overlay(Circle().strokeBorder(Theme.green.opacity(0.5), lineWidth: 1))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Inställningar")
     }
 
     private var changeButton: some View {
