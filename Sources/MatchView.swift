@@ -54,7 +54,7 @@ struct MatchView: View {
                         } label: {
                             Image(systemName: "ellipsis.circle")
                                 .font(.title2)
-                                .foregroundStyle(Theme.green)
+                                .foregroundStyle(Theme.accent)
                                 .frame(width: 34, height: 34)
                         }
                         .accessibilityLabel("Mer")
@@ -214,8 +214,8 @@ struct ClockControls: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.green)
+            .buttonStyle(.glassProminent)
+            .tint(Theme.accent)
 
             if phase == .playing {
                 Button { store.togglePause() } label: {
@@ -223,8 +223,7 @@ struct ClockControls: View {
                         .font(.title2)
                         .frame(width: 44, height: 44)
                 }
-                .buttonStyle(.bordered)
-                .tint(.primary)
+                .buttonStyle(.glass)
                 .accessibilityLabel(store.state.isRunning ? "Pausa klockan" : "Starta klockan")
             }
         }
@@ -323,10 +322,10 @@ struct EventGrid: View {
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: rowHeight)
-            .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+            .depthBackground(color)
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressDownButtonStyle())
         .accessibilityLabel("\(label) \(store.state.teamName(side)), \(count)")
     }
 
@@ -347,10 +346,10 @@ struct EventGrid: View {
                 HStack(spacing: 5) {
                     Image(systemName: kind.icon(for: store.state.sport))
                         .font(.body)
-                        .foregroundStyle(kind == .yellow ? .yellow : kind == .red ? .red : Theme.green)
+                        .foregroundStyle(kind == .yellow ? .yellow : kind == .red ? .red : Theme.accent)
                     Text("\(count)")
                         .font(.headline.monospacedDigit())
-                        .foregroundStyle(count > 0 ? Theme.green : Color.secondary)
+                        .foregroundStyle(count > 0 ? Theme.accent : Color.secondary)
                 }
                 Text(label)
                     .font(.caption.weight(.semibold))
@@ -360,10 +359,10 @@ struct EventGrid: View {
             }
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .background(Theme.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+            .depthBackground(Theme.accent)
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressDownButtonStyle())
         .accessibilityLabel("\(label) \(store.state.ourTeam), \(count)")
     }
 
@@ -410,5 +409,28 @@ struct ToastView: View {
         .background(Theme.slab.opacity(0.95), in: Capsule())
         .shadow(radius: 8, y: 3)
         .padding(.horizontal)
+    }
+}
+
+/// The event buttons sink a little when pressed.
+struct PressDownButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .animation(.spring(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+extension View {
+    /// Subtle depth for the event buttons: a soft gradient, a light top edge and a small shadow.
+    /// Not glass, because these have to stay easy to read in sunlight by the touchline.
+    func depthBackground(_ color: Color) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 12)
+        return background {
+            shape
+                .fill(LinearGradient(colors: [color.opacity(0.22), color.opacity(0.1)], startPoint: .top, endPoint: .bottom))
+                .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.4), .clear], startPoint: .top, endPoint: .center)))
+                .shadow(color: .black.opacity(0.1), radius: 3, y: 2)
+        }
     }
 }

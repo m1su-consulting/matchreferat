@@ -137,7 +137,7 @@ struct OngoingRow: View {
         HStack(spacing: 12) {
             Image(systemName: match.sport.icon)
                 .font(.title3)
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.accent)
                 .frame(width: 28)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {

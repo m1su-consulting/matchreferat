@@ -44,7 +44,7 @@ enum PreviewData {
 
 private extension View {
     func previewEnvironment(_ store: MatchStore = PreviewData.store(), live: LiveShare = PreviewData.liveShare()) -> some View {
-        environment(store).environment(live).tint(Theme.green)
+        environment(store).environment(live).tint(Theme.accent)
     }
 }
 

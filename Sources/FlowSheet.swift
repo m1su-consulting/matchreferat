@@ -135,7 +135,7 @@ struct PenaltyResultPicker: View {
                         .frame(maxWidth: .infinity, minHeight: 52)
                 }
                 .buttonStyle(.bordered)
-                .tint(result == .scored ? Theme.green : .primary)
+                .tint(result == .scored ? Theme.accent : .primary)
                 .accessibilityLabel("Straff: \(result.label)")
             }
         }
@@ -178,7 +178,7 @@ struct PlayerPicker: View {
                         .font(.headline)
                         .buttonStyle(.bordered)
                         .controlSize(.large)
-                        .tint(Theme.green)
+                        .tint(Theme.accent)
                 }
             }
             if players.isEmpty, let skip {
@@ -206,7 +206,7 @@ struct PlayerChip: View {
                 .font(.headline.monospacedDigit())
                 .foregroundStyle(.white)
                 .frame(width: 38, height: 38)
-                .background(Theme.green, in: Circle())
+                .background(Theme.accent, in: Circle())
             Text(player.name)
                 .font(.body.weight(.medium))
                 .foregroundStyle(.primary)

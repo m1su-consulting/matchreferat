@@ -83,12 +83,21 @@ enum LaunchArgument {
 }
 
 enum Theme {
-    static let green = Color(red: 0.13, green: 0.55, blue: 0.29)
-    static let rust = Color(red: 0.74, green: 0.34, blue: 0.17)
+    /// Our team and the app's main colour; a little lighter in dark mode so numbers stay readable.
+    static let accent = adaptive(light: (0.145, 0.388, 0.922), dark: (0.231, 0.51, 0.965))
+    /// The other team. Blue against orange can also be told apart with red-green colour blindness.
+    static let opponent = adaptive(light: (0.918, 0.345, 0.047), dark: (0.984, 0.573, 0.235))
     static let slab = Color(red: 0.09, green: 0.11, blue: 0.14)
     static let clock = Color(red: 1.0, green: 0.84, blue: 0.2)
 
-    static func color(_ side: Side) -> Color { side == .us ? green : rust }
+    static func color(_ side: Side) -> Color { side == .us ? accent : opponent }
+
+    private static func adaptive(light: (CGFloat, CGFloat, CGFloat), dark: (CGFloat, CGFloat, CGFloat)) -> Color {
+        Color(uiColor: UIColor { traits in
+            let c = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: c.0, green: c.1, blue: c.2, alpha: 1)
+        })
+    }
 }
 
 /// Screens pushed on the navigation stack above the start page.
@@ -130,7 +139,7 @@ struct RootView: View {
                 }
             }
         }
-        .tint(Theme.green)
+        .tint(Theme.accent)
         .sheet(isPresented: showConnect) { NavigationStack { LiveServerView() } }
     }
 }

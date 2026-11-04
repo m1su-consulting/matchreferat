@@ -14,7 +14,7 @@ struct TeamEditor: View {
                 LabeledContent("Sport") {
                     // A Label here gets a tall empty row on iOS 27, so icon and text are laid out by hand.
                     HStack(spacing: 6) {
-                        Image(systemName: team.sport.icon).foregroundStyle(Theme.green)
+                        Image(systemName: team.sport.icon).foregroundStyle(Theme.accent)
                         Text(team.sport.label)
                     }
                 }
@@ -31,7 +31,7 @@ struct TeamEditor: View {
                             .multilineTextAlignment(.center)
                             .frame(width: 40)
                             .padding(.vertical, 6)
-                            .background(Theme.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                            .background(Theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
                         TextField("Förnamn", text: $player.firstName)
                             .textInputAutocapitalization(.words)
                             .accessibilityLabel("Förnamn, nummer \(player.number)")
@@ -159,7 +159,7 @@ struct AddMatchPlayerSection: View {
             TextField("Nummer", text: $number)
                 .keyboardType(.numberPad)
             Toggle("Spara i truppen", isOn: $saveInSquad)
-                .tint(Theme.green)
+                .tint(Theme.accent)
             Button("Lägg till") {
                 add(Player(firstName: firstName.trimmingCharacters(in: .whitespaces),
                            lastName: lastName.trimmingCharacters(in: .whitespaces),

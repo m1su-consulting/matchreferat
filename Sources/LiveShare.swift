@@ -544,11 +544,11 @@ struct LiveRow: View {
                 Text(live.isOn ? "LIVE" : "Dela live")
             }
             .font(.subheadline.weight(.bold))
-            .foregroundStyle(live.isOn ? Color.white : Theme.green)
+            .foregroundStyle(live.isOn ? Color.white : Theme.accent)
             .padding(.horizontal, 12)
             .frame(minHeight: 32)
-            .background(live.isOn ? Color.red : Theme.green.opacity(0.14), in: Capsule())
             .contentShape(Capsule())
+            .glassEffect(live.isOn ? .regular.tint(.red).interactive() : .regular.interactive(), in: Capsule())
             .fixedSize()
         }
         .accessibilityLabel(live.isOn ? "Livelänken är aktiv, visa länk" : "Dela live")
@@ -584,7 +584,7 @@ struct LiveShareSheet: View {
                         } actions: {
                             Button("Koppla live-server") { showServer = true }
                                 .buttonStyle(.borderedProminent)
-                                .tint(Theme.green)
+                                .tint(Theme.accent)
                         }
                     }
                 }
@@ -614,7 +614,7 @@ struct LiveShareSheet: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .tint(Theme.green)
+        .tint(Theme.accent)
         .padding()
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
 
@@ -659,7 +659,7 @@ struct LiveShareSheet: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
-            .tint(Theme.green)
+            .tint(Theme.accent)
             if let last = live.lastSynced {
                 Text("Senast skickad \(last.formatted(date: .omitted, time: .standard))")
                     .font(.caption)
@@ -729,7 +729,7 @@ struct LiveServerView: View {
             } else if let result {
                 Section {
                     Label(result.text, systemImage: result.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                        .foregroundStyle(result.ok ? Theme.green : .orange)
+                        .foregroundStyle(result.ok ? Theme.accent : .orange)
                 }
             }
         }

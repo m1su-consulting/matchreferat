@@ -23,8 +23,8 @@ struct StartView: View {
                             .font(.title3.weight(.bold))
                             .frame(maxWidth: .infinity, minHeight: 52)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.green)
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.accent)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -123,7 +123,7 @@ struct StartView: View {
     @ViewBuilder private var matchActions: some View {
         Button(role: .destructive) { confirmDelete = true } label: { Label("Ta bort match", systemImage: "trash") }
         Button { store.endMatch() } label: { Label("Avsluta match", systemImage: "flag.checkered") }
-            .tint(Theme.green)
+            .tint(Theme.accent)
     }
 }
 
@@ -157,7 +157,7 @@ struct SportHeader: View {
     private var title: some View {
         HStack(spacing: 8) {
             Image(systemName: sport.icon)
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.accent)
                 .accessibilityHidden(true)
             Text("Matchreferat")
                 .font(.title.weight(.heavy))
@@ -180,11 +180,10 @@ struct SportHeader: View {
         Button(action: openSettings) {
             Image(systemName: "gearshape")
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.accent)
                 .frame(width: 44, height: 44)
-                .background(Theme.green.opacity(0.14), in: Circle())
-                .overlay(Circle().strokeBorder(Theme.green.opacity(0.5), lineWidth: 1))
                 .contentShape(Circle())
+                .glassEffect(.regular.interactive(), in: Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Inställningar")
@@ -197,13 +196,12 @@ struct SportHeader: View {
                 Text("Byt sport").lineLimit(1)
             }
             .font(.subheadline.weight(.bold))
-            .foregroundStyle(Theme.green)
+            .foregroundStyle(Theme.accent)
             .padding(.horizontal, 14)
             .frame(minHeight: 44)
-            // Same style as "Dela live" on the match page; Ny match below stays the only filled button.
-            .background(Theme.green.opacity(0.14), in: Capsule())
-            .overlay(Capsule().strokeBorder(Theme.green.opacity(0.5), lineWidth: 1))
+            // Same glass as "Dela live" on the match page; Ny match below stays the only filled button.
             .contentShape(Capsule())
+            .glassEffect(.regular.interactive(), in: Capsule())
         }
         .buttonStyle(.plain)
         .fixedSize(horizontal: true, vertical: false)
@@ -341,7 +339,7 @@ struct ContinueCard: View {
         HStack(spacing: 12) {
             Image(systemName: state.sport.icon)
                 .font(.title3)
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.accent)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(state.teamName(state.homeSide)) – \(state.teamName(state.awaySide))")

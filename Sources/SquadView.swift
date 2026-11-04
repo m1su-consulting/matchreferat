@@ -72,7 +72,7 @@ struct PlayerRow: View {
                     .font(.subheadline.weight(.bold).monospacedDigit())
                     .foregroundStyle(.white)
                     .frame(width: 30, height: 30)
-                    .background(player.status == .out ? Color.gray : Theme.green, in: Circle())
+                    .background(player.status == .out ? Color.gray : Theme.accent, in: Circle())
                 Text(player.name)
                     .font(.body.weight(.medium))
                     .foregroundStyle(player.status == .out ? .secondary : .primary)

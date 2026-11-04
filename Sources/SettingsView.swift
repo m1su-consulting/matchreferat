@@ -65,7 +65,7 @@ struct SettingsView: View {
             } footer: {
                 Text("Skärmen hålls tänd när matchsidan är öppen och matchen inte är slut.")
             }
-            .tint(Theme.green)
+            .tint(Theme.accent)
 
             Section {
                 NavigationLink(value: Route.liveServer) {
@@ -113,6 +113,6 @@ struct SettingsLink: View {
                 .frame(minHeight: 36)
         }
         .buttonStyle(.bordered)
-        .tint(Theme.green)
+        .tint(Theme.accent)
     }
 }

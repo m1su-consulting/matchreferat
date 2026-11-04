@@ -43,7 +43,7 @@ struct EventsView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
-                    .tint(Theme.green)
+                    .tint(Theme.accent)
                 }
             }
             .navigationTitle("Händelser")
