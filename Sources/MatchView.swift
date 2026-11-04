@@ -256,7 +256,7 @@ struct EventGrid: View {
     private var ourOnly: [EventKind] {
         switch store.state.sport {
         case .football: [.yellow, .red, .sub]
-        case .floorball: [.suspension, .sub]
+        case .floorball: [.suspension]  // Floorball subs happen all the time, so they aren't logged.
         }
     }
 

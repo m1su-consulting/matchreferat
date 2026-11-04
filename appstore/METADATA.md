@@ -23,7 +23,7 @@ Klistra in i App Store Connect → Matchreferat → version 1.0.3 (tidigare 1.0�
 
 **Reklamtext (170)**
 ```
-Referera barnens matcher i fotboll och innebandy live – mål, skott, straffar och byten med ett tryck. Dela en länk så kan mor- och farföräldrar följa matchen i realtid.
+Referera barnens matcher i fotboll och innebandy live – mål, skott och straffar med ett tryck. Dela en länk så kan mor- och farföräldrar följa matchen i realtid.
 ```
 
 **Beskrivning**
@@ -42,8 +42,8 @@ LAG OCH TRUPP
 
 UNDER MATCHEN
 • Klocka med halvlekar eller perioder, pauser och tilläggstid (t.ex. 25+2')
-• Logga mål med målskytt och assist, skott på mål och utanför, straffar och byten
-• Fotboll: hörnor, frisparkar, gula och röda kort
+• Logga mål med målskytt och assist, skott på mål och utanför samt straffar
+• Fotboll: hörnor, frisparkar, gula och röda kort samt byten
 • Innebandy: frislag och utvisningar (2, 5, 10 min eller matchstraff) med antal och minuter
 • Ångra direkt om du tryckte fel
 • Avsluta eller ta bort en match när du vill

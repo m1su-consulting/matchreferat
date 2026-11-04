@@ -118,6 +118,8 @@ struct FormatFields: View {
 struct LineupSection: View {
     @Binding var players: [Player]
     let playersOnField: Int
+    /// Floorball changes lines all the time, so only football counts against the format.
+    var countsStarters = true
 
     var body: some View {
         let starting = players.filter { $0.status == .start }.count
@@ -130,11 +132,13 @@ struct LineupSection: View {
             HStack {
                 Text("Trupp")
                 Spacer()
-                Text("\(starting) av \(playersOnField) på plan")
-                    .foregroundStyle(starting == playersOnField ? Color.secondary : Color.orange)
+                if countsStarters {
+                    Text("\(starting) av \(playersOnField) på plan")
+                        .foregroundStyle(starting == playersOnField ? Color.secondary : Color.orange)
+                }
             }
         } footer: {
-            if starting != playersOnField {
+            if countsStarters && starting != playersOnField {
                 Text(starting > playersOnField ? "Fler än \(playersOnField) står på Start." : "Färre än \(playersOnField) står på Start.")
                     .foregroundStyle(.orange)
             }

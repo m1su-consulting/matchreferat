@@ -414,7 +414,8 @@ extension MatchState {
     var bench: [Player] { players.filter { $0.status == .bench }.sorted { $0.number < $1.number } }
     var playingToday: [Player] { players.filter { $0.status != .out }.sorted { $0.number < $1.number } }
     /// Players to pick from for goals and shots: those on the pitch, or everyone playing today if no starters are set.
-    var pickable: [Player] { onField.isEmpty ? playingToday : onField }
+    /// Everyone playing can score in floorball, where subs aren't logged and Start says little.
+    var pickable: [Player] { sport == .floorball || onField.isEmpty ? playingToday : onField }
 
     func count(_ kind: EventKind, _ side: Side) -> Int {
         events.filter { $0.kind == kind && $0.side == side }.count
@@ -716,7 +717,6 @@ extension MatchState {
             (13, .freeKick, .us, nil, nil, nil, nil, nil, nil),
             (15, .period, .us, nil, nil, nil, "Periodpaus 1–1", nil, nil),
             (16, .period, .us, nil, nil, nil, "Start period 2", nil, nil),
-            (17, .sub, .us, id(12), id(14), nil, nil, nil, nil),
             (19, .goal, .us, id(10), nil, nil, nil, true, nil),
             (21, .shot, .them, nil, nil, .onTarget, nil, nil, nil),
             (22, .freeKick, .them, nil, nil, nil, nil, nil, nil),

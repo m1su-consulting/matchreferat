@@ -9,7 +9,8 @@ struct MatchSquadSheet: View {
         @Bindable var store = store
         NavigationStack {
             Form {
-                LineupSection(players: $store.state.players, playersOnField: store.state.playersOnField)
+                LineupSection(players: $store.state.players, playersOnField: store.state.playersOnField,
+                              countsStarters: store.state.sport == .football)
                 AddMatchPlayerSection { player, saveInSquad in
                     store.addMatchPlayer(player, saveInSquad: saveInSquad)
                 }

@@ -44,6 +44,12 @@ struct FloorballTests {
         #expect(store.state.periods == 3)
     }
 
+    @Test func everyoneCanBePickedInFloorball() {
+        var match = MatchState.exampleFloorball()
+        match.players[0].status = .bench
+        #expect(match.pickable == match.playingToday)
+    }
+
     @Test func newFootballTeamIsElevenASide() {
         let team = Team.new(.football)
         #expect(team.playersOnField == 11)
