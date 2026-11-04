@@ -2,7 +2,6 @@ import SwiftUI
 
 enum Flow: Identifiable, Hashable {
     case goal
-    case shot(ShotResult)
     case card(EventKind)
     case sub
     case penalty(Side)
@@ -99,7 +98,6 @@ struct MatchView: View {
             // `-demoSheet goal|squad|newMatch` opens that sheet (used for screenshots).
             switch LaunchArgument.string("demoSheet") {
             case "goal": flow = .goal
-            case "shot": flow = .shot(.onTarget)
             case "penalty": flow = .penalty(.us)
             case "suspension": flow = .suspension
             case "squad": showSquad = true
@@ -370,8 +368,7 @@ struct EventGrid: View {
         switch (action, side) {
         case (.event(.goal), .us): flow = .goal
         case (.event(.penalty), _): flow = .penalty(side)
-        case (.shot(let result), .us): flow = .shot(result)
-        case (.shot(let result), .them): store.log(.shot, side: .them, shot: result)
+        case (.shot(let result), _): store.log(.shot, side: side, shot: result)
         case (.event(let kind), _): store.log(kind, side: side)
         }
     }
