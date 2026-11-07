@@ -21,7 +21,7 @@ ReadLineup.prototype = {
         var walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
         var node;
         while ((node = walker.nextNode())) lines.push(node.nodeValue);
-        arguments.completionFunction({ supported: true, names: names, lines: lines });
+        arguments.completionFunction({ supported: true, names: names, lines: lines, url: location.href });
     },
     finalize: function(arguments) {}
 };

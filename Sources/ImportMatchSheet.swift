@@ -24,10 +24,21 @@ struct ImportMatchSheet: View {
                 } footer: {
                     Text("Trupperna sparas med hela namnet på telefonen. Det som delas visar bara förnamn och nummer.")
                 }
-                squad($match.home)
-                squad($match.away)
+                if let url = match.url.flatMap(URL.init(string:)) {
+                    Section {
+                        Link(destination: url) {
+                            Label(match.hasSquads ? "Hämta trupperna igen" : "Hämta trupperna", systemImage: "safari")
+                        }
+                    } footer: {
+                        Text("Öppna matchen i Safari, välj fliken Lineup och dela till Matchreferat. Trupperna publiceras ungefär en timme före avspark.")
+                    }
+                }
+                if match.hasSquads {
+                    squad($match.home)
+                    squad($match.away)
+                }
             }
-            .navigationTitle("Importera match")
+            .navigationTitle("Kommande match")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -38,6 +49,10 @@ struct ImportMatchSheet: View {
                         if store.hasUnfinishedMatch { confirmDiscard = true } else { start() }
                     }
                 }
+            }
+            .onChange(of: store.plannedMatches) {
+                // New squads shared from Safari while this sheet was open.
+                if let latest = store.plannedMatches.first(where: { $0.id == match.id }) { match = latest }
             }
             .alert("Avsluta pågående match?", isPresented: $confirmDiscard) {
                 Button("Starta ny match", role: .destructive) { start() }

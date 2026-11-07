@@ -390,6 +390,7 @@ struct MatchImportTests {
 
     @Test func readsBothTeamsWithFullNames() throws {
         let match = try #require(MatchImport.parse(names: ["Björkdalens IF P14", "Ekbacka IK"], lines: lines))
+        #expect(match.hasSquads)
         #expect(match.home.name == "Björkdalens IF P14")
         #expect(match.away.name == "Ekbacka IK")
         #expect(match.home.players.map(\.number) == [3, 7, 99, 12])
@@ -471,7 +472,31 @@ struct MatchImportTests {
         #expect(store.savedMatches.isEmpty)
     }
 
-    @Test func aPageWithoutLineupIsNotAMatch() {
+    @Test func aPageWithoutTeamsIsNotAMatch() {
         #expect(MatchImport.parse(names: [], lines: ["Flöde", "Tabell"]) == nil)
+    }
+
+    @Test func aMatchCanBeSharedBeforeTheSquadsAreOut() throws {
+        let early = try #require(MatchImport.parse(names: ["Björkdalens IF", "Ekbacka IK"], lines: ["Flöde"], url: "a"))
+        #expect(!early.hasSquads)
+        let list = MatchImport.merge(early, into: [])
+        #expect(list.count == 1)
+
+        // The same page later, with squads: it updates the same match.
+        let late = try #require(MatchImport.parse(names: ["Björkdalens IF", "Ekbacka IK"], lines: lines, url: "a"))
+        let updated = MatchImport.merge(late, into: list)
+        #expect(updated.count == 1)
+        #expect(updated[0].id == early.id)
+        #expect(updated[0].hasSquads)
+
+        // Sharing the page's first tab again doesn't remove them, and another match is its own row.
+        #expect(MatchImport.merge(early, into: updated)[0].hasSquads)
+        #expect(MatchImport.merge(try #require(MatchImport.parse(names: ["A", "B"], lines: [], url: "b")), into: updated).count == 2)
+    }
+
+    @Test func oldPlannedMatchesAreForgotten() throws {
+        let match = try #require(MatchImport.parse(names: ["A", "B"], lines: [], url: "a"))
+        let list = MatchImport.merge(match, into: [], now: .now.addingTimeInterval(-15 * 24 * 3600))
+        #expect(MatchImport.merge(try #require(MatchImport.parse(names: ["C", "D"], lines: [], url: "b")), into: list).count == 1)
     }
 }

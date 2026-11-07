@@ -34,7 +34,7 @@ final class ShareViewController: UIViewController {
             show(.failed)
             return
         }
-        MatchImport.save(match)
+        MatchImport.add(match)
         show(.done(match))
     }
 
@@ -46,7 +46,8 @@ final class ShareViewController: UIViewController {
               let dictionary = item as? NSDictionary,
               let page = dictionary[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
               page["supported"] as? Bool == true else { return nil }
-        return MatchImport.parse(names: page["names"] as? [String] ?? [], lines: page["lines"] as? [String] ?? [])
+        return MatchImport.parse(names: page["names"] as? [String] ?? [], lines: page["lines"] as? [String] ?? [],
+                                 url: page["url"] as? String)
     }
 }
 
@@ -67,14 +68,16 @@ struct ShareResultView: View {
                 ProgressView("Läser matchen…")
             case .failed:
                 Image(systemName: "exclamationmark.circle").font(.largeTitle).foregroundStyle(.orange)
-                Text("Hittade ingen trupp").font(.title3.bold())
-                Text("Öppna matchen på Min fotboll i Safari, välj fliken Lineup och dela igen.")
+                Text("Hittade ingen match").font(.title3.bold())
+                Text("Öppna matchen på Min fotboll i Safari och dela igen.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             case .done(let match):
                 Image(systemName: "checkmark.circle.fill").font(.largeTitle).foregroundStyle(.green)
                 Text("\(match.home.name) – \(match.away.name)").font(.title3.bold()).multilineTextAlignment(.center)
-                Text("Öppna Matchreferat för att starta matchen.")
+                Text(match.hasSquads
+                     ? "Matchen ligger under Kommande matcher i Matchreferat."
+                     : "Matchen ligger under Kommande matcher. Trupperna hämtas när du delar fliken Lineup efter att de är publicerade.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }

@@ -16,6 +16,8 @@ final class MatchStore {
     var teams: [Team]
     /// Finished matches the user chose to keep, newest first.
     private(set) var savedMatches: [SavedMatch] = []
+    /// Matches shared from Min fotboll in Safari, not started yet.
+    private(set) var plannedMatches: [ImportedMatch] = []
     var toast: Toast?
     /// The sport chosen on the first page, remembered between launches. Nil shows the sport picker.
     var sport: Sport? {
@@ -317,6 +319,18 @@ final class MatchStore {
         openMatch()
     }
 
+    /// Picks up what the share extension left. A newly shared match shows on the football start page.
+    func refreshPlanned() {
+        let planned = MatchImport.planned()
+        if planned.contains(where: { new in !plannedMatches.contains(new) }) { sport = .football }
+        plannedMatches = planned
+    }
+
+    func deletePlanned(_ id: UUID) {
+        MatchImport.remove(id)
+        refreshPlanned()
+    }
+
     /// A finished match is kept automatically, and later corrections to it replace the saved copy.
     private func saveFinishedMatch(_ payload: Data) {
         if let index = savedMatches.firstIndex(where: { $0.id == state.id }) {
@@ -357,6 +371,7 @@ final class MatchStore {
         sport = .football
         newMatch(team: team, opponent: match.away.name, isHome: true)
         state.opponentPlayers = squad(match.away)
+        deletePlanned(match.id)
     }
 
     /// Remembers today's Start/Bänk/Ej med as the team's lineup for next time.

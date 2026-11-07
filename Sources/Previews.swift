@@ -67,13 +67,7 @@ private extension View {
 #Preview("Utvecklad av") { MadeBy() }
 #Preview("Fortsätt match") { List { ContinueCard() }.previewEnvironment() }
 #Preview("Ny match") { NewMatchSheet().previewEnvironment() }
-#Preview("Importera match") {
-    let team = { (name: String) in
-        ImportedTeam(name: name, players: [ImportedPlayer(number: 1, firstName: "Alva", starts: true),
-                                           ImportedPlayer(number: 7, firstName: "Liam", starts: false)])
-    }
-    ImportMatchSheet(match: ImportedMatch(home: team("Björkdalens IF"), away: team("Ekbacka IK"))).previewEnvironment()
-}
+#Preview("Kommande match") { ImportMatchSheet(match: .example).previewEnvironment() }
 
 // MARK: Match page
 

@@ -8,6 +8,7 @@ struct StartView: View {
     @State private var showNeedsTeam = false
     @State private var confirmDelete = false
     @State private var browserPage: BrowserPage?
+    @State private var importing: ImportedMatch?
 
     private var sport: Sport { store.sport ?? .football }
 
@@ -54,6 +55,16 @@ struct StartView: View {
             if let server = live.server {
                 OngoingSection(list: live.ongoing.filtered(sport), serverName: server.name) { match in
                     browserPage = BrowserPage(url: server.viewerURL(matchID: match.id))
+                }
+            }
+
+            if sport == .football && !store.plannedMatches.isEmpty {
+                Section("Kommande matcher") {
+                    ForEach(store.plannedMatches) { match in
+                        Button { importing = match } label: { PlannedMatchRow(match: match) }
+                            .buttonStyle(.plain)
+                    }
+                    .onDelete { offsets in offsets.map { store.plannedMatches[$0].id }.forEach(store.deletePlanned) }
                 }
             }
 
@@ -129,6 +140,7 @@ struct StartView: View {
         }
         .sheet(item: $browserPage) { page in SafariView(url: page.url).ignoresSafeArea() }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
+        .sheet(item: $importing) { ImportMatchSheet(match: $0) }
         .alert("Skapa ett lag först", isPresented: $showNeedsTeam) {
             Button("Lägg till lag") { store.path.append(.team(store.addTeam(sport).id)) }
             Button("Prova med ett exempellag") { store.addExampleTeam(sport) }
@@ -140,6 +152,13 @@ struct StartView: View {
         .onAppear {
             // `-demoSheet newMatch` opens the new match sheet (used for screenshots).
             if LaunchArgument.string("demoSheet") == "newMatch" { showNewMatch = true }
+            // `-demoSheet import` shows an imported match with fictional players.
+            if LaunchArgument.string("demoSheet") == "import" { importing = .example }
+            // `-demoSheet planned` adds it to Kommande matcher.
+            if LaunchArgument.string("demoSheet") == "planned" {
+                MatchImport.add(.example)
+                store.refreshPlanned()
+            }
         }
     }
 
@@ -293,6 +312,22 @@ struct SportPickerView: View {
         let count = store.teams(for: sport).count
         let match = store.hasMatchInProgress(in: sport) ? " · pågående match" : ""
         return (count == 0 ? "Inga lag än" : count == 1 ? "1 lag" : "\(count) lag") + match
+    }
+}
+
+/// A shared match waiting to be started.
+struct PlannedMatchRow: View {
+    let match: ImportedMatch
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(match.home.name) – \(match.away.name)").font(.headline)
+            Text(match.hasSquads ? "\(match.home.players.count) och \(match.away.players.count) spelare" : "Trupperna är inte hämtade än")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 }
 

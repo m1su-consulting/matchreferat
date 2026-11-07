@@ -651,6 +651,19 @@ extension MatchState {
     }
 }
 
+extension ImportedMatch {
+    /// Fictional, for previews and `-demoSheet import`.
+    static let example: ImportedMatch = {
+        let names = ["Alva", "Leo", "Noah", "Ella", "Hugo", "Maja", "Liam", "Wilma", "Elias"]
+        let team = { (name: String, first: Int) in
+            ImportedTeam(name: name, players: names.enumerated().map { index, firstName in
+                ImportedPlayer(number: first + index, firstName: firstName, starts: index < 7)
+            })
+        }
+        return ImportedMatch(home: team("Björkdalens IF", 1), away: team("Ekbacka IK", 11), url: "https://example.com/match")
+    }()
+}
+
 extension MatchState {
     /// No team and no match yet, as on first launch.
     static let empty = MatchState(teamID: nil, ourTeam: "", opponent: "", isHome: true, halfLength: 25, periods: 2,

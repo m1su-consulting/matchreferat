@@ -15,30 +15,76 @@ struct ImportedTeam: Codable, Equatable {
     var players: [ImportedPlayer]
 }
 
-/// Both teams of a match shared from Safari, waiting for the app to pick it up.
+/// A match shared from Safari, waiting under Kommande matcher. The squads are empty until they are published.
 struct ImportedMatch: Codable, Equatable, Identifiable {
     var id = UUID()
     var home: ImportedTeam
     var away: ImportedTeam
+    /// The page on Min fotboll. Sharing the same page again updates this match.
+    var url: String?
+    var sharedAt = Date()
+
+    var hasSquads: Bool { !home.players.isEmpty && !away.players.isEmpty }
 }
 
 enum MatchImport {
     /// Shared by the app and the share extension.
     private static let suite = "group.se.matchreferat.app"
-    private static let pendingKey = "pendingImport"
+    private static let plannedKey = "plannedMatches"
+    /// A match nobody started is forgotten after this long, so the squads don't stay on the phone.
+    private static let keptFor: TimeInterval = 14 * 24 * 3600
 
     /// Reads the text of a Min fotboll match page, line by line: for each team "Matchtrupp", then number,
     /// first name and surname (and sometimes "Målvakt") per player, then "Ersättare" and "Ledare".
-    /// `names` are the two team names from the page's header.
-    static func parse(names: [String], lines: [String]) -> ImportedMatch? {
+    /// `names` are the two team names from the page's header. Before the squads are out only the names are there.
+    static func parse(names: [String], lines: [String], url: String? = nil) -> ImportedMatch? {
+        guard names.count == 2, !names.contains(where: \.isEmpty) else { return nil }
         let lines = lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         let starts = lines.indices.filter { lines[$0].caseInsensitiveCompare("Matchtrupp") == .orderedSame }
-        guard starts.count == 2 else { return nil }
-        let home = players(lines[(starts[0] + 1)..<starts[1]])
-        let away = players(lines[(starts[1] + 1)...])
-        guard !home.isEmpty, !away.isEmpty else { return nil }
-        return ImportedMatch(home: ImportedTeam(name: names.first ?? "", players: home),
-                             away: ImportedTeam(name: names.dropFirst().first ?? "", players: away))
+        var home: [ImportedPlayer] = [], away: [ImportedPlayer] = []
+        if starts.count == 2 {
+            home = players(lines[(starts[0] + 1)..<starts[1]])
+            away = players(lines[(starts[1] + 1)...])
+        }
+        return ImportedMatch(home: ImportedTeam(name: names[0], players: home),
+                             away: ImportedTeam(name: names[1], players: away), url: url)
+    }
+
+    /// Adds a shared match to the list, or updates it if the same page was shared before.
+    /// A page without squads doesn't remove the ones already read.
+    static func merge(_ match: ImportedMatch, into list: [ImportedMatch], now: Date = .now) -> [ImportedMatch] {
+        var list = list.filter { now.timeIntervalSince($0.sharedAt) < keptFor }
+        var new = match
+        new.sharedAt = now
+        if let index = list.firstIndex(where: { $0.url == match.url && match.url != nil }) {
+            new.id = list[index].id
+            if !new.hasSquads {
+                new.home.players = list[index].home.players
+                new.away.players = list[index].away.players
+            }
+            list[index] = new
+        } else {
+            list.append(new)
+        }
+        return list
+    }
+
+    static func planned() -> [ImportedMatch] {
+        guard let data = UserDefaults(suiteName: suite)?.data(forKey: plannedKey),
+              let list = try? JSONDecoder().decode([ImportedMatch].self, from: data) else { return [] }
+        return list.filter { Date.now.timeIntervalSince($0.sharedAt) < keptFor }
+    }
+
+    static func add(_ match: ImportedMatch) {
+        store(merge(match, into: planned()))
+    }
+
+    static func remove(_ id: UUID) {
+        store(planned().filter { $0.id != id })
+    }
+
+    private static func store(_ list: [ImportedMatch]) {
+        UserDefaults(suiteName: suite)?.set(try? JSONEncoder().encode(list), forKey: plannedKey)
     }
 
     private static let headings: Set<String> = ["ersättare", "ledare", "matchtrupp"]
@@ -68,16 +114,5 @@ enum MatchImport {
             index += 1
         }
         return result
-    }
-
-    static func save(_ match: ImportedMatch) {
-        UserDefaults(suiteName: suite)?.set(try? JSONEncoder().encode(match), forKey: pendingKey)
-    }
-
-    /// The match waiting to be imported, which is removed from the shared storage.
-    static func takePending() -> ImportedMatch? {
-        guard let defaults = UserDefaults(suiteName: suite), let data = defaults.data(forKey: pendingKey) else { return nil }
-        defaults.removeObject(forKey: pendingKey)
-        return try? JSONDecoder().decode(ImportedMatch.self, from: data)
     }
 }
