@@ -294,7 +294,8 @@ struct PlannedMatchRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("\(match.home.name) – \(match.away.name)").font(.headline)
-            Text(match.hasSquads ? "\(match.home.players.count) och \(match.away.players.count) spelare" : "Trupperna är inte hämtade än")
+            Text(match.home.players.isEmpty && match.away.players.isEmpty ? "Trupperna är inte hämtade än"
+                 : "\(match.home.players.count) och \(match.away.players.count) spelare")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

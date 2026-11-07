@@ -33,10 +33,8 @@ struct ImportMatchSheet: View {
                         Text("Matchen öppnas i Safari. Dela den till Matchreferat igen, så kommer trupperna med. De publiceras ungefär en timme före avspark.")
                     }
                 }
-                if match.hasSquads {
-                    squad($match.home)
-                    squad($match.away)
-                }
+                if !match.home.players.isEmpty { squad($match.home) }
+                if !match.away.players.isEmpty { squad($match.away) }
             }
             .navigationTitle("Kommande match")
             .navigationBarTitleDisplayMode(.inline)

@@ -507,6 +507,15 @@ struct MatchImportTests {
         #expect(store.state.periods == 3)
     }
 
+    @Test func oneTeamsSquadIsKeptWhenTheOtherComesLater() throws {
+        let first = try #require(MatchImport.parseFloorball(names: ["A", "B"], teams: [[["number": "1", "name": "Alva"]], []], url: "a"))
+        #expect(!first.hasSquads)
+        let later = try #require(MatchImport.parseFloorball(names: ["A", "B"], teams: [[], [["number": "9", "name": "Saga"]]], url: "a"))
+        let merged = MatchImport.merge(later, into: MatchImport.merge(first, into: []))
+        #expect(merged.count == 1)
+        #expect(merged[0].hasSquads)
+    }
+
     @Test func pastedTextGivesLinkAndNames() throws {
         let shared = try #require(MatchImport.pasted("Björkdalens IF - Ekbacka IK Dam\nhttps://minfotboll.app.link/abc"))
         #expect(shared.url == "https://minfotboll.app.link/abc")

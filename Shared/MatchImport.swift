@@ -80,17 +80,15 @@ enum MatchImport {
     }
 
     /// Adds a shared match to the list, or updates it if the same page was shared before.
-    /// A page without squads doesn't remove the ones already read.
+    /// A page without a squad doesn't remove the one already read.
     static func merge(_ match: ImportedMatch, into list: [ImportedMatch], now: Date = .now) -> [ImportedMatch] {
         var list = list.filter { now.timeIntervalSince($0.sharedAt) < keptFor }
         var new = match
         new.sharedAt = now
         if let index = list.firstIndex(where: { $0.url == match.url && match.url != nil }) {
             new.id = list[index].id
-            if !new.hasSquads {
-                new.home.players = list[index].home.players
-                new.away.players = list[index].away.players
-            }
+            if new.home.players.isEmpty { new.home.players = list[index].home.players }
+            if new.away.players.isEmpty { new.away.players = list[index].away.players }
             list[index] = new
         } else {
             list.append(new)
