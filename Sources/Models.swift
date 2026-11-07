@@ -344,7 +344,7 @@ struct MatchState: Equatable {
     var halfLength: Int
     var periods: Int = 2
     var playersOnField: Int = 9
-    /// Identifies the match among the saved ones. Matches saved before 1.1.0 get a new one when loaded.
+    /// Identifies the match among the saved ones. Matches saved before 2.0 get a new one when loaded.
     var id = UUID()
     var players: [Player]
     /// The other team's squad, from an imported match. Empty when the opponent is just a name.
