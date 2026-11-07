@@ -107,6 +107,7 @@ final class MatchStore {
             context.insert(StoredMatch(payload: payload))
         }
         commit()
+        if state.phase == .finished && !state.events.isEmpty { saveFinishedMatch(payload) }
     }
 
     func saveTeams() {
@@ -316,13 +317,19 @@ final class MatchStore {
         openMatch()
     }
 
-    var isMatchSaved: Bool { savedMatches.contains { $0.state == state } }
-
-    func saveMatch() {
-        guard !isMatchSaved, let payload = try? JSONEncoder().encode(state) else { return }
-        let match = SavedMatch(id: UUID(), savedAt: .now, state: state)
-        savedMatches.insert(match, at: 0)
-        container.mainContext.insert(StoredSavedMatch(id: match.id, savedAt: match.savedAt, payload: payload))
+    /// A finished match is kept automatically, and later corrections to it replace the saved copy.
+    private func saveFinishedMatch(_ payload: Data) {
+        if let index = savedMatches.firstIndex(where: { $0.id == state.id }) {
+            guard savedMatches[index].state != state else { return }
+            savedMatches[index] = SavedMatch(id: state.id, savedAt: savedMatches[index].savedAt, state: state)
+            let id = state.id
+            (try? container.mainContext.fetch(FetchDescriptor<StoredSavedMatch>(predicate: #Predicate { $0.id == id })))?
+                .first?.payload = payload
+        } else {
+            let match = SavedMatch(id: state.id, savedAt: .now, state: state)
+            savedMatches.insert(match, at: 0)
+            container.mainContext.insert(StoredSavedMatch(id: match.id, savedAt: match.savedAt, payload: payload))
+        }
         commit()
     }
 

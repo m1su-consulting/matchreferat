@@ -440,20 +440,35 @@ struct MatchImportTests {
         #expect(store.state.isHome)
     }
 
-    @Test func aFinishedMatchCanBeSavedOnceAndDeleted() throws {
+    @Test func aFinishedMatchIsSavedAndCorrectionsReplaceIt() throws {
         let container = Persistence.container(inMemory: true)
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let store = MatchStore(container: container, legacyDirectory: directory)
         importedMatch(in: store)
-        store.saveMatch()
-        store.saveMatch()
-        #expect(store.isMatchSaved)
+        store.log(.corner, side: .us)
+        store.log(.goal, side: .them)
+        store.save()
+        #expect(store.savedMatches.isEmpty)     // still being played
+        store.state.phase = .finished
+        store.save()
         #expect(store.savedMatches.count == 1)
+        store.deleteEvent(try #require(store.state.events.first).id)
+        store.save()
         let reopened = MatchStore(container: container, legacyDirectory: directory)
         let saved = try #require(reopened.savedMatches.first)
+        #expect(reopened.savedMatches.count == 1)
+        #expect(saved.state.events.count == 1)
         #expect(saved.state.opponentPlayers.count == 2)
         reopened.deleteSavedMatch(saved.id)
         #expect(MatchStore(container: container, legacyDirectory: directory).savedMatches.isEmpty)
+    }
+
+    @Test func aFinishedMatchWithoutEventsIsNotSaved() {
+        let store = makeStore()
+        importedMatch(in: store)
+        store.state.phase = .finished
+        store.save()
+        #expect(store.savedMatches.isEmpty)
     }
 
     @Test func aPageWithoutLineupIsNotAMatch() {

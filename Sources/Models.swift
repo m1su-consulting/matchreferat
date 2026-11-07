@@ -341,6 +341,8 @@ struct MatchState: Equatable {
     var halfLength: Int
     var periods: Int = 2
     var playersOnField: Int = 9
+    /// Identifies the match among the saved ones. Matches saved before 1.1.0 get a new one when loaded.
+    var id = UUID()
     var players: [Player]
     /// The other team's squad, from an imported match. Empty when the opponent is just a name.
     var opponentPlayers: [Player] = []
@@ -355,12 +357,13 @@ struct MatchState: Equatable {
 
 extension MatchState: Codable {
     private enum CodingKeys: String, CodingKey {
-        case sport, teamID, ourTeam, opponent, isHome, halfLength, periods, playersOnField, players, opponentPlayers, events
+        case id, sport, teamID, ourTeam, opponent, isHome, halfLength, periods, playersOnField, players, opponentPlayers, events
         case phase, period, isRunning, accumulated, runningSince
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         // Matches saved before 1.0.3 have no sport and are football matches.
         sport = try c.decodeIfPresent(Sport.self, forKey: .sport) ?? .football
         teamID = try c.decodeIfPresent(UUID.self, forKey: .teamID)
@@ -389,6 +392,7 @@ extension MatchState: Codable {
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
         try c.encode(sport, forKey: .sport)
         try c.encodeIfPresent(teamID, forKey: .teamID)
         try c.encode(ourTeam, forKey: .ourTeam)

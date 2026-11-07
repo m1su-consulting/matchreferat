@@ -224,15 +224,6 @@ struct ClockControls: View {
                 .buttonStyle(.glass)
                 .accessibilityLabel(store.state.isRunning ? "Pausa klockan" : "Starta klockan")
             }
-            if phase == .finished {
-                Button { store.saveMatch() } label: {
-                    Label(store.isMatchSaved ? "Sparad" : "Spara", systemImage: store.isMatchSaved ? "checkmark" : "tray.and.arrow.down")
-                        .font(.headline)
-                        .frame(minHeight: 44)
-                }
-                .buttonStyle(.glass)
-                .disabled(store.isMatchSaved)
-            }
         }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .alert("Blås slutsignal?", isPresented: $confirmEnd) {

@@ -71,7 +71,7 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 ```
 • Importera en match från Min fotboll: öppna matchen i Safari, dela till Matchreferat och starta med båda trupperna ifyllda
 • Båda lagen är likvärdiga: mål, kort, byten och utvisningar med spelare för båda
-• Spara färdiga matcher på telefonen och se hur det gick
+• Färdiga matcher sparas på telefonen, så du kan se hur det gick
 • Hela namn visas bara i appen – det som delas visar förnamn och nummer
 ```
 
