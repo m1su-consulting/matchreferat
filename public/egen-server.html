@@ -1,71 +1,102 @@
 <!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><style>:root{--bg:#fff;--text:#14181d;--muted:#5d636b;--accent:#2563eb}@media (prefers-color-scheme:dark){:root{--bg:#000;--text:#f2f2f7;--muted:#9a9ca3;--accent:#3b82f6}}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}main{max-width:680px;margin:0 auto;padding:32px 16px 48px}h1{font-size:28px;margin:0 0 4px}h2{font-size:19px;margin:28px 0 6px}p,li{color:var(--text)}.muted{color:var(--muted);font-size:14px}a{color:var(--accent)}hr{border:0;border-top:1px solid #8884;margin:36px 0}</style><style>.box{background:#8881;border-radius:12px;padding:16px;margin:16px 0}label{display:block;font-weight:600;margin:12px 0 4px}input{width:100%;box-sizing:border-box;font:inherit;padding:10px;border-radius:10px;border:1px solid #8886;background:var(--bg);color:var(--text)}.btn{display:inline-block;background:var(--accent);color:#fff;border:0;border-radius:999px;padding:12px 20px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer;margin:8px 8px 0 0}.btn.secondary{background:#8883;color:var(--text)}code,pre{font-family:ui-monospace,Menlo,monospace;font-size:13px}pre{white-space:pre-wrap;word-break:break-all;background:#8881;border-radius:10px;padding:12px;max-height:340px;overflow:auto}#qr{background:#fff;display:inline-block;padding:12px;border-radius:12px}#qr img{display:block;width:220px;height:220px;image-rendering:pixelated}ol li{margin:6px 0}</style><title>Egen live-server – Matchreferat</title></head><body><main>
 <h1>Skapa en egen live-server</h1>
-<p class="muted">Matchreferat · tar cirka 15 minuter · gratis</p>
+<p class="muted">Matchreferat · cirka 10 minuter · gratis, inget kort behövs</p>
 
-<p>Livelänken i Matchreferat behöver en plats där matchen kan lagras medan andra tittar. Den platsen är en gratis databas hos Google Firebase som <strong>du</strong> äger. Ingen annan kan läsa dina matcher utan länken, och gamla matcher går inte att läsa efter sju dagar.</p>
-<p>Du behöver ett Google-konto. Gratisnivån (Spark) räcker gott, och du behöver inte ange något kort.</p>
+<p>För att andra ska kunna följa dina matcher behöver appen en plats att lägga dem på. Det är en gratis databas hos Google Firebase som <strong>du</strong> äger. En i laget gör det här en gång och delar sedan kopplingslänken med de andra föräldrarna som vill referera.</p>
+<p>Gör det gärna på en dator. Du behöver bara ett Google-konto.</p>
 
-<h2>1. Skapa ett Firebase-projekt</h2>
+<h2>1. Skapa projektet</h2>
 <ol>
-<li>Gå till <a href="https://console.firebase.google.com/">console.firebase.google.com</a> och logga in med ditt Google-konto.</li>
-<li>Klicka <strong>Skapa ett projekt</strong> (Create a project), ge det ett namn, till exempel <em>mitt-lag-live</em>.</li>
-<li>Google Analytics behövs inte – stäng av det. Klicka <strong>Skapa</strong>.</li>
+<li>Öppna <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebase</a> och logga in.</li>
+<li>Välj <strong>Create a project</strong> och skriv ett namn, till exempel <em>bjorkdalen-p14-live</em>.</li>
+<li>Stäng av Google Analytics och klicka på <strong>Create</strong>.</li>
 </ol>
+<label for="project">Projektets id, så blir länkarna nedan direktlänkar (frivilligt)</label>
+<input id="project" placeholder="t.ex. bjorkdalen-p14-live" autocomplete="off" autocapitalize="none">
+<p class="muted">Du ser id:t under projektnamnet i Firebase, eller i adressen efter <code>/project/</code>.</p>
 
 <h2>2. Slå på anonym inloggning</h2>
 <ol>
-<li>I vänstermenyn: <strong>Security → Authentication</strong>. Klicka <strong>Get started</strong> om knappen visas.</li>
-<li>Fliken <strong>Sign-in method</strong> → <strong>Anonymous</strong> → slå på <strong>Enable</strong> → <strong>Save</strong>.</li>
+<li>Öppna <a data-path="/authentication/providers" href="https://console.firebase.google.com/" target="_blank" rel="noopener">Authentication</a> och klicka på <strong>Get started</strong> om knappen visas.</li>
+<li>Välj <strong>Anonymous</strong>, slå på <strong>Enable</strong> och klicka på <strong>Save</strong>.</li>
 </ol>
-<p class="muted">Ingen behöver skapa konto. Den anonyma inloggningen gör bara att endast din telefon kan ändra din match.</p>
 
 <h2>3. Skapa databasen</h2>
 <ol>
-<li>I vänstermenyn: <strong>Databases &amp; Storage → Firestore</strong> → <strong>Create database</strong>.</li>
-<li>Välj en plats i Europa, till exempel <strong>europe-north1 (Finland)</strong> eller <strong>eur3</strong>. Den går inte att ändra senare.</li>
-<li>Välj <strong>Start in production mode</strong> → <strong>Create</strong>.</li>
+<li>Öppna <a data-path="/firestore" href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firestore</a> och klicka på <strong>Create database</strong>.</li>
+<li>Välj en plats i Europa, till exempel <strong>europe-north1</strong>.</li>
+<li>Välj <strong>Production mode</strong> och klicka på <strong>Create</strong>.</li>
 </ol>
 
-<h2>4. Lägg in säkerhetsreglerna</h2>
+<h2>4. Lägg in reglerna</h2>
 <ol>
-<li>I Firestore, öppna fliken <strong>Rules</strong>.</li>
-<li>Ta bort allt som står där och klistra in reglerna nedan. Klicka <strong>Publish</strong>.</li>
+<li>Klicka på knappen nedan, så kopieras reglerna.</li>
+<li>Öppna fliken <strong>Rules</strong> i Firestore, ta bort allt som står där, klistra in och klicka på <strong>Publish</strong>.</li>
 </ol>
 <button class="btn secondary" id="copy-rules" type="button">Kopiera reglerna</button>
-<pre id="rules">Laddar reglerna…</pre>
-<p class="muted">Reglerna gör att vem som helst med en livelänk kan läsa just den matchen, men ingen kan lista matcherna och bara den som skapade matchen kan ändra den. Alla som har kopplat appen till servern (med kopplingslänken) ser dessutom en lista "Pågår nu" med lagnamn, ställning och matchminut för matcher som delas live. Spelare och händelser syns bara på livesidan.</p>
-<p class="muted"><strong>Har du redan en server?</strong> Klistra in reglerna igen när du uppdaterar appen, till exempel till 1.0.2 (annars visas inte "Pågår nu") och 1.0.3 (som stoppar utgångna matcher). Livedelningen fungerar ändå med de gamla reglerna.</p>
 
-<h2>5. Radering av gamla matcher</h2>
-<p>Det här sköts av reglerna och appen, så du behöver inte göra något. Matchen raderas direkt när du stänger av "Dela live". Har en match inte uppdaterats på sju dagar går den inte längre att läsa, och appen raderar den från servern nästa gång den öppnas.</p>
-<p class="muted"><strong>Har du betalplanen Blaze?</strong> Då kan du låta Firebase radera utgångna matcher själv: i Firestore, öppna fliken <strong>Time-to-live (TTL)</strong> → <strong>Create policy</strong>, med Collection group <code>matches</code> och Timestamp field <code>expireAt</code>, och en policy till för <code>ongoing</code>. På gratisnivån Spark finns inte TTL.</p>
-
-<h2>6. Hämta uppgifterna för appen</h2>
+<h2>5. Skapa kopplingslänken</h2>
 <ol>
-<li>Klicka på kugghjulet → <strong>Project settings</strong>.</li>
-<li>Under <strong>Your apps</strong>, klicka på webbikonen <strong>&lt;/&gt;</strong> för att lägga till en webbapp. Ge den valfritt namn. Firebase Hosting behövs inte.</li>
-<li>Du ser nu en kodruta med <code>firebaseConfig</code>. Där står <code>apiKey</code> (börjar med <em>AIza</em>) och <code>projectId</code>. Det är de två du behöver.</li>
+<li>Öppna <a data-path="/settings/general" href="https://console.firebase.google.com/" target="_blank" rel="noopener">Project settings</a> och klicka på webbikonen <strong>&lt;/&gt;</strong> under <strong>Your apps</strong>.</li>
+<li>Skriv valfritt namn och klicka på <strong>Register app</strong>. Hosting behövs inte.</li>
+<li>Kopiera kodrutan som visas, med <code>apiKey</code> och <code>projectId</code>, och klistra in den här:</li>
 </ol>
-<p class="muted">API-nyckeln för webben är inte hemlig – den identifierar bara projektet. Det är säkerhetsreglerna som skyddar datan.</p>
+<textarea id="config" placeholder="const firebaseConfig = { apiKey: &quot;AIza…&quot;, projectId: &quot;…&quot; … }" autocomplete="off" autocapitalize="none" spellcheck="false"></textarea>
+<label for="name">Namn som visas i appen (frivilligt)</label>
+<input id="name" maxlength="40" placeholder="t.ex. Björkdalens IF P14">
+<p><button class="btn" id="make-link" type="button">Skapa kopplingslänk</button></p>
+<p class="muted" id="config-error" hidden>Hittade inte apiKey och projectId. Kopiera hela kodrutan och försök igen.</p>
+<p class="muted">Inget sparas eller skickas, allt sker här i din webbläsare.</p>
 
-<h2>7. Koppla appen</h2>
-<ol>
-<li>Gå till <a href="/koppla">matchreferat.web.app/koppla</a>, fyll i projekt-id och API-nyckel och klicka <strong>Skapa kopplingslänk</strong>.</li>
-<li>Öppna länken på telefonen (eller skanna QR-koden) och tryck <strong>Öppna i Matchreferat</strong>. Appen testar anslutningen och kopplas.</li>
-<li>Klart! Nu fungerar <strong>Dela live</strong> på matchsidan. Du kan dela kopplingslänken med andra föräldrar du litar på.</li>
-</ol>
+<h2>6. Koppla appen</h2>
+<p>Öppna kopplingslänken på telefonen, eller skanna QR-koden, och tryck på <strong>Öppna i Matchreferat</strong>. Appen testar anslutningen. Klart! Nu fungerar <strong>Dela live</strong>.</p>
+<p>Skicka länken till dem i laget som också ska referera. De som bara ska titta behöver den inte: de får en livelänk för varje match.</p>
 
 <h2>Om något inte fungerar</h2>
-<p>Gå till <strong>Inställningar → Live-server → Testa anslutningen</strong> i appen. Den talar om vad som saknas: anonym inloggning, databasen eller säkerhetsreglerna.</p>
+<p>Gå till <strong>Inställningar → Live-server → Testa anslutningen</strong> i appen. Den talar om vad som saknas: anonym inloggning, databasen eller reglerna.</p>
+
+<details>
+<summary>Mer för den som är nyfiken</summary>
+<h3>Vad reglerna gör</h3>
+<p class="muted">Den som har en livelänk kan läsa just den matchen, ingen kan lista matcherna, och bara den som skapade en match kan ändra den. De som har kopplat appen ser dessutom Pågår nu med lagnamn, ställning och matchminut. Spelare och händelser syns bara i själva matchen.</p>
+<h3>Radering</h3>
+<p class="muted">En match raderas direkt när du stänger av Dela live. Har den inte uppdaterats på sju dagar går den inte längre att läsa, och appen tar bort den nästa gång den öppnas. Med betalplanen Blaze kan du också lägga en Time-to-live-policy på <code>expireAt</code> för både <code>matches</code> och <code>ongoing</code>.</p>
+<h3>API-nyckeln</h3>
+<p class="muted">Nyckeln identifierar projektet och är inte hemlig. Det är reglerna som skyddar datan. Dela ändå kopplingslänken bara med dem som ska referera.</p>
+<h3>Har du redan en server?</h3>
+<p class="muted">Kopiera in reglerna igen när appen uppdateras, så följer nya funktioner med. Livedelningen fungerar även med äldre regler.</p>
+<h3>Reglerna som text</h3>
+<pre id="rules">Laddar reglerna…</pre>
+</details>
 
 <hr>
 <p class="muted"><a href="/support">Support</a> · <a href="/integritet">Integritetspolicy</a></p>
 </main>
 <script>
-  fetch("/firestore.rules").then(r => r.text()).then(t => { document.getElementById("rules").textContent = t; });
-  document.getElementById("copy-rules").onclick = async () => {
-    await navigator.clipboard.writeText(document.getElementById("rules").textContent);
-    document.getElementById("copy-rules").textContent = "Kopierat!";
+  const rules = fetch("/firestore.rules").then(r => r.text());
+  rules.then(t => { document.getElementById("rules").textContent = t; });
+  document.getElementById("copy-rules").onclick = async (e) => {
+    await navigator.clipboard.writeText(await rules);
+    e.target.textContent = "Kopierat!";
+  };
+
+  // With the project's id the links lead straight to the right page in Firebase.
+  const project = document.getElementById("project");
+  project.oninput = () => {
+    const id = project.value.trim().toLowerCase();
+    document.querySelectorAll("a[data-path]").forEach(link => {
+      link.href = "https://console.firebase.google.com/" + (id ? "project/" + encodeURIComponent(id) + link.dataset.path : "");
+    });
+  };
+
+  document.getElementById("make-link").onclick = () => {
+    const text = document.getElementById("config").value;
+    const key = text.match(/apiKey["']?\s*:\s*["']([A-Za-z0-9_-]{20,60})["']/);
+    const id = text.match(/projectId["']?\s*:\s*["']([a-z0-9-]{4,40})["']/);
+    document.getElementById("config-error").hidden = !!(key && id);
+    if (!key || !id) return;
+    const name = document.getElementById("name").value.trim() || id[1];
+    location.href = "/koppla#p=" + id[1] + "&k=" + key[1] + "&n=" + encodeURIComponent(name);
   };
 </script>
 </body></html>

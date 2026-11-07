@@ -721,7 +721,7 @@ struct LiveServerView: View {
                 } header: {
                     Text("Koppla live-server")
                 } footer: {
-                    Text("Livelänken kräver en egen gratis Firebase-databas, eller en kopplingslänk från någon som har en. Öppnar du länken på telefonen kopplas appen automatiskt.")
+                    Text("För att dela live behöver appen en gratis Firebase-databas. En i laget skapar den med guiden nedan och delar kopplingslänken med dem som ska referera. Att följa en match kräver ingen koppling.")
                 }
                 Section {
                     Link(destination: URL(string: "\(LiveServer.viewerHost)/egen-server")!) {

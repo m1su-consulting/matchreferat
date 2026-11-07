@@ -1,3 +1,5 @@
+> Guiden för användare finns på https://matchreferat.web.app/egen-server (`public/egen-server.html`), som är den aktuella versionen.
+
 # Skapa en egen live-server
 
 > Matchreferat · tar cirka 15 minuter · gratis
