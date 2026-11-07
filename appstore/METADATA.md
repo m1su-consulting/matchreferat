@@ -72,6 +72,7 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 • Hämta matchen från Min fotboll eller Innebandy Play: öppna den i Safari och dela till Matchreferat, gärna dagen innan
 • Kommande matcher: uppdatera trupperna när de är publicerade och starta matchen när det är dags
 • Båda lagen är likvärdiga: mål, kort, byten och utvisningar med spelare för båda
+• Följ matcher direkt i appen: livelänken och Pågår nu öppnar en egen matchvy med ställning och händelser
 • Färdiga matcher sparas på telefonen, så du kan se hur det gick
 • Inga registrerade lag längre: ett lag är något som hör till matchen
 • Hela namn visas bara i appen – det som delas visar förnamn och nummer

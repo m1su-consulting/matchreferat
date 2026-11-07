@@ -15,6 +15,7 @@ targets:
       path: Sources/Matchreferat.entitlements
       properties:
         com.apple.security.application-groups: [group.se.matchreferat.app]
+        com.apple.developer.associated-domains: [applinks:matchreferat.web.app]
     info:
       path: Sources/Info.plist
       properties:

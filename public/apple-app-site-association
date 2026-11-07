@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["VNDXQRN7C3.se.matchreferat.app"],
+        "components": [
+          { "/": "/m/*", "comment": "En livedelad match" },
+          { "/": "/koppla", "comment": "Koppla live-server" }
+        ]
+      }
+    ]
+  }
+}

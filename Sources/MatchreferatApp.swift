@@ -30,7 +30,12 @@ struct MatchreferatApp: App {
                     }
                 }
                 .onOpenURL { url in
-                    if url.scheme == "matchreferat" { live.pendingLink = url.absoluteString }
+                    // The custom scheme and the web links, which open the app when it is installed.
+                    if let match = LiveMatchLink(url: url, fallback: live.server) {
+                        live.openedMatch = match
+                    } else if url.scheme == "matchreferat" || url.path == "/koppla" {
+                        live.pendingLink = url.absoluteString
+                    }
                 }
                 .task {
                     store.refreshPlanned()
@@ -121,6 +126,7 @@ struct RootView: View {
     var body: some View {
         @Bindable var store = store
         let showConnect = Binding(get: { live.pendingLink != nil }, set: { if !$0 { live.pendingLink = nil } })
+        @Bindable var live = live
         NavigationStack(path: $store.path) {
             Group {
                 if store.sport == nil { SportPickerView() } else { StartView() }
@@ -148,5 +154,6 @@ struct RootView: View {
         }
         .tint(Theme.accent)
         .sheet(isPresented: showConnect) { NavigationStack { LiveServerView() } }
+        .sheet(item: $live.openedMatch) { LiveMatchView(link: $0) }
     }
 }

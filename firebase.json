@@ -9,6 +9,10 @@
     "rewrites": [{ "source": "/m/**", "destination": "/index.html" }],
     "headers": [
       {
+        "source": "/apple-app-site-association",
+        "headers": [{ "key": "Content-Type", "value": "application/json" }]
+      },
+      {
         "source": "**",
         "headers": [
           { "key": "X-Robots-Tag", "value": "noindex, nofollow" },

@@ -138,6 +138,8 @@ final class LiveShare {
     private(set) var ongoing: OngoingList = .loading
     /// A connection link opened from outside the app, waiting for the user to confirm.
     var pendingLink: String?
+    /// A shared match being followed in the app, from Pågår nu or a link.
+    var openedMatch: LiveMatchLink?
     private var session: AnonymousSession?
     private var pending: Task<Void, Never>?
     /// False once the server has refused the `ongoing` summary (its rules predate it), so sharing keeps working.
@@ -512,7 +514,7 @@ final class LiveShare {
     }()
 
     /// Encodes a Swift value as a Firestore REST `Value`.
-    private static func value(_ v: Any) -> Any {
+    static func value(_ v: Any) -> Any {
         switch v {
         case let b as Bool: ["booleanValue": b]
         case let i as Int: ["integerValue": String(i)]

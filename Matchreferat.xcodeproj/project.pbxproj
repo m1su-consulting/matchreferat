@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0327C84B357804FDB4E81674 /* StartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC947CCCD25F31F357EC250E /* StartView.swift */; };
 		081E96D6100226F0F10C0B98 /* MatchreferatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C72B0887DF613CCE83218F1 /* MatchreferatTests.swift */; };
+		1235110D5DC140B7CD62F147 /* LiveMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 302AA27692F2E05E58C58BAF /* LiveMatchView.swift */; };
 		1D23A198298D1F1CF4D0C06D /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B344D7EB8CAB799918C7B0 /* Persistence.swift */; };
 		1DA26DD3B8C0CE24B406FB74 /* MatchImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119C39B4E2A2BD52C16F632C /* MatchImport.swift */; };
 		215F0B4D0986328F833DCA4C /* LicensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2145666CD07F6062F9EF1659 /* LicensesView.swift */; };
@@ -74,6 +75,7 @@
 		119C39B4E2A2BD52C16F632C /* MatchImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchImport.swift; sourceTree = "<group>"; };
 		2145666CD07F6062F9EF1659 /* LicensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicensesView.swift; sourceTree = "<group>"; };
 		2226A5DD1AAD795DC85C8C7B /* Apache-2.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Apache-2.0.txt"; sourceTree = "<group>"; };
+		302AA27692F2E05E58C58BAF /* LiveMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMatchView.swift; sourceTree = "<group>"; };
 		39D59000F9B5085B4287AC52 /* Matchreferat.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Matchreferat.entitlements; sourceTree = "<group>"; };
 		3B0C41D402F1023B67BCB754 /* LiveShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveShare.swift; sourceTree = "<group>"; };
 		52264AC78ACDFA24DCD35037 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
@@ -172,6 +174,7 @@
 				D0C717801180EDDDAEC22B1D /* ImportMatchSheet.swift */,
 				6185471496180B5519AD8118 /* Info.plist */,
 				2145666CD07F6062F9EF1659 /* LicensesView.swift */,
+				302AA27692F2E05E58C58BAF /* LiveMatchView.swift */,
 				3B0C41D402F1023B67BCB754 /* LiveShare.swift */,
 				39D59000F9B5085B4287AC52 /* Matchreferat.entitlements */,
 				89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */,
@@ -335,6 +338,7 @@
 				76AE77EF646C791EEB5D2031 /* HelpView.swift in Sources */,
 				94BBA2E9413E220E157D9B85 /* ImportMatchSheet.swift in Sources */,
 				215F0B4D0986328F833DCA4C /* LicensesView.swift in Sources */,
+				1235110D5DC140B7CD62F147 /* LiveMatchView.swift in Sources */,
 				4343B3905002AFC95EDCE3B2 /* LiveShare.swift in Sources */,
 				1DA26DD3B8C0CE24B406FB74 /* MatchImport.swift in Sources */,
 				54A7187220AB2114146BA834 /* MatchStore.swift in Sources */,

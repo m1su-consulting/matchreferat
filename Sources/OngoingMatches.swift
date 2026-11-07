@@ -1,4 +1,3 @@
-import SafariServices
 import SwiftUI
 
 /// Another person's shared match, as listed in the server's `ongoing` collection.
@@ -61,7 +60,7 @@ struct OngoingMatch: Identifiable, Equatable, Sendable {
     }
 
     /// Firestore timestamps can have up to nine fractional digits, which `ISO8601DateFormatter` rejects.
-    private static func parseTimestamp(_ text: String) -> Date? {
+    static func parseTimestamp(_ text: String) -> Date? {
         let whole = text.replacingOccurrences(of: #"\.\d+"#, with: "", options: .regularExpression)
         return ISO8601DateFormatter().date(from: whole)
     }
@@ -162,25 +161,9 @@ struct OngoingRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(match.sport.label): \(match.title), \(match.homeScore) mot \(match.awayScore), \(match.statusText)")
-        .accessibilityHint("Öppnar livesidan")
+        .accessibilityHint("Öppnar matchen")
         .accessibilityAddTraits(.isButton)
     }
-}
-
-/// A web page to show in the in-app browser.
-struct BrowserPage: Identifiable {
-    let url: URL
-    var id: URL { url }
-}
-
-struct SafariView: UIViewControllerRepresentable {
-    let url: URL
-
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        SFSafariViewController(url: url)
-    }
-
-    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }
 
 #if DEBUG

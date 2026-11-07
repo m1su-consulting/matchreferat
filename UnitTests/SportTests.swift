@@ -530,3 +530,50 @@ struct MatchImportTests {
         #expect(MatchImport.merge(try #require(MatchImport.parse(names: ["C", "D"], lines: [], url: "b")), into: list).count == 1)
     }
 }
+
+@Suite("Följa match i appen")
+@MainActor
+struct LiveMatchTests {
+    private let server = LiveServer(projectID: "mitt-lag", apiKey: "AIzaTEST0000000000000000", name: "Mitt lag")
+
+    @Test func aLiveLinkNamesServerAndMatch() throws {
+        let url = server.viewerURL(matchID: "abc123")
+        let link = try #require(LiveMatchLink(url: url))
+        #expect(link.matchID == "abc123")
+        #expect(link.server.projectID == "mitt-lag")
+        #expect(link.webURL == url)
+    }
+
+    @Test func otherLinksAreNotMatches() throws {
+        #expect(LiveMatchLink(url: try #require(URL(string: "https://matchreferat.web.app/support"))) == nil)
+        #expect(LiveMatchLink(url: try #require(URL(string: "https://example.com/m/abc123#p=mitt-lag&k=AIzaTEST0000000000000000"))) == nil)
+        // No server in the link: only works with one already connected.
+        let bare = try #require(URL(string: "https://matchreferat.web.app/m/abc123"))
+        #expect(LiveMatchLink(url: bare) == nil)
+        #expect(LiveMatchLink(url: bare, fallback: server)?.matchID == "abc123")
+    }
+
+    @Test func readsTheSharedDocumentAsItIsWritten() throws {
+        var state = MatchState.example()
+        state.phase = .playing
+        state.isRunning = false
+        let payload = LiveShare.payload(state, owner: "test")
+        let fields = payload.mapValues { LiveShare.value($0) }
+        let data = try JSONSerialization.data(withJSONObject: ["fields": fields])
+        let match = try #require(LiveMatch.parse(data))
+        #expect(match.homeName == state.teamName(state.homeSide))
+        #expect(match.homeScore == state.goals(state.homeSide))
+        #expect(match.events.count == state.events.count)
+        #expect(match.events.first?.kind != nil)
+        #expect(match.stats == state.statsLine)
+    }
+
+    @Test func theClockKeepsCountingWhileTheMatchRuns() throws {
+        var match = try #require(LiveMatch.parse(Data(#"{"fields":{"homeName":{"stringValue":"A"},"awayName":{"stringValue":"B"},"homeScore":{"integerValue":"1"},"awayScore":{"integerValue":"0"},"phase":{"stringValue":"playing"},"clockLabel":{"stringValue":"5'"}}}"#.utf8)))
+        #expect(match.clock(at: .now) == "5'")
+        match.running = true
+        match.halfLength = 25
+        match.startedAt = Date.now.addingTimeInterval(-10 * 60 - 5)
+        #expect(match.clock(at: .now) == "11'")
+    }
+}

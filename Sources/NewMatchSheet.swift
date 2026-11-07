@@ -3,6 +3,7 @@ import SwiftUI
 /// A new match: paste a link from Min fotboll or Innebandy Play, or make one by hand.
 struct NewMatchSheet: View {
     @Environment(MatchStore.self) private var store
+    @Environment(LiveShare.self) private var live
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
@@ -56,6 +57,12 @@ struct NewMatchSheet: View {
             return
         }
         failed = false
+        // A live link from someone else's match opens to follow, right here in the app.
+        if let url = URL(string: pasted.url), let match = LiveMatchLink(url: url, fallback: live.server) {
+            live.openedMatch = match
+            dismiss()
+            return
+        }
         working = true
         Task {
             let page = await Self.matchPage(pasted.url)

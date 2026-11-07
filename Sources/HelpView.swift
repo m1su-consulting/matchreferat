@@ -23,6 +23,9 @@ struct HelpView: View {
                 Text("Trupperna publiceras oftast ungefär en timme före avspark. Saknas de: tryck på matchen, välj Hämta trupperna och dela igen.")
                 Text("Tryck på Starta när det är dags.")
             }
+            Section("Följa en match") {
+                Text("Får du en livelänk från någon som refererar öppnas matchen direkt i Matchreferat, med ställning och händelser. Du behöver inget konto. Har du kopplat en live-server syns matcher också under Pågår nu.")
+            }
             Section("Länk från Min fotboll-appen") {
                 Text("Under Ny match kan du klistra in länken eller texten du får när du delar matchen i Min fotboll-appen. Trupperna måste ändå hämtas från Safari, eftersom det bara är där du är inloggad.")
             }

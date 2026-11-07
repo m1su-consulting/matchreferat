@@ -6,7 +6,6 @@ struct StartView: View {
     @Environment(LiveShare.self) private var live
     @State private var showNewMatch = false
     @State private var confirmDelete = false
-    @State private var browserPage: BrowserPage?
     @State private var importing: ImportedMatch?
 
     private var sport: Sport { store.sport ?? .football }
@@ -52,7 +51,7 @@ struct StartView: View {
 
             if let server = live.server {
                 OngoingSection(list: live.ongoing.filtered(sport), serverName: server.name) { match in
-                    browserPage = BrowserPage(url: server.viewerURL(matchID: match.id))
+                    live.openedMatch = LiveMatchLink(server: server, matchID: match.id)
                 }
             }
 
@@ -116,7 +115,6 @@ struct StartView: View {
                 try? await Task.sleep(for: .seconds(25))
             }
         }
-        .sheet(item: $browserPage) { page in SafariView(url: page.url).ignoresSafeArea() }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .sheet(item: $importing) { ImportMatchSheet(match: $0) }
         .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
@@ -125,6 +123,9 @@ struct StartView: View {
             if LaunchArgument.string("demoSheet") == "newMatch" { showNewMatch = true }
             // `-demoSheet import` shows an imported match with fictional players.
             if LaunchArgument.string("demoSheet") == "import" { importing = .example }
+            if LaunchArgument.string("demoSheet") == "follow" {
+                live.openedMatch = LiveMatchLink(server: LiveServer(projectID: "demo", apiKey: "", name: "Demo"), matchID: "demo")
+            }
             // `-demoSheet planned` adds it to Kommande matcher.
             if LaunchArgument.string("demoSheet") == "planned" {
                 MatchImport.add(.example)
