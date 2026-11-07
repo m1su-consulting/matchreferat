@@ -21,7 +21,9 @@ ReadLineup.prototype = {
         var walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
         var node;
         while ((node = walker.nextNode())) lines.push(node.nodeValue);
-        arguments.completionFunction({ supported: true, names: names, lines: lines, url: location.href });
+        // Every tab of a match counts as the same match.
+        var game = location.pathname.match(/\/game-view\/\d+/);
+        arguments.completionFunction({ supported: true, names: names, lines: lines, url: location.origin + (game ? game[0] : location.pathname) });
     },
     finalize: function(arguments) {}
 };
