@@ -70,7 +70,10 @@ ReadLineup.prototype = {
                 return name ? name.textContent.trim() : "";
             }
             function finish(first, second) {
-                var names = document.title.split("|")[0].split(" - ").map(function(name) { return name.trim(); });
+                // The page's title stays empty until you browse inside the site, so the names come from the page.
+                var names = Array.prototype.map.call(main.querySelectorAll("[class*=TeamInfoItem_Title]"), function(title) {
+                    return title.textContent.trim();
+                }).slice(0, 2);
                 page.completionFunction({ supported: true, sport: "floorball", names: names, teams: [first, second],
                                           url: location.origin + location.pathname });
             }
