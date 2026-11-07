@@ -47,7 +47,8 @@ final class ShareViewController: UIViewController {
               let page = dictionary[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
               page["supported"] as? Bool == true else { return nil }
         if page["sport"] as? String == "floorball" {
-            return await FloorballPage.read(page["url"] as? String ?? "", in: view)
+            let url = page["url"] as? String ?? ""
+            return FloorballPage.isMatchLink(url) ? await FloorballPage.read(url, in: view) : nil
         }
         return MatchImport.parse(names: page["names"] as? [String] ?? [], lines: page["lines"] as? [String] ?? [], url: page["url"] as? String)
     }
@@ -70,8 +71,8 @@ struct ShareResultView: View {
                 ProgressView("Läser matchen…")
             case .failed:
                 Image(systemName: "exclamationmark.circle").font(.largeTitle).foregroundStyle(.orange)
-                Text("Hittade ingen match").font(.title3.bold())
-                Text("Öppna matchen på Min fotboll eller Innebandy Play i Safari och dela igen.")
+                Text("Det här är ingen matchsida").font(.title3.bold())
+                Text("Tryck på själva matchen på Min fotboll eller Innebandy Play, så att båda lagen syns, och dela igen.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             case .done(let match):
