@@ -13,6 +13,8 @@ targets:
       - target: MatchreferatShare
     entitlements:
       path: Sources/Matchreferat.entitlements
+      properties:
+        com.apple.security.application-groups: [group.se.matchreferat.app]
     info:
       path: Sources/Info.plist
       properties:
@@ -45,6 +47,8 @@ targets:
     sources: [ShareExtension, Shared]
     entitlements:
       path: ShareExtension/MatchreferatShare.entitlements
+      properties:
+        com.apple.security.application-groups: [group.se.matchreferat.app]
     info:
       path: ShareExtension/Info.plist
       properties:
