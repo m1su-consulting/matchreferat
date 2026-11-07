@@ -90,6 +90,7 @@ final class MatchStore {
             match.teamID = team.id
         }
         state = match
+        plannedMatches = MatchImport.planned()
         let saved = (try? context.fetch(FetchDescriptor<StoredSavedMatch>(sortBy: [SortDescriptor(\.savedAt, order: .reverse)]))) ?? []
         savedMatches = saved.compactMap { stored in
             (try? decoder.decode(MatchState.self, from: stored.payload)).map { SavedMatch(id: stored.id, savedAt: stored.savedAt, state: $0) }
