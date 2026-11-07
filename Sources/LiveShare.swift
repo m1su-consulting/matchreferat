@@ -260,6 +260,7 @@ final class LiveShare {
             defaults.set(id, forKey: Self.idKey)
             lastSynced = .now
             status = .live
+            await refreshOngoing()
         } catch {
             Self.log.error("Start failed: \(String(describing: error), privacy: .public)")
             status = .failed("Kunde inte starta live-delningen. Kontrollera nätet och försök igen.")

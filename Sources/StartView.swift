@@ -119,6 +119,8 @@ struct StartView: View {
         .sheet(item: $importing) { ImportMatchSheet(match: $0) }
         .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
         .onAppear {
+            // Back from the match page: a share that was just turned on shows right away.
+            Task { await live.refreshOngoing() }
             // `-demoSheet newMatch` opens the new match sheet (used for screenshots).
             if LaunchArgument.string("demoSheet") == "newMatch" { showNewMatch = true }
             // `-demoSheet import` shows an imported match with fictional players.
