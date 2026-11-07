@@ -384,12 +384,14 @@ final class MatchStore {
         }
     }
 
-    /// Adds a player to today's match and, if asked, to the team's squad.
-    func addMatchPlayer(_ player: Player, saveInSquad: Bool) {
-        state.players.append(player)
-        state.players.sort { $0.number < $1.number }
-        if saveInSquad, let index = teams.firstIndex(where: { $0.id == state.teamID }) {
-            teams[index].players.append(player)
+    /// Adds a player to one of today's teams.
+    func addMatchPlayer(_ player: Player, side: Side) {
+        if side == .us {
+            state.players.append(player)
+            state.players.sort { $0.number < $1.number }
+        } else {
+            state.opponentPlayers.append(player)
+            state.opponentPlayers.sort { $0.number < $1.number }
         }
     }
 

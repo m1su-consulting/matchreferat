@@ -107,7 +107,6 @@ enum Theme {
 /// Screens pushed on the navigation stack above the start page.
 enum Route: Hashable {
     case match
-    case team(UUID)
     case liveServer
     case licenses
     case settings
@@ -131,10 +130,6 @@ struct RootView: View {
                 case .match:
                     MatchView()
                         .toolbar(.hidden, for: .navigationBar)
-                case .team(let id):
-                    if let index = store.teams.firstIndex(where: { $0.id == id }) {
-                        TeamEditor(team: $store.teams[index])
-                    }
                 case .liveServer:
                     LiveServerView()
                 case .licenses:

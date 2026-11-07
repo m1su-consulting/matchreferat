@@ -1,42 +1,43 @@
 import SwiftUI
 
-/// Starts a new match: team, opponent and home/away. Everything else comes from the team
-/// and can be changed on the match page via ⋯.
+/// Starts a match by hand: two team names and the format. Squads can be added under Dagens trupp.
+/// A match from Min fotboll is shared from Safari instead and comes with both squads.
 struct NewMatchSheet: View {
     @Environment(MatchStore.self) private var store
     @Environment(LiveShare.self) private var live
     @Environment(\.dismiss) private var dismiss
 
-    @State private var teamID: UUID?
-    @State private var opponent = ""
-    @State private var isHome = true
+    @State private var home = ""
+    @State private var away = ""
+    @State private var playersOnField = 11
+    @State private var periods = 2
+    @State private var periodLength = 45
     @State private var confirmDiscard = false
 
     private var sport: Sport { store.sport ?? store.state.sport }
-    private var teams: [Team] { store.teams(for: sport) }
-    private var team: Team? { teams.first { $0.id == teamID } }
+    private var homeName: String { home.trimmingCharacters(in: .whitespaces) }
+    private var awayName: String { away.trimmingCharacters(in: .whitespaces) }
+    private var canStart: Bool { !homeName.isEmpty && !awayName.isEmpty }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Lag", selection: $teamID) {
-                        ForEach(teams) { Text($0.name).tag(Optional($0.id)) }
-                    }
-                    TextField("Motståndare", text: $opponent)
+                    TextField("Hemmalag", text: $home)
+                        .textInputAutocapitalization(.words)
+                    TextField("Bortalag", text: $away)
                         .textInputAutocapitalization(.words)
                         .submitLabel(.go)
                         .onSubmit(tryStart)
-                    Picker("Vi spelar", selection: $isHome) {
-                        Text("Hemma").tag(true)
-                        Text("Borta").tag(false)
-                    }
-                    .pickerStyle(.segmented)
                 } footer: {
-                    if let team {
-                        Text("\(team.sport.label) · \(Team.formatLabel(team.playersOnField)) · \(team.periods) × \(team.periodLength) min · senaste uppställningen. Ändras under ⋯ på matchsidan."
-                             + (live.isOn ? " Den gamla livelänken slutar fungera." : ""))
+                    if sport == .football {
+                        Text("Vill du ha trupperna från Min fotboll? Öppna matchen i Safari och dela den till Matchreferat.")
                     }
+                }
+                Section {
+                    FormatFields(sport: sport, playersOnField: $playersOnField, periods: $periods, periodLength: $periodLength)
+                } footer: {
+                    if live.isOn { Text("Den gamla livelänken slutar fungera.") }
                 }
             }
             .navigationTitle(sport == .football ? "Ny fotbollsmatch" : "Ny innebandymatch")
@@ -47,7 +48,7 @@ struct NewMatchSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Starta", action: tryStart)
-                        .disabled(team == nil || opponent.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .disabled(!canStart)
                 }
             }
             .alert("Avsluta pågående match?", isPresented: $confirmDiscard) {
@@ -57,23 +58,27 @@ struct NewMatchSheet: View {
                 Text("Händelserna i den pågående \(store.state.sport == .football ? "fotbollsmatchen" : "innebandymatchen") försvinner.")
             }
             .onAppear {
-                teamID = teams.first { $0.id == store.state.teamID }?.id ?? teams.first?.id
-                isHome = store.state.isHome
+                let defaults = Team.new(sport)
+                playersOnField = defaults.playersOnField
+                periods = defaults.periods
+                periodLength = defaults.periodLength
             }
         }
-        .presentationDetents([.medium])
+        .tint(Theme.accent)
     }
 
     private func tryStart() {
-        guard team != nil, !opponent.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard canStart else { return }
         if store.hasUnfinishedMatch { confirmDiscard = true } else { start() }
     }
 
     private func start() {
-        guard let team else { return }
-        let name = opponent.trimmingCharacters(in: .whitespaces)
+        var team = Team.new(sport, name: homeName)
+        team.playersOnField = playersOnField
+        team.periods = periods
+        team.periodLength = periodLength
         Task {
-            await Self.startNewMatch(store: store, live: live, team: team, opponent: name, isHome: isHome)
+            await Self.startNewMatch(store: store, live: live, team: team, opponent: awayName, isHome: true)
             dismiss()
         }
     }

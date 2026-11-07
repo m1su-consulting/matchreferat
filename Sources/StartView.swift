@@ -5,7 +5,6 @@ struct StartView: View {
     @Environment(MatchStore.self) private var store
     @Environment(LiveShare.self) private var live
     @State private var showNewMatch = false
-    @State private var showNeedsTeam = false
     @State private var confirmDelete = false
     @State private var browserPage: BrowserPage?
     @State private var importing: ImportedMatch?
@@ -14,12 +13,11 @@ struct StartView: View {
 
     var body: some View {
         @Bindable var store = store
-        let teams = store.teams(for: sport)
         List {
             Section {
                 VStack(spacing: 18) {
                     SportHeader(sport: sport, changeSport: { store.sport = nil }, openSettings: { store.path.append(.settings) })
-                    Button { if teams.isEmpty { showNeedsTeam = true } else { showNewMatch = true } } label: {
+                    Button { showNewMatch = true } label: {
                         Label("Ny match", systemImage: "plus.circle.fill")
                             .font(.title3.weight(.bold))
                             .frame(maxWidth: .infinity, minHeight: 52)
@@ -58,6 +56,13 @@ struct StartView: View {
                 }
             }
 
+            if sport == .football && store.plannedMatches.isEmpty && !store.hasMatchInProgress(in: sport) {
+                Section {
+                    Text("Öppna en match på Min fotboll i Safari och dela den till Matchreferat, så kommer båda trupperna med.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
             if sport == .football && !store.plannedMatches.isEmpty {
                 Section("Kommande matcher") {
                     ForEach(store.plannedMatches) { match in
@@ -66,36 +71,6 @@ struct StartView: View {
                     }
                     .onDelete { offsets in offsets.map { store.plannedMatches[$0].id }.forEach(store.deletePlanned) }
                 }
-            }
-
-            Section {
-                if teams.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Lägg till ditt första \(sport == .football ? "fotbollslag" : "innebandylag") för att kunna starta en match.")
-                            .foregroundStyle(.secondary)
-                        Button("Prova med ett exempellag") { store.addExampleTeam(sport) }
-                            .font(.subheadline)
-                    }
-                    .padding(.vertical, 4)
-                }
-                ForEach(teams) { team in
-                    NavigationLink(value: Route.team(team.id)) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(team.name.isEmpty ? "Namnlöst lag" : team.name).font(.headline)
-                            Text(team.summary)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .onDelete { offsets in store.deleteTeams(offsets.map { teams[$0].id }) }
-                Button {
-                    _ = store.addTeam(sport)
-                } label: {
-                    Label("Lägg till lag", systemImage: "plus")
-                }
-            } header: {
-                Text("Mina lag · \(sport.label)")
             }
 
             let saved = store.savedMatches.filter { $0.state.sport == sport }
@@ -141,13 +116,6 @@ struct StartView: View {
         .sheet(item: $browserPage) { page in SafariView(url: page.url).ignoresSafeArea() }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .sheet(item: $importing) { ImportMatchSheet(match: $0) }
-        .alert("Skapa ett lag först", isPresented: $showNeedsTeam) {
-            Button("Lägg till lag") { store.path.append(.team(store.addTeam(sport).id)) }
-            Button("Prova med ett exempellag") { store.addExampleTeam(sport) }
-            Button("Avbryt", role: .cancel) {}
-        } message: {
-            Text("En match spelas av ett av dina lag. Lägg till \(sport == .football ? "ett fotbollslag" : "ett innebandylag") med spelarnas förnamn och tröjnummer, eller prova med ett exempellag.")
-        }
         .modifier(DeleteMatchConfirmation(isPresented: $confirmDelete))
         .onAppear {
             // `-demoSheet newMatch` opens the new match sheet (used for screenshots).
@@ -285,7 +253,7 @@ struct SportPickerView: View {
                     Button { store.sport = sport } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             SportPicture(sport: sport)
-                            Text(teamsText(sport))
+                            Text(statusText(sport))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .padding(.leading, 6)
@@ -294,7 +262,7 @@ struct SportPickerView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(sport.label), \(teamsText(sport))")
+                    .accessibilityLabel("\(sport.label), \(statusText(sport))")
                     .accessibilityAddTraits(.isButton)
                 }
                 MadeBy(logoHeight: 40)
@@ -308,10 +276,11 @@ struct SportPickerView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    private func teamsText(_ sport: Sport) -> String {
-        let count = store.teams(for: sport).count
-        let match = store.hasMatchInProgress(in: sport) ? " · pågående match" : ""
-        return (count == 0 ? "Inga lag än" : count == 1 ? "1 lag" : "\(count) lag") + match
+    private func statusText(_ sport: Sport) -> String {
+        if store.hasMatchInProgress(in: sport) { return "Pågående match" }
+        let planned = sport == .football ? store.plannedMatches.count : 0
+        let saved = store.savedMatches.filter { $0.state.sport == sport }.count
+        return planned > 0 ? "\(planned) kommande" : saved > 0 ? "\(saved) sparade" : "Inga matcher än"
     }
 }
 

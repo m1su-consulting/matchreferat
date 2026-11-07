@@ -112,10 +112,6 @@ private extension View {
     @Previewable @State var player = PreviewData.player
     List { PlayerRow(player: $player) }
 }
-#Preview("Redigera lag") {
-    @Previewable @State var team = MatchState.exampleTeam()
-    NavigationStack { TeamEditor(team: $team) }
-}
 #Preview("Spelform – innebandy") {
     @Previewable @State var onField = 5
     @Previewable @State var periods = 3
@@ -132,7 +128,7 @@ private extension View {
     @Previewable @State var players = MatchState.example().players
     Form { LineupSection(players: $players, playersOnField: 9) }
 }
-#Preview("Lägg till spelare") { Form { AddMatchPlayerSection { _, _ in } } }
+#Preview("Lägg till spelare") { Form { AddMatchPlayerSection(names: [(.us, "Björkdalens IF"), (.them, "Ekbacka IK")]) { _, _ in } } }
 
 // MARK: Live link and licenses
 

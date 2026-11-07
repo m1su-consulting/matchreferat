@@ -9,16 +9,13 @@ struct MatchSquadSheet: View {
         @Bindable var store = store
         NavigationStack {
             Form {
-                // Two squads after an import, otherwise only ours.
-                let two = !store.state.opponentPlayers.isEmpty
+                let counts = store.state.sport == .football
                 LineupSection(players: $store.state.players, playersOnField: store.state.playersOnField,
-                              title: two ? store.state.ourTeam : "Trupp", countsStarters: store.state.sport == .football)
-                if two {
-                    LineupSection(players: $store.state.opponentPlayers, playersOnField: store.state.playersOnField,
-                                  title: store.state.opponent, countsStarters: store.state.sport == .football)
-                }
-                AddMatchPlayerSection { player, saveInSquad in
-                    store.addMatchPlayer(player, saveInSquad: saveInSquad)
+                              title: store.state.ourTeam, countsStarters: counts)
+                LineupSection(players: $store.state.opponentPlayers, playersOnField: store.state.playersOnField,
+                              title: store.state.opponent, countsStarters: counts)
+                AddMatchPlayerSection(names: [(.us, store.state.ourTeam), (.them, store.state.opponent)]) { player, side in
+                    store.addMatchPlayer(player, side: side)
                 }
             }
             .navigationTitle("Dagens trupp")

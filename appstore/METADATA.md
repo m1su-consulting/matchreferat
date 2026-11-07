@@ -35,9 +35,9 @@ FOTBOLL OCH INNEBANDY
 • Fotboll: 5, 7, 9 eller 11 mot, halvlekar och minuter
 • Innebandy: 3, 4 eller 5 mot 5, 2 eller 3 perioder och minuter
 
-LAG OCH TRUPP
-• Lägg in ett eller flera lag per sport
-• Trupp med förnamn och tröjnummer – senaste uppställningen kommer ihåg
+MATCHER OCH TRUPPER
+• Importera matchen från Min fotboll genom att dela den från Safari, gärna dagen innan
+• Eller starta en match med två lagnamn och lägg till spelare under Dagens trupp
 • Ändra dagens trupp och matchinställningar när som helst under matchen
 
 UNDER MATCHEN
@@ -73,6 +73,7 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 • Kommande matcher: uppdatera trupperna när de är publicerade och starta matchen när det är dags
 • Båda lagen är likvärdiga: mål, kort, byten och utvisningar med spelare för båda
 • Färdiga matcher sparas på telefonen, så du kan se hur det gick
+• Inga registrerade lag längre: ett lag är något som hör till matchen
 • Hela namn visas bara i appen – det som delas visar förnamn och nummer
 ```
 
@@ -164,8 +165,8 @@ Från version 1.0.1 har appen ingen inbyggd server. Granskaren behöver en koppl
 Matchreferat lets a parent log events of a youth football match and optionally share a live link.
 
 How to test (no login needed):
-1. On the start page, tap "Prova med ett exempellag" (adds a team with fictional players), or "Lägg till lag" to create your own.
-2. Tap "Ny match", choose the team, type any opponent name and tap "Starta".
+1. On the start page, tap "Ny match", type a home and an away team and tap "Starta".
+2. Open "⋯" and "Dagens trupp" to add players if you want players to pick from.
 3. Tap "Avspark" to start the clock, then use the buttons (Mål, Skott på mål, Hörna, Gult kort, Byte …). Each event can be undone from the toast at the bottom.
 4. Live sharing needs a live server (a Firebase project the user owns or is given access to). To connect our test server, open this link on the device:
    <KOPPLINGSLÄNK>
