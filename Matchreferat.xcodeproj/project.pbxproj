@@ -10,6 +10,7 @@
 		0327C84B357804FDB4E81674 /* StartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC947CCCD25F31F357EC250E /* StartView.swift */; };
 		081E96D6100226F0F10C0B98 /* MatchreferatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C72B0887DF613CCE83218F1 /* MatchreferatTests.swift */; };
 		1235110D5DC140B7CD62F147 /* LiveMatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 302AA27692F2E05E58C58BAF /* LiveMatchView.swift */; };
+		1CD92DFCCF30CE5C9A564AC8 /* FloorballPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4340E08DA28918F18B030B70 /* FloorballPage.swift */; };
 		1D23A198298D1F1CF4D0C06D /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B344D7EB8CAB799918C7B0 /* Persistence.swift */; };
 		1DA26DD3B8C0CE24B406FB74 /* MatchImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119C39B4E2A2BD52C16F632C /* MatchImport.swift */; };
 		215F0B4D0986328F833DCA4C /* LicensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2145666CD07F6062F9EF1659 /* LicensesView.swift */; };
@@ -35,6 +36,7 @@
 		9D7711B87044EFFE47FE0BC1 /* MatchreferatShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E0B1525D669E00A1628B0604 /* MatchreferatShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B5020833C5CC8F19C4A80962 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E03729956B1FFCC4591418 /* SettingsView.swift */; };
 		BBFB031CD5584AA7A424D132 /* SportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E3311B0DA1EADF1BE9F345A /* SportTests.swift */; };
+		CBBAF52114A594CB08A1D5C0 /* FloorballPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4340E08DA28918F18B030B70 /* FloorballPage.swift */; };
 		CFC718D2AC7A54701381AF2F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 671AFD78B8019A05E17A26E0 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -78,6 +80,7 @@
 		302AA27692F2E05E58C58BAF /* LiveMatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMatchView.swift; sourceTree = "<group>"; };
 		39D59000F9B5085B4287AC52 /* Matchreferat.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Matchreferat.entitlements; sourceTree = "<group>"; };
 		3B0C41D402F1023B67BCB754 /* LiveShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveShare.swift; sourceTree = "<group>"; };
+		4340E08DA28918F18B030B70 /* FloorballPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloorballPage.swift; sourceTree = "<group>"; };
 		52264AC78ACDFA24DCD35037 /* EventsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsView.swift; sourceTree = "<group>"; };
 		5415F7129D343D5CA9E5C815 /* FlowSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowSheet.swift; sourceTree = "<group>"; };
 		6185471496180B5519AD8118 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -140,6 +143,7 @@
 		7D9F93F3C86AA1AB38D41262 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				4340E08DA28918F18B030B70 /* FloorballPage.swift */,
 				119C39B4E2A2BD52C16F632C /* MatchImport.swift */,
 			);
 			path = Shared;
@@ -324,6 +328,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1CD92DFCCF30CE5C9A564AC8 /* FloorballPage.swift in Sources */,
 				81A7B49BA3D7392426F28888 /* MatchImport.swift in Sources */,
 				73B9C59F8EDF5C9D16086952 /* ShareViewController.swift in Sources */,
 			);
@@ -334,6 +339,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				97AE9ED9D7D57BD4FEDBB532 /* EventsView.swift in Sources */,
+				CBBAF52114A594CB08A1D5C0 /* FloorballPage.swift in Sources */,
 				7A7E1985C92B29FA1C1109B9 /* FlowSheet.swift in Sources */,
 				76AE77EF646C791EEB5D2031 /* HelpView.swift in Sources */,
 				94BBA2E9413E220E157D9B85 /* ImportMatchSheet.swift in Sources */,

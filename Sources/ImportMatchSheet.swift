@@ -8,6 +8,7 @@ struct ImportMatchSheet: View {
 
     @State var match: ImportedMatch
     @State private var confirmDiscard = false
+    @State private var fetching = false
 
     var body: some View {
         NavigationStack {
@@ -24,7 +25,16 @@ struct ImportMatchSheet: View {
                 } footer: {
                     Text("Trupperna sparas med hela namnet på telefonen. Det som delas visar bara förnamn och nummer.")
                 }
-                if !match.hasSquads, let url = match.safariURL {
+                if !match.hasSquads, match.sport != nil {
+                    Section {
+                        Button(action: fetchSquads) {
+                            if fetching { ProgressView() } else { Label("Hämta trupperna", systemImage: "arrow.down.circle") }
+                        }
+                        .disabled(fetching)
+                    } footer: {
+                        Text("Trupperna hämtas från Innebandy Play när lagen har lagt in dem.")
+                    }
+                } else if !match.hasSquads, let url = match.safariURL {
                     Section {
                         Link(destination: url) {
                             Label("Hämta trupperna", systemImage: "safari")
@@ -80,6 +90,18 @@ struct ImportMatchSheet: View {
                     Text("\(team.wrappedValue.players.filter(\.starts).count) startar")
                 }
             }
+        }
+    }
+
+    private func fetchSquads() {
+        guard let url = match.url else { return }
+        fetching = true
+        Task {
+            if let read = await FloorballPage.read(url, in: NewMatchSheet.window) {
+                MatchImport.add(read)
+                store.refreshPlanned()
+            }
+            fetching = false
         }
     }
 

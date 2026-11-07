@@ -55,42 +55,11 @@ ReadLineup.prototype = {
             waitFor(squadsShown, finish);
         }
 
-        function innebandyPlay() {
-            function find(name, root) { return (root || main).querySelector("[class*=" + name + "]"); }
-            function roster() {
-                var players = [];
-                main.querySelectorAll("[class*=LineupPlayers_PlayerItem]").forEach(function(item) {
-                    var number = find("LineupPlayers_PlayerNumber", item), name = find("LineupPlayers_PlayerName", item);
-                    if (number && name) players.push({ number: number.textContent.trim(), name: name.textContent.trim() });
-                });
-                return players;
-            }
-            function teamName() {
-                var name = find("LineupWrapper_TeamName");
-                return name ? name.textContent.trim() : "";
-            }
-            function finish(first, second) {
-                // The page's title stays empty until you browse inside the site, so the names come from the page.
-                var names = Array.prototype.map.call(main.querySelectorAll("[class*=TeamInfoItem_Title]"), function(title) {
-                    return title.textContent.trim();
-                }).slice(0, 2);
-                page.completionFunction({ supported: true, sport: "floorball", names: names, teams: [first, second],
-                                          url: location.origin + location.pathname });
-            }
-            clickTab(/^laguppställning$/i);
-            waitFor(function() { return roster().length > 0; }, function() {
-                var first = roster(), firstName = teamName();
-                var toggles = main.querySelectorAll("[class*=LineupToggle_Link]");
-                if (toggles.length < 2) return finish(first, []);
-                toggles[1].click();
-                waitFor(function() { return teamName() !== firstName && roster().length > 0; }, function() { finish(first, roster()); });
-            });
-        }
-
         if (/(^|\.)svenskfotboll\.se$/.test(location.hostname)) {
             minFotboll();
         } else if (location.hostname === "play.innebandy.se") {
-            innebandyPlay();
+            // The pages are public, so the extension opens them itself.
+            page.completionFunction({ supported: true, sport: "floorball", url: location.href });
         } else {
             page.completionFunction({ supported: false });
         }

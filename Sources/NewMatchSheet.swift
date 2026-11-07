@@ -29,7 +29,9 @@ struct NewMatchSheet: View {
                 } header: {
                     Text("Från \(sport.matchSite)")
                 } footer: {
-                    Text(failed ? "Hittade ingen länk i texten." : "Matchen öppnas i Safari. Dela den därifrån till Matchreferat, så kommer lagen och trupperna med.")
+                    Text(failed ? "Hittade ingen match bakom länken." : sport == .football
+                         ? "Matchen öppnas i Safari. Dela den därifrån till Matchreferat, så kommer lagen och trupperna med."
+                         : "Matchen och trupperna hämtas direkt och hamnar under Kommande matcher.")
                         .foregroundStyle(failed ? Color.orange : Color.secondary)
                 }
                 Section {
@@ -40,6 +42,13 @@ struct NewMatchSheet: View {
             .navigationTitle(sport == .football ? "Ny fotbollsmatch" : "Ny innebandymatch")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(isPresented: $showHelp) { HelpView() }
+            .onAppear {
+                // `-demoLink <url>` reads that link (used for tests: the simulator takes no paste).
+                if let demo = LaunchArgument.string("demoLink") {
+                    link = demo
+                    useLink()
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -65,6 +74,19 @@ struct NewMatchSheet: View {
         }
         working = true
         Task {
+            // Innebandy Play's pages are public, so the app reads the match itself.
+            if FloorballPage.isMatchLink(pasted.url) {
+                let match = await FloorballPage.read(pasted.url, in: Self.window)
+                working = false
+                if let match {
+                    MatchImport.add(match)
+                    store.refreshPlanned()
+                    dismiss()
+                } else {
+                    failed = true
+                }
+                return
+            }
             let page = await Self.matchPage(pasted.url)
             working = false
             if pasted.names.count == 2 {
@@ -77,6 +99,10 @@ struct NewMatchSheet: View {
             }
             dismiss()
         }
+    }
+
+    static var window: UIWindow? {
+        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
     }
 
     /// Min fotboll's short links hide the match page in the landing page they lead to.

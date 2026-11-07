@@ -46,11 +46,10 @@ final class ShareViewController: UIViewController {
               let dictionary = item as? NSDictionary,
               let page = dictionary[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
               page["supported"] as? Bool == true else { return nil }
-        let names = page["names"] as? [String] ?? []
         if page["sport"] as? String == "floorball" {
-            return MatchImport.parseFloorball(names: names, teams: page["teams"] as? [[[String: String]]] ?? [], url: page["url"] as? String)
+            return await FloorballPage.read(page["url"] as? String ?? "", in: view)
         }
-        return MatchImport.parse(names: names, lines: page["lines"] as? [String] ?? [], url: page["url"] as? String)
+        return MatchImport.parse(names: page["names"] as? [String] ?? [], lines: page["lines"] as? [String] ?? [], url: page["url"] as? String)
     }
 }
 

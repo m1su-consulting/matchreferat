@@ -28,7 +28,7 @@ struct ImportedMatch: Codable, Equatable, Identifiable {
 
     var hasSquads: Bool { !home.players.isEmpty && !away.players.isEmpty }
     /// Opens the page in Safari, where the login is, and not in the Min fotboll app.
-    var safariURL: URL? { url.flatMap { URL(string: "x-safari-" + $0 + (sport == nil ? "" : "?tab=lineup")) } }
+    var safariURL: URL? { url.flatMap { URL(string: "x-safari-" + $0) } }
 }
 
 enum MatchImport {

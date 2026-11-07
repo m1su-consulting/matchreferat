@@ -14,8 +14,7 @@ struct HelpView: View {
             Section("Innebandy – Innebandy Play") {
                 step(1, "Öppna play.innebandy.se i Safari på telefonen. Ingen inloggning behövs.")
                 step(2, "Öppna matchen under Matcher.")
-                step(3, "Tryck på de tre prickarna (…) i adressfältet och välj Dela.")
-                step(4, "Välj Matchreferat.")
+                step(3, "Tryck på de tre prickarna (…) i adressfältet, välj Dela och sedan Matchreferat. Eller kopiera länken och klistra in den under Ny match.")
                 Link("Öppna Innebandy Play i Safari", destination: URL(string: "x-safari-https://play.innebandy.se")!)
             }
             Section("Sedan") {
