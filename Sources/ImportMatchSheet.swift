@@ -24,10 +24,10 @@ struct ImportMatchSheet: View {
                 } footer: {
                     Text("Trupperna sparas med hela namnet på telefonen. Det som delas visar bara förnamn och nummer.")
                 }
-                if let url = match.url.flatMap(URL.init(string:)) {
+                if !match.hasSquads, let url = match.url.flatMap(URL.init(string:)) {
                     Section {
                         Link(destination: url) {
-                            Label(match.hasSquads ? "Hämta trupperna igen" : "Hämta trupperna", systemImage: "safari")
+                            Label("Hämta trupperna", systemImage: "safari")
                         }
                     } footer: {
                         Text("Öppna matchen i Safari, välj fliken Lineup och dela till Matchreferat. Trupperna publiceras ungefär en timme före avspark.")
