@@ -307,6 +307,40 @@ final class MatchStore {
         openMatch()
     }
 
+    /// Starts a football match from an imported lineup: the team gets anyone new, keeps its other players
+    /// and their surnames, and those not in the lineup are Ej med.
+    func startImportedMatch(players imported: [ImportedPlayer], teamID: UUID?, teamName: String, opponent: String, isHome: Bool) {
+        var team: Team
+        if let existing = teams.first(where: { $0.id == teamID }) {
+            team = existing
+        } else {
+            team = Team.new(.football, name: teamName)
+            let starters = imported.filter(\.starts).count
+            if Team.formats(.football).contains(starters) {
+                team.playersOnField = starters
+                team.periodLength = Team.defaultPeriodLength(for: starters)
+            }
+        }
+        for index in team.players.indices { team.players[index].status = .out }
+        for player in imported {
+            let status: PlayerStatus = player.starts ? .start : .bench
+            if let index = team.players.firstIndex(where: { $0.number == player.number }) {
+                team.players[index].firstName = player.firstName
+                team.players[index].status = status
+            } else {
+                team.players.append(Player(firstName: player.firstName, number: player.number, status: status))
+            }
+        }
+        team.players.sort { $0.number < $1.number }
+        if let index = teams.firstIndex(where: { $0.id == team.id }) {
+            teams[index] = team
+        } else {
+            teams.append(team)
+        }
+        sport = .football
+        newMatch(team: team, opponent: opponent, isHome: isHome)
+    }
+
     /// Remembers today's Start/Bänk/Ej med as the team's lineup for next time.
     func saveLineupToTeam() {
         guard let index = teams.firstIndex(where: { $0.id == state.teamID }) else { return }

@@ -6,6 +6,7 @@ struct MatchreferatApp: App {
     @State private var store: MatchStore
     @State private var live: LiveShare
     @Environment(\.scenePhase) private var scenePhase
+    @State private var pendingImport: ImportedMatch?
 
     init() {
         _store = State(initialValue: MatchStore(container: Persistence.container()))
@@ -22,19 +23,40 @@ struct MatchreferatApp: App {
                     live.sync(store.state)
                 }
                 .onChange(of: store.teams) { store.saveTeams() }
+                // A match shared from Min fotboll in Safari waits for the app to open.
+                .sheet(item: $pendingImport) { match in
+                    ImportMatchSheet(match: match)
+                        .environment(store)
+                        .environment(live)
+                }
                 // matchreferat://koppla?p=…&k=…&n=… connects a live server.
                 .onChange(of: scenePhase) {
-                    if scenePhase == .active { Task { await live.expireIfNeeded() } }
+                    if scenePhase == .active {
+                        Task { await live.expireIfNeeded() }
+                        if let match = MatchImport.takePending() { pendingImport = match }
+                    }
                 }
                 .onOpenURL { url in
                     if url.scheme == "matchreferat" { live.pendingLink = url.absoluteString }
                 }
                 .task {
+                    if let match = MatchImport.takePending() { pendingImport = match }
                     // A share older than 7 days is deleted. Otherwise refresh the viewers' copy, e.g. after
                     // the app was closed mid-match; a finished match isn't refreshed, so it still expires.
                     await live.expireIfNeeded()
                     if live.isOn && store.state.phase != .finished { live.sync(store.state) }
                     #if DEBUG
+                    // `-demoSheet import` shows an imported match with fictional players.
+                    if LaunchArgument.string("demoSheet") == "import" {
+                        let team = { (name: String, numbers: [Int], names: [String]) in
+                            ImportedTeam(name: name, players: zip(numbers, names).enumerated().map { index, player in
+                                ImportedPlayer(number: player.0, firstName: player.1, starts: index < 7)
+                            })
+                        }
+                        let names = ["Alva", "Leo", "Noah", "Ella", "Hugo", "Maja", "Liam", "Wilma", "Elias"]
+                        pendingImport = ImportedMatch(home: team("Björkdalens IF", Array(1...9), names),
+                                                      away: team("Ekbacka IK", Array(11...19), names))
+                    }
                     // `-demoScreenshots YES` shows a fictional team mid-match (App Store screenshots), with
                     // `-sport floorball` a floorball team.
                     if UserDefaults.standard.bool(forKey: "demoScreenshots") {
