@@ -9,6 +9,7 @@ struct ImportMatchSheet: View {
     @State var match: ImportedMatch
     @State private var confirmDiscard = false
     @State private var fetching = false
+    @State private var shareLive = false
 
     var body: some View {
         NavigationStack {
@@ -41,6 +42,14 @@ struct ImportMatchSheet: View {
                         }
                     } footer: {
                         Text("Matchen öppnas i Safari. Dela den till Matchreferat igen, så kommer trupperna med. De publiceras ungefär en timme före avspark.")
+                    }
+                }
+                if live.isConfigured {
+                    Section {
+                        Toggle("Dela live direkt", isOn: $shareLive)
+                            .tint(Theme.accent)
+                    } footer: {
+                        Text("Matchen syns under Pågår nu och kan följas med en länk. Spelare visas med förnamn och nummer.")
                     }
                 }
                 if !match.home.players.isEmpty { squad($match.home) }
@@ -118,6 +127,7 @@ struct ImportMatchSheet: View {
         Task {
             await live.stop()
             store.startImportedMatch(match)
+            if shareLive { await live.start(store.state) }
             dismiss()
         }
     }
