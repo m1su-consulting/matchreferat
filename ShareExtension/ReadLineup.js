@@ -3,9 +3,9 @@
 var ReadLineup = function() {};
 
 ReadLineup.prototype = {
-    run: function(arguments) {
+    run: function(page) {
         if (!/(^|\.)svenskfotboll\.se$/.test(location.hostname)) {
-            arguments.completionFunction({ supported: false });
+            page.completionFunction({ supported: false });
             return;
         }
         var main = document.querySelector("main") || document.body;
@@ -33,7 +33,7 @@ ReadLineup.prototype = {
             });
             // Every tab of a match counts as the same match.
             var game = location.pathname.match(/\/game-view\/\d+/);
-            arguments.completionFunction({ supported: true, names: names, lines: textLines(),
+            page.completionFunction({ supported: true, names: names, lines: textLines(),
                                            url: location.origin + (game ? game[0] : location.pathname) });
         }
 
@@ -54,7 +54,7 @@ ReadLineup.prototype = {
             }
         }, 200);
     },
-    finalize: function(arguments) {}
+    finalize: function(page) {}
 };
 
 var ExtensionPreprocessingJS = new ReadLineup;
