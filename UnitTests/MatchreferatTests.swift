@@ -223,7 +223,7 @@ struct LiveServerTests {
         #expect(app.name == "Mitt lag")
         let web = try #require(LiveServer.parse("https://matchreferat.web.app/koppla#p=mitt-lag&k=\(key)"))
         #expect(web.name == "mitt-lag")
-        #expect(web.viewerURL(matchID: "X").absoluteString.hasSuffix("/m/X#p=mitt-lag&k=\(key)"))
+        #expect(web.viewerURL(matchID: "X").absoluteString.hasSuffix("/m/X#p=mitt-lag"))
         #expect(LiveServer.parse("https://example.com") == nil)
         #expect(LiveServer.parse("matchreferat://koppla?p=A&k=short") == nil)
     }

@@ -1,24 +1,31 @@
 import SwiftUI
 
-/// A shared match to follow: which server it is on, and its id. The match is readable by anyone with the id.
+/// A shared match to follow: which project it is on, and its id. Reading it takes neither a sign-in nor an API key.
 struct LiveMatchLink: Identifiable, Equatable {
-    let server: LiveServer
+    let projectID: String
     let matchID: String
 
     var id: String { matchID }
-    var webURL: URL { server.viewerURL(matchID: matchID) }
+    var webURL: URL { URL(string: "\(LiveServer.viewerHost)/m/\(matchID)#p=\(projectID)")! }
+    var documentURL: URL {
+        URL(string: "https://firestore.googleapis.com/v1/projects/\(projectID)/databases/(default)/documents/matches/\(matchID)")!
+    }
 
     init(server: LiveServer, matchID: String) {
-        self.server = server
+        projectID = server.projectID
         self.matchID = matchID
     }
 
-    /// Reads a live link, https://matchreferat.web.app/m/<id>#p=…&k=…, which names its server in the fragment.
+    /// Reads a live link, https://matchreferat.web.app/m/<id>#p=…. Links from before 2.0 also have the key in them.
     init?(url: URL, fallback: LiveServer? = nil) {
         let parts = url.path.split(separator: "/")
         guard url.host == URL(string: LiveServer.viewerHost)?.host, parts.count == 2, parts[0] == "m",
-              let server = LiveServer.parse(url.absoluteString) ?? fallback else { return nil }
-        self.init(server: server, matchID: String(parts[1]))
+              parts[1].range(of: "^[A-Za-z0-9]+$", options: .regularExpression) != nil else { return nil }
+        let values = (url.fragment ?? "").split(separator: "&").map { $0.split(separator: "=", maxSplits: 1) }
+        let project = values.first { $0.count == 2 && $0[0] == "p" }.map { String($0[1]) } ?? fallback?.projectID
+        guard let project, project.range(of: "^[a-z0-9-]{4,40}$", options: .regularExpression) != nil else { return nil }
+        projectID = project
+        matchID = String(parts[1])
     }
 }
 
@@ -160,10 +167,7 @@ struct LiveMatchView: View {
     }
 
     private func load() async {
-        let url = link.server.documentsURL.appendingPathComponent("matches/\(link.matchID)")
-        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
-        components.queryItems = [URLQueryItem(name: "key", value: link.server.apiKey)]
-        guard let (data, response) = try? await client.data(for: URLRequest(url: components.url!, timeoutInterval: 15)) else {
+        guard let (data, response) = try? await client.data(for: URLRequest(url: link.documentURL, timeoutInterval: 15)) else {
             if match == nil { failed = true }   // otherwise keep showing the last state on a brief network hiccup
             return
         }

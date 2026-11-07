@@ -540,8 +540,14 @@ struct LiveMatchTests {
         let url = server.viewerURL(matchID: "abc123")
         let link = try #require(LiveMatchLink(url: url))
         #expect(link.matchID == "abc123")
-        #expect(link.server.projectID == "mitt-lag")
+        #expect(link.projectID == "mitt-lag")
         #expect(link.webURL == url)
+        #expect(!url.absoluteString.contains(server.apiKey))
+    }
+
+    @Test func oldLinksWithTheKeyStillOpen() throws {
+        let old = try #require(URL(string: "https://matchreferat.web.app/m/abc123#p=mitt-lag&k=AIzaTEST0000000000000000"))
+        #expect(LiveMatchLink(url: old)?.projectID == "mitt-lag")
     }
 
     @Test func otherLinksAreNotMatches() throws {

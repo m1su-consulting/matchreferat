@@ -30,8 +30,10 @@ struct LiveServer: Codable, Equatable {
     /// Server details go in the fragment, which browsers never send to the web server.
     private var fragment: String { "p=\(projectID)&k=\(apiKey)" }
 
+    /// A match can be read with the project alone, so the link leaves out the API key: whoever gets it
+    /// can follow the match, but not sign in to the server and share matches of their own.
     func viewerURL(matchID: String) -> URL {
-        URL(string: "\(Self.viewerHost)/m/\(matchID)#\(fragment)")!
+        URL(string: "\(Self.viewerHost)/m/\(matchID)#p=\(projectID)")!
     }
 
     /// Accepts the app link, the web link, or just the `p=…&k=…` part.

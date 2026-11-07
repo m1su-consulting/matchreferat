@@ -316,11 +316,12 @@
       };
     }
 
-    // Links name their live server in the fragment (#p=project&k=apiKey), which is never sent
+    // Links name their live server in the fragment (#p=project), which is never sent
     // to this web server. Older links without it use Matchreferat's own project.
     async function firebaseConfig() {
       const hash = new URLSearchParams(location.hash.slice(1));
-      if (hash.get("p") && hash.get("k")) return { projectId: hash.get("p"), apiKey: hash.get("k") };
+      // A match can be read without an API key, so links from 2.0 don't carry one.
+      if (hash.get("p")) return { projectId: hash.get("p"), apiKey: hash.get("k") || undefined };
       try {
         const response = await fetch("/__/firebase/init.json");
         if (response.ok) return await response.json();
