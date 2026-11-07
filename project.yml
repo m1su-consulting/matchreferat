@@ -38,7 +38,7 @@ targets:
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete
         MARKETING_VERSION: "2.0.0"
-        CURRENT_PROJECT_VERSION: "8"
+        CURRENT_PROJECT_VERSION: "9"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: VNDXQRN7C3
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -72,7 +72,7 @@ targets:
         SWIFT_VERSION: "6.0"
         SWIFT_STRICT_CONCURRENCY: complete
         MARKETING_VERSION: "2.0.0"
-        CURRENT_PROJECT_VERSION: "8"
+        CURRENT_PROJECT_VERSION: "9"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: VNDXQRN7C3
   MatchreferatTests:
