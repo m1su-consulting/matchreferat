@@ -275,16 +275,17 @@ struct LiveServerTests {
         #expect(OngoingMatch.parseList(Data("{}".utf8)).isEmpty)
     }
 
-    @Test func hidesOwnExpiredAndStaleMatches() {
+    @Test func showsOwnMatchButHidesExpiredAndStale() {
         let now = Date.now
         func match(_ id: String, owner: String = "anna", updated: TimeInterval = -60, expires: TimeInterval = 86400) -> OngoingMatch {
             OngoingMatch(id: id, ownerUid: owner, homeName: "A", awayName: "B", homeScore: 0, awayScore: 0,
                          phase: .playing, periodText: "", clockLabel: "", updatedAt: now + updated, expireAt: now + expires)
         }
-        let all = [match("old", updated: -7 * 3600), match("mine", owner: "me"), match("expired", expires: -1),
-                   match("ownShare", owner: "otherDevice"), match("newer", updated: -10), match("live")]
-        let visible = OngoingMatch.visible(all, excludingOwner: "me", ownMatch: "ownShare", now: now)
-        #expect(visible.map(\.id) == ["newer", "live"])
+        let all = [match("old", updated: -7 * 3600), match("mine", owner: "me", updated: -30), match("expired", expires: -1),
+                   match("newer", updated: -10), match("live")]
+        let visible = OngoingMatch.visible(all, ownerUid: "me", now: now)
+        #expect(visible.map(\.id) == ["newer", "mine", "live"])
+        #expect(visible.map(\.isOwn) == [false, true, false])
     }
 
     @MainActor

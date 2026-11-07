@@ -14,6 +14,8 @@ struct OngoingMatch: Identifiable, Equatable, Sendable {
     var updatedAt: Date
     var expireAt: Date
     var sport: Sport = .football
+    /// Shared from this phone.
+    var isOwn = false
 
     /// Matches nobody has touched for this long are treated as abandoned.
     static let staleAfter: TimeInterval = 6 * 3600
@@ -72,10 +74,15 @@ struct OngoingMatch: Identifiable, Equatable, Sendable {
     }
 
     /// Other people's matches that are still live, most recently updated first.
-    static func visible(_ all: [OngoingMatch], excludingOwner uid: String?, ownMatch: String?, now: Date) -> [OngoingMatch] {
+    /// Everything shared right now, your own match too, so you can see it the way others do.
+    static func visible(_ all: [OngoingMatch], ownerUid uid: String?, now: Date) -> [OngoingMatch] {
         all.filter { match in
-            match.ownerUid != uid && match.id != ownMatch && match.phase != .finished
-                && match.expireAt > now && now.timeIntervalSince(match.updatedAt) < staleAfter
+            match.phase != .finished && match.expireAt > now && now.timeIntervalSince(match.updatedAt) < staleAfter
+        }
+        .map { match in
+            var match = match
+            match.isOwn = match.ownerUid == uid
+            return match
         }
         .sorted { $0.updatedAt > $1.updatedAt }
     }
@@ -123,7 +130,7 @@ struct OngoingSection: View {
         } header: {
             Text("Pågår nu")
         } footer: {
-            Text("Matcher som andra delar live via \(serverName).")
+            Text("Matcher som delas live via \(serverName).")
         }
     }
 }
@@ -146,7 +153,7 @@ struct OngoingRow: View {
                     }
                     Text(match.title).font(.headline)
                 }
-                Text(match.statusText)
+                Text(match.isOwn ? "Din match · \(match.statusText)" : match.statusText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

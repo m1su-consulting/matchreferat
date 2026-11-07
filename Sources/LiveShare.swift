@@ -384,7 +384,7 @@ final class LiveShare {
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
             guard (200..<300).contains(code) else { throw RequestError(status: code, body: "") }
             let all = OngoingMatch.parseList(data)
-            ongoing = .loaded(OngoingMatch.visible(all, excludingOwner: current.uid, ownMatch: matchID, now: .now))
+            ongoing = .loaded(OngoingMatch.visible(all, ownerUid: current.uid, now: .now))
             await deleteExpired(OngoingMatch.expired(all, ownMatch: matchID, now: .now))
         } catch let error as RequestError where error.status == 403 {
             ongoing = .failed("Servern har inte de senaste säkerhetsreglerna, så pågående matcher kan inte visas.")
