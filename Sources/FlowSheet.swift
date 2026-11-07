@@ -34,6 +34,7 @@ struct FlowSheet: View {
     private var title: String {
         switch flow {
         case .goal: "Mål – \(store.state.ourTeam)"
+        case .opponentGoal: "Mål – \(store.state.opponent)"
         case .card(let kind): kind.label
         case .sub: "Byte"
         case .penalty(let side): "Straff – \(store.state.teamName(side))"
@@ -56,6 +57,10 @@ struct FlowSheet: View {
                              skip: "Ingen assist") { id in
                     finish(.goal, .us, player: firstPlayer, otherPlayer: id)
                 }
+            }
+        case .opponentGoal:
+            PlayerPicker(prompt: "Vem gjorde målet?", players: state.opponentPlayers, skip: "Okänd") { id in
+                finish(.goal, .them, player: id)
             }
         case .card(let kind):
             PlayerPicker(prompt: "Vem fick kortet?", players: state.playingToday, skip: "Okänd") { id in

@@ -307,9 +307,10 @@ final class MatchStore {
         openMatch()
     }
 
-    /// Starts a football match from an imported lineup: the team gets anyone new, keeps its other players
-    /// and their surnames, and those not in the lineup are Ej med.
-    func startImportedMatch(players imported: [ImportedPlayer], teamID: UUID?, teamName: String, opponent: String, isHome: Bool) {
+    /// Starts a football match from an imported lineup: the team gets anyone new, keeps its other players,
+    /// and those not in the lineup are Ej med. The opponent's squad belongs to this match and stays on the phone.
+    func startImportedMatch(players imported: [ImportedPlayer], opponentPlayers: [ImportedPlayer] = [], teamID: UUID?,
+                            teamName: String, opponent: String, isHome: Bool) {
         var team: Team
         if let existing = teams.first(where: { $0.id == teamID }) {
             team = existing
@@ -326,9 +327,11 @@ final class MatchStore {
             let status: PlayerStatus = player.starts ? .start : .bench
             if let index = team.players.firstIndex(where: { $0.number == player.number }) {
                 team.players[index].firstName = player.firstName
+                if !player.lastName.isEmpty { team.players[index].lastName = player.lastName }
                 team.players[index].status = status
             } else {
-                team.players.append(Player(firstName: player.firstName, number: player.number, status: status))
+                team.players.append(Player(firstName: player.firstName, lastName: player.lastName, number: player.number,
+                                           status: status))
             }
         }
         team.players.sort { $0.number < $1.number }
@@ -339,6 +342,9 @@ final class MatchStore {
         }
         sport = .football
         newMatch(team: team, opponent: opponent, isHome: isHome)
+        state.opponentPlayers = opponentPlayers.sorted { $0.number < $1.number }.map {
+            Player(firstName: $0.firstName, lastName: $0.lastName, number: $0.number, status: $0.starts ? .start : .bench)
+        }
     }
 
     /// Remembers today's Start/Bänk/Ej med as the team's lineup for next time.

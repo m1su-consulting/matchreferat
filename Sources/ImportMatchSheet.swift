@@ -47,7 +47,7 @@ struct ImportMatchSheet: View {
                                 Text("\(player.number)")
                                     .font(.headline.monospacedDigit())
                                     .frame(minWidth: 32, alignment: .trailing)
-                                Text(player.firstName)
+                                Text("\(player.firstName) \(player.lastName)")
                             }
                         }
                         .tint(Theme.accent)
@@ -59,7 +59,7 @@ struct ImportMatchSheet: View {
                         Text("\(starters) av \(players.count)")
                     }
                 } footer: {
-                    Text("Bara förnamn och tröjnummer sparas. Efternamn från sidan följer inte med.")
+                    Text("Båda trupperna sparas med hela namnet på telefonen. Det som delas visar bara förnamn och nummer för ert lag, och inga namn för motståndaren.")
                 }
             }
             .navigationTitle("Importera match")
@@ -105,7 +105,8 @@ struct ImportMatchSheet: View {
     private func start() {
         Task {
             await live.stop()
-            store.startImportedMatch(players: players, teamID: teamID, teamName: mine.name,
+            store.startImportedMatch(players: players, opponentPlayers: (isHome ? match.away : match.home).players,
+                                     teamID: teamID, teamName: mine.name,
                                      opponent: opponent.trimmingCharacters(in: .whitespaces), isHome: isHome)
             dismiss()
         }

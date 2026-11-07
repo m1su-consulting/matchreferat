@@ -335,6 +335,8 @@ struct MatchState: Equatable {
     var periods: Int = 2
     var playersOnField: Int = 9
     var players: [Player]
+    /// The opponent's squad from an imported match. Stays on the phone: never part of the live page or the report.
+    var opponentPlayers: [Player] = []
     var events: [MatchEvent]
     var phase: Phase
     /// The period being played, or the one just finished during an interval.
@@ -346,7 +348,7 @@ struct MatchState: Equatable {
 
 extension MatchState: Codable {
     private enum CodingKeys: String, CodingKey {
-        case sport, teamID, ourTeam, opponent, isHome, halfLength, periods, playersOnField, players, events
+        case sport, teamID, ourTeam, opponent, isHome, halfLength, periods, playersOnField, players, opponentPlayers, events
         case phase, period, isRunning, accumulated, runningSince
     }
 
@@ -362,6 +364,7 @@ extension MatchState: Codable {
         periods = try c.decodeIfPresent(Int.self, forKey: .periods) ?? 2
         playersOnField = try c.decodeIfPresent(Int.self, forKey: .playersOnField) ?? 9
         players = try c.decode([Player].self, forKey: .players)
+        opponentPlayers = try c.decodeIfPresent([Player].self, forKey: .opponentPlayers) ?? []
         events = try c.decode([MatchEvent].self, forKey: .events)
         isRunning = try c.decode(Bool.self, forKey: .isRunning)
         accumulated = try c.decode(TimeInterval.self, forKey: .accumulated)
@@ -388,6 +391,7 @@ extension MatchState: Codable {
         try c.encode(periods, forKey: .periods)
         try c.encode(playersOnField, forKey: .playersOnField)
         try c.encode(players, forKey: .players)
+        try c.encode(opponentPlayers, forKey: .opponentPlayers)
         try c.encode(events, forKey: .events)
         try c.encode(phase, forKey: .phase)
         try c.encode(period, forKey: .period)
@@ -402,7 +406,7 @@ extension MatchState {
     var awaySide: Side { isHome ? .them : .us }
 
     func teamName(_ side: Side) -> String { side == .us ? ourTeam : opponent }
-    func name(_ id: UUID?) -> String? { players.first { $0.id == id }?.name }
+    func name(_ id: UUID?) -> String? { (players + opponentPlayers).first { $0.id == id }?.name }
 
     /// First name and shirt number, e.g. "Selma (10)". The only form of a player name that may leave the phone.
     func publicName(_ id: UUID?) -> String? {
@@ -558,7 +562,7 @@ extension MatchState {
         switch e.kind {
         case .goal:
             let penalty = e.isPenalty == true
-            guard e.side == .us else { return "Mål \(opponent)" + (penalty ? " (straff)" : "") }
+            guard e.side == .us else { return "Mål \(opponent)" + (penalty ? " (straff)" : "") + (who.map { " – \($0)" } ?? "") }
             var text = (penalty ? "Straffmål! " : "Mål! ") + (who ?? "Okänd målskytt")
             if let assist = name(e.otherPlayer) { text += ", assist \(assist)" }
             return text

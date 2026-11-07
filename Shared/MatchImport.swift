@@ -1,9 +1,10 @@
 import Foundation
 
-/// A player read from a match page: first name and shirt number only, surnames are never kept.
+/// A player read from a match page. Names stay on the phone: what is shared is only first name and number.
 struct ImportedPlayer: Codable, Equatable, Identifiable {
     var number: Int
     var firstName: String
+    var lastName = ""
     var starts: Bool
 
     var id: Int { number }
@@ -40,6 +41,8 @@ enum MatchImport {
                              away: ImportedTeam(name: names.dropFirst().first ?? "", players: away))
     }
 
+    private static let headings: Set<String> = ["ersättare", "ledare", "matchtrupp"]
+
     private static func players(_ lines: ArraySlice<String>) -> [ImportedPlayer] {
         var result: [ImportedPlayer] = []
         var starts = true
@@ -50,8 +53,17 @@ enum MatchImport {
             if line.caseInsensitiveCompare("Ersättare") == .orderedSame {
                 starts = false
             } else if let number = Int(line), number >= 0, index + 1 < lines.endIndex, Int(lines[index + 1]) == nil {
-                result.append(ImportedPlayer(number: number, firstName: lines[index + 1], starts: starts))
-                index += 1
+                // Number, first name, then the surname until the next number or heading; "Målvakt" is a label.
+                var parts: [String] = []
+                var next = index + 2
+                while next < lines.endIndex, Int(lines[next]) == nil, !headings.contains(lines[next].lowercased()) {
+                    if lines[next].caseInsensitiveCompare("Målvakt") != .orderedSame { parts.append(lines[next]) }
+                    next += 1
+                }
+                result.append(ImportedPlayer(number: number, firstName: lines[index + 1],
+                                             lastName: parts.joined(separator: " "), starts: starts))
+                index = next
+                continue
             }
             index += 1
         }

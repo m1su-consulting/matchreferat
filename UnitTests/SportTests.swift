@@ -388,16 +388,29 @@ struct MatchImportTests {
                          "Ersättare", "12", "Ines", "Dahl", "Ledare", "Maja", "Holm", "Tränare",
                          "Matchtrupp", "1", "Saga", "Lund", "Ersättare", "4", "Moa", "Ek", "Ledare", "Ebba", "Ek"]
 
-    @Test func readsBothTeamsWithoutSurnames() throws {
+    @Test func readsBothTeamsWithFullNames() throws {
         let match = try #require(MatchImport.parse(names: ["Björkdalens IF P14", "Ekbacka IK"], lines: lines))
         #expect(match.home.name == "Björkdalens IF P14")
         #expect(match.away.name == "Ekbacka IK")
         #expect(match.home.players.map(\.number) == [3, 7, 99, 12])
         #expect(match.home.players.map(\.firstName) == ["Alva", "Liam", "Noah", "Ines"])
+        #expect(match.home.players.map(\.lastName) == ["Berg", "Af Sandberg Holm", "Ek", "Dahl"])
         #expect(match.home.players.map(\.starts) == [true, true, true, false])
         #expect(match.away.players.map(\.firstName) == ["Saga", "Moa"])
-        let stored = String(decoding: try JSONEncoder().encode(match), as: UTF8.self)
-        #expect(!stored.contains("Berg") && !stored.contains("Holm"))
+    }
+
+    @Test func opponentNamesStayOnThePhone() throws {
+        let store = makeStore()
+        store.startImportedMatch(players: [ImportedPlayer(number: 3, firstName: "Alva", lastName: "Berg", starts: true)],
+                                 opponentPlayers: [ImportedPlayer(number: 9, firstName: "Saga", lastName: "Lund", starts: true)],
+                                 teamID: nil, teamName: "Björkdalens IF", opponent: "Ekbacka IK", isHome: true)
+        store.log(.goal, side: .them, player: store.state.opponentPlayers[0].id)
+        store.log(.goal, side: .us, player: store.state.players[0].id)
+        let them = try #require(store.state.events.first)
+        #expect(store.state.describe(them) == "Mål Ekbacka IK – Saga Lund")
+        #expect(store.state.describe(them, publicNames: true) == "Mål Ekbacka IK")
+        let shared = store.state.report(at: .now) + String(describing: LiveShare.payload(store.state, owner: "test"))
+        #expect(!shared.contains("Saga") && !shared.contains("Lund") && !shared.contains("Berg"))
     }
 
     @Test func aPageWithoutLineupIsNotAMatch() {

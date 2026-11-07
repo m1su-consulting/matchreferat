@@ -2,6 +2,7 @@ import SwiftUI
 
 enum Flow: Identifiable, Hashable {
     case goal
+    case opponentGoal
     case card(EventKind)
     case sub
     case penalty(Side)
@@ -367,6 +368,7 @@ struct EventGrid: View {
     private func tap(_ action: Action, _ side: Side) {
         switch (action, side) {
         case (.event(.goal), .us): flow = .goal
+        case (.event(.goal), .them) where !store.state.opponentPlayers.isEmpty: flow = .opponentGoal
         case (.event(.penalty), _): flow = .penalty(side)
         case (.shot(let result), _): store.log(.shot, side: side, shot: result)
         case (.event(let kind), _): store.log(kind, side: side)
