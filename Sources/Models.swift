@@ -32,6 +32,9 @@ enum Sport: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    /// Where a match can be shared from.
+    var matchSite: String { self == .football ? "Min fotboll" : "Innebandy Play" }
+
     /// "halvlek" in football, "period" in floorball.
     var periodWord: String { self == .football ? "halvlek" : "period" }
     var periodWordPlural: String { self == .football ? "halvlekar" : "perioder" }

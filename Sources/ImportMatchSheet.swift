@@ -24,13 +24,13 @@ struct ImportMatchSheet: View {
                 } footer: {
                     Text("Trupperna sparas med hela namnet på telefonen. Det som delas visar bara förnamn och nummer.")
                 }
-                if !match.hasSquads, let url = match.url.flatMap(URL.init(string:)) {
+                if !match.hasSquads, let url = match.safariURL {
                     Section {
                         Link(destination: url) {
                             Label("Hämta trupperna", systemImage: "safari")
                         }
                     } footer: {
-                        Text("Öppna matchen i Safari, välj fliken Lineup och dela till Matchreferat. Trupperna publiceras ungefär en timme före avspark.")
+                        Text("Matchen öppnas i Safari. Dela den till Matchreferat igen, så kommer trupperna med. De publiceras ungefär en timme före avspark.")
                     }
                 }
                 if match.hasSquads {
@@ -67,22 +67,30 @@ struct ImportMatchSheet: View {
     private func squad(_ team: Binding<ImportedTeam>) -> some View {
         Section {
             ForEach(team.players) { $player in
-                Toggle(isOn: $player.starts) {
-                    HStack(spacing: 10) {
-                        Text("\(player.number)")
-                            .font(.headline.monospacedDigit())
-                            .frame(minWidth: 32, alignment: .trailing)
-                        Text("\(player.firstName) \(player.lastName)")
-                    }
+                if match.sport == nil {
+                    Toggle(isOn: $player.starts) { row(player) }
+                        .tint(Theme.accent)
+                } else {
+                    row(player)  // Floorball changes lines all the time, so nobody is marked as starting.
                 }
-                .tint(Theme.accent)
             }
         } header: {
             HStack {
                 Text(team.wrappedValue.name)
                 Spacer()
-                Text("\(team.wrappedValue.players.filter(\.starts).count) startar")
+                if match.sport == nil {
+                    Text("\(team.wrappedValue.players.filter(\.starts).count) startar")
+                }
             }
+        }
+    }
+
+    private func row(_ player: ImportedPlayer) -> some View {
+        HStack(spacing: 10) {
+            Text("\(player.number)")
+                .font(.headline.monospacedDigit())
+                .frame(minWidth: 32, alignment: .trailing)
+            Text("\(player.firstName) \(player.lastName)")
         }
     }
 

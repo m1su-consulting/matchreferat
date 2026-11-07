@@ -56,20 +56,23 @@ struct StartView: View {
                 }
             }
 
-            if sport == .football && store.plannedMatches.isEmpty && !store.hasMatchInProgress(in: sport) {
+            let planned = store.plannedMatches.filter { ($0.sport == nil) == (sport == .football) }
+            if planned.isEmpty && !store.hasMatchInProgress(in: sport) {
                 Section {
-                    Text("Öppna en match på Min fotboll i Safari och dela den till Matchreferat, så kommer båda trupperna med.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    NavigationLink(value: Route.help) {
+                        Text("Så här hämtar du en match från \(sport.matchSite)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
-            if sport == .football && !store.plannedMatches.isEmpty {
+            if !planned.isEmpty {
                 Section("Kommande matcher") {
-                    ForEach(store.plannedMatches) { match in
+                    ForEach(planned) { match in
                         Button { importing = match } label: { PlannedMatchRow(match: match) }
                             .buttonStyle(.plain)
                     }
-                    .onDelete { offsets in offsets.map { store.plannedMatches[$0].id }.forEach(store.deletePlanned) }
+                    .onDelete { offsets in offsets.map { planned[$0].id }.forEach(store.deletePlanned) }
                 }
             }
 
@@ -278,7 +281,7 @@ struct SportPickerView: View {
 
     private func statusText(_ sport: Sport) -> String {
         if store.hasMatchInProgress(in: sport) { return "Pågående match" }
-        let planned = sport == .football ? store.plannedMatches.count : 0
+        let planned = store.plannedMatches.filter { ($0.sport == nil) == (sport == .football) }.count
         let saved = store.savedMatches.filter { $0.state.sport == sport }.count
         return planned > 0 ? "\(planned) kommande" : saved > 0 ? "\(saved) sparade" : "Inga matcher än"
     }

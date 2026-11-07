@@ -82,6 +82,9 @@ struct SettingsView: View {
             }
 
             Section("Om appen") {
+                NavigationLink(value: Route.help) {
+                    Label("Så hämtar du en match", systemImage: "questionmark.circle")
+                }
                 NavigationLink(value: Route.licenses) {
                     Label("Licenser", systemImage: "doc.text")
                 }

@@ -23,8 +23,12 @@ struct ImportedMatch: Codable, Equatable, Identifiable {
     /// The page on Min fotboll. Sharing the same page again updates this match.
     var url: String?
     var sharedAt = Date()
+    /// "floorball" for Innebandy Play. Nil is football from Min fotboll.
+    var sport: String?
 
     var hasSquads: Bool { !home.players.isEmpty && !away.players.isEmpty }
+    /// Opens the page in Safari, where the login is, and not in the Min fotboll app.
+    var safariURL: URL? { url.flatMap { URL(string: "x-safari-" + $0 + (sport == nil ? "" : "?tab=lineup")) } }
 }
 
 enum MatchImport {
@@ -48,6 +52,31 @@ enum MatchImport {
         }
         return ImportedMatch(home: ImportedTeam(name: names[0], players: home),
                              away: ImportedTeam(name: names[1], players: away), url: url)
+    }
+
+    /// Reads Innebandy Play, where the page lists each player with number and full name.
+    static func parseFloorball(names: [String], teams: [[[String: String]]], url: String?) -> ImportedMatch? {
+        guard names.count == 2, !names.contains(where: \.isEmpty) else { return nil }
+        func squad(_ index: Int) -> [ImportedPlayer] {
+            guard teams.indices.contains(index) else { return [] }
+            return teams[index].compactMap { player in
+                guard let number = player["number"].flatMap(Int.init), let name = player["name"] else { return nil }
+                let parts = name.split(separator: " ", maxSplits: 1).map(String.init)
+                return ImportedPlayer(number: number, firstName: parts.first ?? "", lastName: parts.count > 1 ? parts[1] : "", starts: true)
+            }
+        }
+        return ImportedMatch(home: ImportedTeam(name: names[0], players: squad(0)),
+                             away: ImportedTeam(name: names[1], players: squad(1)), url: url, sport: "floorball")
+    }
+
+    /// A pasted text from Min fotboll's share button: "Hemmalag - Bortalag" and a link. Without names, only the link.
+    static func pasted(_ text: String) -> (url: String, names: [String])? {
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue),
+              let match = detector.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let url = match.url?.absoluteString else { return nil }
+        let names = (text.components(separatedBy: .newlines).first ?? "").components(separatedBy: " - ")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        return (url, names.count == 2 && !names.contains(where: { $0.isEmpty || $0.contains("://") }) ? names : [])
     }
 
     /// Adds a shared match to the list, or updates it if the same page was shared before.

@@ -322,7 +322,7 @@ final class MatchStore {
     /// Picks up what the share extension left. A newly shared match shows on the football start page.
     func refreshPlanned() {
         let planned = MatchImport.planned()
-        if planned.contains(where: { new in !plannedMatches.contains(new) }) { sport = .football }
+        if let new = planned.last(where: { !plannedMatches.contains($0) }) { sport = new.sport == nil ? .football : .floorball }
         plannedMatches = planned
     }
 
@@ -354,21 +354,22 @@ final class MatchStore {
         commit()
     }
 
-    /// Starts a football match from an imported match. Both squads belong to the match, not to Mina lag.
+    /// Starts a match from a shared one. Both squads belong to the match, not to Mina lag.
     func startImportedMatch(_ match: ImportedMatch) {
         func squad(_ team: ImportedTeam) -> [Player] {
             team.players.sorted { $0.number < $1.number }.map {
                 Player(firstName: $0.firstName, lastName: $0.lastName, number: $0.number, status: $0.starts ? .start : .bench)
             }
         }
-        var team = Team.new(.football, name: match.home.name)
+        let matchSport: Sport = match.sport == nil ? .football : .floorball
+        var team = Team.new(matchSport, name: match.home.name)
         team.players = squad(match.home)
         let starters = match.home.players.filter(\.starts).count
-        if Team.formats(.football).contains(starters) {
+        if matchSport == .football && Team.formats(.football).contains(starters) {
             team.playersOnField = starters
             team.periodLength = Team.defaultPeriodLength(for: starters)
         }
-        sport = .football
+        sport = matchSport
         newMatch(team: team, opponent: match.away.name, isHome: true)
         state.opponentPlayers = squad(match.away)
         deletePlanned(match.id)

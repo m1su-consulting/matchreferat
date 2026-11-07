@@ -36,7 +36,7 @@ FOTBOLL OCH INNEBANDY
 • Innebandy: 3, 4 eller 5 mot 5, 2 eller 3 perioder och minuter
 
 MATCHER OCH TRUPPER
-• Importera matchen från Min fotboll genom att dela den från Safari, gärna dagen innan
+• Hämta matchen från Min fotboll eller Innebandy Play genom att dela den från Safari, gärna dagen innan
 • Eller starta en match med två lagnamn och lägg till spelare under Dagens trupp
 • Ändra dagens trupp och matchinställningar när som helst under matchen
 
@@ -69,7 +69,7 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 
 **Nyheter i den här versionen** (1.1.0)
 ```
-• Importera en match från Min fotboll: öppna matchen i Safari och dela till Matchreferat, gärna dagen innan
+• Hämta matchen från Min fotboll eller Innebandy Play: öppna den i Safari och dela till Matchreferat, gärna dagen innan
 • Kommande matcher: uppdatera trupperna när de är publicerade och starta matchen när det är dags
 • Båda lagen är likvärdiga: mål, kort, byten och utvisningar med spelare för båda
 • Färdiga matcher sparas på telefonen, så du kan se hur det gick
@@ -165,7 +165,7 @@ Från version 1.0.1 har appen ingen inbyggd server. Granskaren behöver en koppl
 Matchreferat lets a parent log events of a youth football match and optionally share a live link.
 
 How to test (no login needed):
-1. On the start page, tap "Ny match", type a home and an away team and tap "Starta".
+1. On the start page, tap "Ny match", then "Lägg upp egen match", type a home and an away team and tap "Starta".
 2. Open "⋯" and "Dagens trupp" to add players if you want players to pick from.
 3. Tap "Avspark" to start the clock, then use the buttons (Mål, Skott på mål, Hörna, Gult kort, Byte …). Each event can be undone from the toast at the bottom.
 4. Live sharing needs a live server (a Firebase project the user owns or is given access to). To connect our test server, open this link on the device:
@@ -175,7 +175,7 @@ How to test (no login needed):
 6. "⋯" opens the timeline and a text report (Kopiera/Dela), today's squad and match settings. It also has "Avsluta match" (ends the match at the current score) and "Ta bort match" (asks first, then deletes the match and stops live sharing). The same two actions appear when you swipe left on the "Pågående match" card on the start page. Licenses are under Inställningar → Licenser.
 7. A shot ("Skott på mål"/"Skott utanför") is logged with one tap, with no player to pick.
 8. New in 1.0.2: when a live server is connected, the start page shows "Pågår nu", a list of matches that other people are sharing live on the same server (team names, score and minute only). To test it, share a match from one device and look at the start page on another device connected with the same link; tapping a match opens its live page. With nothing shared it shows "Inga matcher pågår just nu". Your own match is not listed there, it appears under "Pågående match".
-10. New in 1.1.0: a match can be imported by opening it on Min fotboll (minfotboll.svenskfotboll.se) in Safari, tapping Share and choosing Matchreferat. That page needs a Min fotboll account, so the import can't be tested without one; the rest of the app works without it. The extension reads only that site, on the device.
+10. New in 1.1.0: a match can be imported by opening it on Min fotboll (minfotboll.svenskfotboll.se) in Safari, tapping Share and choosing Matchreferat. That page needs a Min fotboll account. Floorball matches work the same way from play.innebandy.se without any account: open a match in Safari, tap Share and choose Matchreferat. The extension reads only those two sites, on the device.
 9. New in 1.0.3: the first page asks for sport (Fotboll or Innebandy); "Byt sport" on the start page switches. In Innebandy, "Prova med ett exempellag" works the same way; the match has periods ("Start period 1"), frislag, straff and utvisning (2 min preselected). In Fotboll there is now a "Straff" button (goal, saved or missed). Inställningar has keep-screen-on, vibration and which sport the app opens with.
 
 Privacy: no account. Only team names, events and players as first name + shirt number are uploaded, and only to the live server the user has connected, and only when live sharing is on. Users connected to the same server see team names, score and minute of ongoing shared matches in "Pågår nu"; players and events are only on the live page. Shared matches are deleted when sharing stops. After 7 days without an update the Firestore rules refuse to read them, and the app deletes them from the server the next time it opens (Firestore TTL needs a paid plan, so the rules and the app enforce expiry instead). Privacy policy: https://matchreferat.web.app/integritet

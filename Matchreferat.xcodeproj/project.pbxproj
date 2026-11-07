@@ -23,6 +23,7 @@
 		6DA7428CD6456C10AAC54904 /* TeamsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA55C84662CFA8CC30313FE3 /* TeamsView.swift */; };
 		728A5BFC5D9C20FDBB5292F4 /* MatchreferatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D326DAC75AD4778BC8F03B /* MatchreferatApp.swift */; };
 		73B9C59F8EDF5C9D16086952 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEF276BF901A76099BC6A4D /* ShareViewController.swift */; };
+		76AE77EF646C791EEB5D2031 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6860672C44E8F9D57550A7D3 /* HelpView.swift */; };
 		78DC81D9A9D063E0B8E70362 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA60336EA9F5AD415E16EEF7 /* Models.swift */; };
 		7A7E1985C92B29FA1C1109B9 /* FlowSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5415F7129D343D5CA9E5C815 /* FlowSheet.swift */; };
 		81A7B49BA3D7392426F28888 /* MatchImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119C39B4E2A2BD52C16F632C /* MatchImport.swift */; };
@@ -79,6 +80,7 @@
 		5415F7129D343D5CA9E5C815 /* FlowSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowSheet.swift; sourceTree = "<group>"; };
 		6185471496180B5519AD8118 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		671AFD78B8019A05E17A26E0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		6860672C44E8F9D57550A7D3 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		69C6182995ACEE0EDD2824C6 /* MatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchStore.swift; sourceTree = "<group>"; };
 		6C72B0887DF613CCE83218F1 /* MatchreferatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchreferatTests.swift; sourceTree = "<group>"; };
 		791A520E54E03B49E0FAEE8F /* Matchreferat.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Matchreferat.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -166,6 +168,7 @@
 				D76168D8200CDCE61E174F61 /* Assets.xcassets */,
 				52264AC78ACDFA24DCD35037 /* EventsView.swift */,
 				5415F7129D343D5CA9E5C815 /* FlowSheet.swift */,
+				6860672C44E8F9D57550A7D3 /* HelpView.swift */,
 				D0C717801180EDDDAEC22B1D /* ImportMatchSheet.swift */,
 				6185471496180B5519AD8118 /* Info.plist */,
 				2145666CD07F6062F9EF1659 /* LicensesView.swift */,
@@ -329,6 +332,7 @@
 			files = (
 				97AE9ED9D7D57BD4FEDBB532 /* EventsView.swift in Sources */,
 				7A7E1985C92B29FA1C1109B9 /* FlowSheet.swift in Sources */,
+				76AE77EF646C791EEB5D2031 /* HelpView.swift in Sources */,
 				94BBA2E9413E220E157D9B85 /* ImportMatchSheet.swift in Sources */,
 				215F0B4D0986328F833DCA4C /* LicensesView.swift in Sources */,
 				4343B3905002AFC95EDCE3B2 /* LiveShare.swift in Sources */,

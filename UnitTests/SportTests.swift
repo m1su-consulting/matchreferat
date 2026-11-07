@@ -494,6 +494,27 @@ struct MatchImportTests {
         #expect(MatchImport.merge(try #require(MatchImport.parse(names: ["A", "B"], lines: [], url: "b")), into: updated).count == 2)
     }
 
+    @Test func floorballPageGivesBothSquads() throws {
+        let match = try #require(MatchImport.parseFloorball(
+            names: ["Björkdalens IBK", "Ekbacka IBK"],
+            teams: [[["number": "1", "name": "Alva Berg Lund"]], [["number": "9", "name": "Saga"], ["name": "Utan nummer"]]], url: "a"))
+        #expect(match.sport == "floorball")
+        #expect(match.home.players == [ImportedPlayer(number: 1, firstName: "Alva", lastName: "Berg Lund", starts: true)])
+        #expect(match.away.players.map(\.firstName) == ["Saga"])
+        let store = makeStore()
+        store.startImportedMatch(match)
+        #expect(store.state.sport == .floorball)
+        #expect(store.state.periods == 3)
+    }
+
+    @Test func pastedTextGivesLinkAndNames() throws {
+        let shared = try #require(MatchImport.pasted("Björkdalens IF - Ekbacka IK Dam\nhttps://minfotboll.app.link/abc"))
+        #expect(shared.url == "https://minfotboll.app.link/abc")
+        #expect(shared.names == ["Björkdalens IF", "Ekbacka IK Dam"])
+        #expect(try #require(MatchImport.pasted("https://play.innebandy.se/lag/games/g/x1")).names.isEmpty)
+        #expect(MatchImport.pasted("ingen länk här") == nil)
+    }
+
     @Test func oldPlannedMatchesAreForgotten() throws {
         let match = try #require(MatchImport.parse(names: ["A", "B"], lines: [], url: "a"))
         let list = MatchImport.merge(match, into: [], now: .now.addingTimeInterval(-15 * 24 * 3600))

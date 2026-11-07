@@ -46,8 +46,11 @@ final class ShareViewController: UIViewController {
               let dictionary = item as? NSDictionary,
               let page = dictionary[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any],
               page["supported"] as? Bool == true else { return nil }
-        return MatchImport.parse(names: page["names"] as? [String] ?? [], lines: page["lines"] as? [String] ?? [],
-                                 url: page["url"] as? String)
+        let names = page["names"] as? [String] ?? []
+        if page["sport"] as? String == "floorball" {
+            return MatchImport.parseFloorball(names: names, teams: page["teams"] as? [[[String: String]]] ?? [], url: page["url"] as? String)
+        }
+        return MatchImport.parse(names: names, lines: page["lines"] as? [String] ?? [], url: page["url"] as? String)
     }
 }
 
@@ -69,7 +72,7 @@ struct ShareResultView: View {
             case .failed:
                 Image(systemName: "exclamationmark.circle").font(.largeTitle).foregroundStyle(.orange)
                 Text("Hittade ingen match").font(.title3.bold())
-                Text("Öppna matchen på Min fotboll i Safari och dela igen.")
+                Text("Öppna matchen på Min fotboll eller Innebandy Play i Safari och dela igen.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             case .done(let match):
