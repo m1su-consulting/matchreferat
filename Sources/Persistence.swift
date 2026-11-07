@@ -29,8 +29,22 @@ final class StoredTeam {
     }
 }
 
+/// A finished match kept on the phone, stored as its encoded `MatchState`.
+@Model
+final class StoredSavedMatch {
+    @Attribute(.unique) var id: UUID
+    var savedAt: Date
+    var payload: Data
+
+    init(id: UUID, savedAt: Date, payload: Data) {
+        self.id = id
+        self.savedAt = savedAt
+        self.payload = payload
+    }
+}
+
 enum Persistence {
-    static let models: [any PersistentModel.Type] = [StoredMatch.self, StoredTeam.self]
+    static let models: [any PersistentModel.Type] = [StoredMatch.self, StoredTeam.self, StoredSavedMatch.self]
 
     private static let log = Logger(subsystem: "se.matchreferat.app", category: "persistence")
 

@@ -14,7 +14,7 @@ struct EventsView: View {
                         Text("Inga händelser än").foregroundStyle(.secondary)
                     }
                     ForEach(timeline) { event in
-                        EventRow(event: event)
+                        EventRow(event: event, state: store.state)
                     }
                     .onDelete { offsets in
                         offsets.map { timeline[$0].id }.forEach(store.deleteEvent)
@@ -62,23 +62,58 @@ struct EventsView: View {
     }
 }
 
+/// A saved match: the result, the timeline with full names and the report to share.
+struct SavedMatchView: View {
+    let match: SavedMatch
+
+    var body: some View {
+        let state = match.state
+        List {
+            Section {
+                VStack(spacing: 6) {
+                    Text(state.scoreText).font(.largeTitle.weight(.heavy).monospacedDigit())
+                    Text(state.statsLine)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+            } header: {
+                Text(match.savedAt, format: .dateTime.day().month().year())
+            }
+            Section("Tidslinje") {
+                ForEach(state.events.sorted { $0.createdAt > $1.createdAt }) { event in
+                    EventRow(event: event, state: state)
+                }
+            }
+            Section {
+                ShareLink(item: state.report(at: match.savedAt)) {
+                    Label("Dela referat", systemImage: "square.and.arrow.up")
+                }
+            }
+        }
+        .navigationTitle("\(state.teamName(state.homeSide)) – \(state.teamName(state.awaySide))")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 struct EventRow: View {
-    @Environment(MatchStore.self) private var store
     let event: MatchEvent
+    let state: MatchState
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(event.minute.text)
                 .font(.subheadline.weight(.semibold).monospacedDigit())
                 .frame(width: 48, alignment: .leading)
-            Image(systemName: event.kind == .goal && event.isPenalty == true ? EventKind.penalty.icon : event.kind.icon(for: store.state.sport))
+            Image(systemName: event.kind == .goal && event.isPenalty == true ? EventKind.penalty.icon : event.kind.icon(for: state.sport))
                 .accessibilityHidden(true)
                 .foregroundStyle(iconColor)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
-                Text(store.state.describe(event))
+                Text(state.describe(event))
                     .fontWeight(event.kind == .goal ? .semibold : .regular)
-                Text(event.kind == .period ? "Match" : store.state.teamName(event.side))
+                Text(event.kind == .period ? "Match" : state.teamName(event.side))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

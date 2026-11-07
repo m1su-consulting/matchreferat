@@ -74,7 +74,7 @@ struct ShareResultView: View {
             case .done(let match):
                 Image(systemName: "checkmark.circle.fill").font(.largeTitle).foregroundStyle(.green)
                 Text("\(match.home.name) – \(match.away.name)").font(.title3.bold()).multilineTextAlignment(.center)
-                Text("Öppna Matchreferat för att välja ert lag och starta matchen.")
+                Text("Öppna Matchreferat för att starta matchen.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
             }

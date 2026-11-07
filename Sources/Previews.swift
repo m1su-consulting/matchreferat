@@ -81,7 +81,7 @@ private extension View {
 #Preview("Matchsida – innebandy") { MatchView().previewEnvironment(PreviewData.floorballStore()) }
 #Preview("Straff") { FlowSheet(flow: .penalty(.us)).previewEnvironment() }
 #Preview("Straff – motståndare") { FlowSheet(flow: .penalty(.them)).previewEnvironment() }
-#Preview("Utvisning") { FlowSheet(flow: .suspension).previewEnvironment(PreviewData.floorballStore()) }
+#Preview("Utvisning") { FlowSheet(flow: .suspension(.us)).previewEnvironment(PreviewData.floorballStore()) }
 #Preview("Straffresultat") { PenaltyResultPicker { _ in }.padding() }
 #Preview("Utvisningstyp") {
     @Previewable @State var kind = Suspension.two
@@ -100,7 +100,7 @@ private extension View {
 #Preview("Ångra-ruta") {
     ToastView(toast: .init(eventID: UUID(), text: "31' Mål! Elias Forsberg, assist Freja Håkansson")).previewEnvironment()
 }
-#Preview("Välj målskytt") { FlowSheet(flow: .goal).previewEnvironment() }
+#Preview("Välj målskytt") { FlowSheet(flow: .goal(.us)).previewEnvironment() }
 #Preview("Välj spelare") {
     PlayerPicker(prompt: "Vem gjorde målet?", players: MatchState.example().onField, skip: "Okänd") { _ in }.padding()
 }
@@ -110,7 +110,7 @@ private extension View {
 
 #Preview("Händelser och referat") { EventsView().previewEnvironment() }
 #Preview("Händelserad") {
-    List { EventRow(event: MatchState.example().events.first { $0.kind == .goal }!) }.previewEnvironment()
+    List { EventRow(event: MatchState.example().events.first { $0.kind == .goal }!, state: .example()) }.previewEnvironment()
 }
 #Preview("Dagens trupp") { MatchSquadSheet().previewEnvironment() }
 #Preview("Matchinställningar") { MatchSettingsSheet().previewEnvironment() }

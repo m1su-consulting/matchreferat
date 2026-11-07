@@ -1,12 +1,11 @@
 import SwiftUI
 
 enum Flow: Identifiable, Hashable {
-    case goal
-    case opponentGoal
-    case card(EventKind)
-    case sub
+    case goal(Side)
+    case card(EventKind, Side)
+    case sub(Side)
     case penalty(Side)
-    case suspension
+    case suspension(Side)
 
     var id: String { "\(self)" }
 }
@@ -98,9 +97,9 @@ struct MatchView: View {
         .onAppear {
             // `-demoSheet goal|squad|newMatch` opens that sheet (used for screenshots).
             switch LaunchArgument.string("demoSheet") {
-            case "goal": flow = .goal
+            case "goal": flow = .goal(.us)
             case "penalty": flow = .penalty(.us)
-            case "suspension": flow = .suspension
+            case "suspension": flow = .suspension(.us)
             case "squad": showSquad = true
             case "settings": showSettings = true
             case "events": showEvents = true
@@ -225,6 +224,15 @@ struct ClockControls: View {
                 .buttonStyle(.glass)
                 .accessibilityLabel(store.state.isRunning ? "Pausa klockan" : "Starta klockan")
             }
+            if phase == .finished {
+                Button { store.saveMatch() } label: {
+                    Label(store.isMatchSaved ? "Sparad" : "Spara", systemImage: store.isMatchSaved ? "checkmark" : "tray.and.arrow.down")
+                        .font(.headline)
+                        .frame(minHeight: 44)
+                }
+                .buttonStyle(.glass)
+                .disabled(store.isMatchSaved)
+            }
         }
         .sheet(isPresented: $showNewMatch) { NewMatchSheet() }
         .alert("Blås slutsignal?", isPresented: $confirmEnd) {
@@ -243,7 +251,7 @@ struct EventGrid: View {
         case shot(ShotResult)
     }
 
-    /// Events logged for both teams. The opponent is only a team name: no player data, no cards or utvisningar.
+    /// Events with their own row for each team.
     private var sharedRows: [Action] {
         switch store.state.sport {
         case .football: [.event(.goal), .shot(.onTarget), .shot(.off), .event(.corner), .event(.freeKick), .event(.penalty)]
@@ -251,8 +259,8 @@ struct EventGrid: View {
         }
     }
 
-    /// Events only we log, shown as one row of compact tiles.
-    private var ourOnly: [EventKind] {
+    /// Less common events, as one row of compact tiles under each team.
+    private var tiles: [EventKind] {
         switch store.state.sport {
         case .football: [.yellow, .red, .sub]
         case .floorball: [.suspension]  // Floorball subs happen all the time, so they aren't logged.
@@ -273,15 +281,11 @@ struct EventGrid: View {
                 }
             }
             GridRow {
-                header("Bara för \(store.state.ourTeam)", .us)
-                    .gridCellColumns(2)
-                    .padding(.top, 2)
-            }
-            GridRow {
-                HStack(spacing: 8) {
-                    ForEach(ourOnly, id: \.self) { kind in tile(kind) }
+                ForEach(sides, id: \.self) { side in
+                    HStack(spacing: 4) {
+                        ForEach(tiles, id: \.self) { kind in tile(kind, side) }
+                    }
                 }
-                .gridCellColumns(2)
             }
         }
     }
@@ -331,24 +335,27 @@ struct EventGrid: View {
     /// Football has one more row (Straff) than before 1.0.3, so its rows are a little lower to keep one screen.
     private var rowHeight: CGFloat { sharedRows.count > 5 ? 46 : 50 }
 
-    private func tile(_ kind: EventKind) -> some View {
-        let count = store.state.count(kind, .us)
+    private func tile(_ kind: EventKind, _ side: Side) -> some View {
+        let color = Theme.color(side)
+        let count = store.state.count(kind, side)
         let label = kind.label(for: store.state.sport)
         return Button {
+            let hasSquad = !store.state.players(side).isEmpty
             switch kind {
-            case .sub: flow = .sub
-            case .suspension: flow = .suspension
-            default: flow = .card(kind)
+            case .suspension: flow = .suspension(side)
+            case .sub where hasSquad: flow = .sub(side)
+            case _ where hasSquad: flow = .card(kind, side)
+            default: store.log(kind, side: side)  // The team is just a name: nobody to pick.
             }
         } label: {
             VStack(spacing: 2) {
                 HStack(spacing: 5) {
                     Image(systemName: kind.icon(for: store.state.sport))
                         .font(.body)
-                        .foregroundStyle(kind == .yellow ? .yellow : kind == .red ? .red : Theme.accent)
+                        .foregroundStyle(kind == .yellow ? .yellow : kind == .red ? .red : color)
                     Text("\(count)")
                         .font(.headline.monospacedDigit())
-                        .foregroundStyle(count > 0 ? Theme.accent : Color.secondary)
+                        .foregroundStyle(count > 0 ? color : Color.secondary)
                 }
                 Text(label)
                     .font(.caption.weight(.semibold))
@@ -358,17 +365,16 @@ struct EventGrid: View {
             }
             .padding(.horizontal, 4)
             .frame(maxWidth: .infinity, minHeight: 54)
-            .depthBackground(Theme.accent)
+            .depthBackground(color)
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(PressDownButtonStyle())
-        .accessibilityLabel("\(label) \(store.state.ourTeam), \(count)")
+        .accessibilityLabel("\(label) \(store.state.teamName(side)), \(count)")
     }
 
     private func tap(_ action: Action, _ side: Side) {
         switch (action, side) {
-        case (.event(.goal), .us): flow = .goal
-        case (.event(.goal), .them) where !store.state.opponentPlayers.isEmpty: flow = .opponentGoal
+        case (.event(.goal), _) where !store.state.players(side).isEmpty: flow = .goal(side)
         case (.event(.penalty), _): flow = .penalty(side)
         case (.shot(let result), _): store.log(.shot, side: side, shot: result)
         case (.event(let kind), _): store.log(kind, side: side)

@@ -129,6 +129,7 @@ enum Route: Hashable {
     case liveServer
     case licenses
     case settings
+    case savedMatch(UUID)
 }
 
 struct RootView: View {
@@ -158,6 +159,10 @@ struct RootView: View {
                     LicensesView()
                 case .settings:
                     SettingsView()
+                case .savedMatch(let id):
+                    if let match = store.savedMatches.first(where: { $0.id == id }) {
+                        SavedMatchView(match: match)
+                    }
                 }
             }
         }

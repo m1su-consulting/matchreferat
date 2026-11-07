@@ -33,12 +33,11 @@ struct FlowSheet: View {
 
     private var title: String {
         switch flow {
-        case .goal: "Mål – \(store.state.ourTeam)"
-        case .opponentGoal: "Mål – \(store.state.opponent)"
-        case .card(let kind): kind.label
-        case .sub: "Byte"
+        case .goal(let side): "Mål – \(store.state.teamName(side))"
+        case .card(let kind, let side): "\(kind.label) – \(store.state.teamName(side))"
+        case .sub(let side): "Byte – \(store.state.teamName(side))"
         case .penalty(let side): "Straff – \(store.state.teamName(side))"
-        case .suspension: "Utvisning – \(store.state.ourTeam)"
+        case .suspension(let side): "Utvisning – \(store.state.teamName(side))"
         }
     }
 
@@ -46,67 +45,58 @@ struct FlowSheet: View {
     private var content: some View {
         let state = store.state
         switch flow {
-        case .goal:
+        case .goal(let side):
             if step == 0 {
-                PlayerPicker(prompt: "Vem gjorde målet?", players: state.pickable, skip: "Okänd") { id in
+                PlayerPicker(prompt: "Vem gjorde målet?", players: state.pickable(side), skip: "Okänd") { id in
                     firstPlayer = id
                     step = 1
                 }
             } else {
-                PlayerPicker(prompt: "Assist?", players: state.pickable.filter { $0.id != firstPlayer },
+                PlayerPicker(prompt: "Assist?", players: state.pickable(side).filter { $0.id != firstPlayer },
                              skip: "Ingen assist") { id in
-                    finish(.goal, .us, player: firstPlayer, otherPlayer: id)
+                    finish(.goal, side, player: firstPlayer, otherPlayer: id)
                 }
             }
-        case .opponentGoal:
-            PlayerPicker(prompt: "Vem gjorde målet?", players: state.opponentPlayers, skip: "Okänd") { id in
-                finish(.goal, .them, player: id)
+        case .card(let kind, let side):
+            PlayerPicker(prompt: "Vem fick kortet?", players: state.playingToday(side), skip: "Okänd") { id in
+                finish(kind, side, player: id)
             }
-        case .card(let kind):
-            PlayerPicker(prompt: "Vem fick kortet?", players: state.playingToday, skip: "Okänd") { id in
-                finish(kind, .us, player: id)
-            }
-        case .penalty(.them):
-            PenaltyResultPicker { result in
-                store.logPenalty(side: .them, result: result)
-                dismiss()
-            }
-        case .penalty(.us):
-            if step == 0 {
-                PlayerPicker(prompt: "Vem slog straffen?", players: state.pickable, skip: "Okänd") { id in
+        case .penalty(let side):
+            // Without a squad, as for a team that is just a name, only the result is asked for.
+            if step == 0 && !state.playingToday(side).isEmpty {
+                PlayerPicker(prompt: "Vem slog straffen?", players: state.pickable(side), skip: "Okänd") { id in
                     firstPlayer = id
                     step = 1
                 }
             } else {
                 PenaltyResultPicker { result in
-                    store.logPenalty(side: .us, player: firstPlayer, result: result)
+                    store.logPenalty(side: side, player: firstPlayer, result: result)
                     dismiss()
                 }
             }
-        case .suspension:
+        case .suspension(let side):
             VStack(alignment: .leading, spacing: 18) {
                 SuspensionPicker(selection: $suspension)
-                PlayerPicker(prompt: "Vem blev utvisad?", players: state.playingToday, skip: "Okänd") { id in
-                    finish(.suspension, .us, player: id, suspension: suspension)
+                PlayerPicker(prompt: "Vem blev utvisad?", players: state.playingToday(side), skip: "Okänd") { id in
+                    finish(.suspension, side, player: id, suspension: suspension)
                 }
             }
-        case .sub:
+        case .sub(let side):
             // Normally Start goes out and Bänk comes in. If either list is empty (no lineup set),
             // everyone playing today can be picked instead of leaving an empty sheet.
+            let onField = state.onField(side), bench = state.bench(side), everyone = state.playingToday(side)
             if step == 0 {
-                PlayerPicker(prompt: "Vem går ut?", players: state.onField.isEmpty ? state.playingToday : state.onField,
-                             skip: nil) { id in
+                PlayerPicker(prompt: "Vem går ut?", players: onField.isEmpty ? everyone : onField, skip: nil) { id in
                     firstPlayer = id
                     step = 1
                 }
             } else {
-                PlayerPicker(prompt: "Vem kommer in?",
-                             players: state.bench.isEmpty ? state.playingToday.filter { $0.id != firstPlayer } : state.bench,
+                PlayerPicker(prompt: "Vem kommer in?", players: bench.isEmpty ? everyone.filter { $0.id != firstPlayer } : bench,
                              skip: nil) { id in
-                    finish(.sub, .us, player: firstPlayer, otherPlayer: id)
+                    finish(.sub, side, player: firstPlayer, otherPlayer: id)
                 }
             }
-            if state.onField.isEmpty || state.bench.isEmpty {
+            if onField.isEmpty || bench.isEmpty {
                 Text("Vilka som startar och sitter på bänken väljer du under ⋯ → Dagens trupp.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)

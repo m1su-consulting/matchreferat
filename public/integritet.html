@@ -11,12 +11,13 @@
 <p>Livelänken kräver att du har kopplat appen till en <strong>live-server</strong>: en Firebase-databas som du själv har skapat, eller som någon du litar på har gett dig en kopplingslänk till. Appen har ingen inbyggd server. När du slår på livelänken skickas följande till den kopplade servern, så att de som har länken kan följa matchen:</p>
 <ul>
 <li>lagnamn, motståndarens lagnamn, hemma/borta, resultat, klocka och statistik</li>
-<li>matchhändelser, där spelare bara visas med <strong>förnamn och tröjnummer</strong> (till exempel "Selma (10)"). Efternamn skickas aldrig.</li>
+<li>matchhändelser, där spelare i båda lagen bara visas med <strong>förnamn och tröjnummer</strong> (till exempel "Selma (10)"). Efternamn skickas aldrig.</li>
 <li>ett anonymt användar-id som gör att bara din telefon kan ändra matchen. Det är inte kopplat till ditt namn, din e-post eller ditt Apple-id.</li>
 </ul>
-<p>Från version 1.1.0 kan du dela en match från Min fotboll i Safari till appen. Då läser appen namn och tröjnummer för båda trupperna från sidan du har öppen. Det sker på telefonen, och namnen sparas bara där. Motståndarens trupp raderas när du startar nästa match. Inget av detta skickas till oss, och det som delas live visar bara förnamn och tröjnummer för ditt lag.</p>
+<p>Från version 1.1.0 kan du dela en match från Min fotboll i Safari till appen. Då läser appen namn och tröjnummer för båda trupperna från sidan du har öppen. Det sker på telefonen, och hela namnen sparas bara där. Efternamn skickas aldrig.</p>
 <p>Länken innehåller en lång slumpkod och går inte att gissa eller söka fram. Från version 1.0.2 ser de som har kopplat appen till samma live-server (med kopplingslänken) en lista "Pågår nu" med lagnamn, ställning och matchminut, och kan öppna livesidan därifrån. Andra kan inte hitta matchen. Matchen raderas från servern när du stänger av "Dela live". Har matchen inte uppdaterats på 7 dagar slutar länken att fungera och ingen kan längre läsa matchen. Från version 1.0.3 raderar appen den då från servern nästa gång du öppnar appen, och appar som är kopplade till samma server tar bort utgångna matcher som de hittar. Tar du bort appen medan delningen är på kan matchen ligga kvar oläsbar på servern tills den städas bort. Hör av dig, så raderar vi den från vår server.</p>
-<p>Motståndarlaget anges bara med namn. Inga uppgifter om motståndarnas spelare sparas.</p>
+<p>Skriver du en match för hand anges motståndarlaget bara med namn. Vid import från Min fotboll sparas båda trupperna på telefonen, och spelare som loggas visas med förnamn och tröjnummer på livesidan och i referatet.</p>
+<p>Sparar du en färdig match ligger den kvar på telefonen tills du tar bort den. Sparade matcher skickas ingenstans.</p>
 
 <p>Den som äger live-servern är personuppgiftsansvarig för det som lagras där. För M1SU Consulting AB:s egen server är det M1SU Consulting AB. Använder du en egen server är det du själv, eller den som gav dig kopplingslänken.</p>
 

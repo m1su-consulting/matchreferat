@@ -57,7 +57,7 @@ DELA
 INTEGRITET
 • Inget konto och ingen reklam
 • Bara förnamn och tröjnummer delas – efternamn lämnar aldrig telefonen
-• I det som delas anges motståndarlaget bara med lagnamn
+• Utan import anges motståndarlaget bara med lagnamn
 • Delade matcher raderas när du stänger av delningen och slutar visas efter 7 dagar
 ```
 
@@ -69,9 +69,10 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 
 **Nyheter i den här versionen** (1.1.0)
 ```
-• Importera en match från Min fotboll: öppna matchen i Safari, dela till Matchreferat och starta med trupperna ifyllda
-• Välj målskytt även för motståndaren när matchen är importerad
-• Namnen stannar på telefonen – det som delas live visar bara förnamn och nummer för ert lag
+• Importera en match från Min fotboll: öppna matchen i Safari, dela till Matchreferat och starta med båda trupperna ifyllda
+• Båda lagen är likvärdiga: mål, kort, byten och utvisningar med spelare för båda
+• Spara färdiga matcher på telefonen och se hur det gick
+• Hela namn visas bara i appen – det som delas visar förnamn och nummer
 ```
 
 **Nyheter i 1.0.4** (inskickad tidigare, sparas som referens)
@@ -150,7 +151,7 @@ Svara **Inget / Nej** på alla frågor (våld, sexuellt innehåll, droger, spel 
 | Användarinnehåll → Annat användarinnehåll | Appfunktionalitet | Nej | Nej |
 | Identifierare → Användar-ID | Appfunktionalitet | Nej | Nej |
 
-Förklaring: bara när användaren slår på "Dela live" skickas lagnamn, händelser och spelare som förnamn + tröjnummer till Firebase, tillsammans med ett anonymt användar-id (Firebase Anonymous Auth) som gör att bara skaparen kan ändra matchen. Ingen spårning, ingen reklam, ingen analys.
+Förklaring: bara när användaren slår på "Dela live" skickas lagnamn, händelser och spelare i båda lagen som förnamn + tröjnummer till Firebase, tillsammans med ett anonymt användar-id (Firebase Anonymous Auth) som gör att bara skaparen kan ändra matchen. Ingen spårning, ingen reklam, ingen analys.
 
 ## Information till granskaren (App Review)
 

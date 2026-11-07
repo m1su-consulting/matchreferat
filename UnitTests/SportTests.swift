@@ -111,7 +111,7 @@ struct FloorballTests {
         #expect(match.shots(.us) == 3)
         #expect(match.shotsOnTarget(.them) == 2)
         #expect(match.suspensions() == 2)
-        #expect(match.statsLine == "Skott 3–3 · På mål 3–2 · Utvisningar 2 (4 min)")
+        #expect(match.statsLine == "Skott 3–3 · På mål 3–2 · Utvisningar 2–0 (4–0 min)")
         #expect(match.statsLine.count <= 120)   // the Firestore rules allow 120 characters
     }
 
@@ -131,8 +131,8 @@ struct FloorballTests {
         #expect(store.state.report(at: .now).contains("⛔ \(event.minute.text) Saga (10), Matchstraff"))
         #expect(!store.state.report(at: .now).contains("Berg"))
         #expect(store.state.suspensionMinutes == 4 + 5 + 5)
-        #expect(store.state.statsLine.hasSuffix("Utvisningar 4 (14 min)"))
-        #expect(store.state.report(at: .now).contains("Utvisningar 4 (14 min)"))
+        #expect(store.state.statsLine.hasSuffix("Utvisningar 4–0 (14–0 min)"))
+        #expect(store.state.report(at: .now).contains("Utvisningar 4–0 (14–0 min)"))
         #expect(Suspension.ten.minutes == 10)
         #expect(Suspension.two.teamMinutes == 2 && Suspension.ten.teamMinutes == 0 && Suspension.match.teamMinutes == 5)
     }
@@ -399,47 +399,64 @@ struct MatchImportTests {
         #expect(match.away.players.map(\.firstName) == ["Saga", "Moa"])
     }
 
-    @Test func opponentNamesStayOnThePhone() throws {
+    private func importedMatch(in store: MatchStore) {
+        store.startImportedMatch(ImportedMatch(
+            home: ImportedTeam(name: "Björkdalens IF", players: [ImportedPlayer(number: 3, firstName: "Alva", lastName: "Berg", starts: true),
+                                                                 ImportedPlayer(number: 5, firstName: "Leo", lastName: "Holm", starts: false)]),
+            away: ImportedTeam(name: "Ekbacka IK", players: [ImportedPlayer(number: 9, firstName: "Saga", lastName: "Lund", starts: true),
+                                                             ImportedPlayer(number: 4, firstName: "Moa", lastName: "Ek", starts: false)])))
+    }
+
+    @Test func fullNamesInTheAppFirstNamesWhenShared() throws {
         let store = makeStore()
-        store.startImportedMatch(players: [ImportedPlayer(number: 3, firstName: "Alva", lastName: "Berg", starts: true)],
-                                 opponentPlayers: [ImportedPlayer(number: 9, firstName: "Saga", lastName: "Lund", starts: true)],
-                                 teamID: nil, teamName: "Björkdalens IF", opponent: "Ekbacka IK", isHome: true)
-        store.log(.goal, side: .them, player: store.state.opponentPlayers[0].id)
-        store.log(.goal, side: .us, player: store.state.players[0].id)
-        let them = try #require(store.state.events.first)
-        #expect(store.state.describe(them) == "Mål Ekbacka IK – Saga Lund")
-        #expect(store.state.describe(them, publicNames: true) == "Mål Ekbacka IK")
+        importedMatch(in: store)
+        store.log(.goal, side: .them, player: store.state.opponentPlayers[1].id)
+        store.log(.yellow, side: .us, player: store.state.players[0].id)
+        let goal = try #require(store.state.events.first)
+        #expect(store.state.describe(goal) == "Mål! Saga Lund")
+        #expect(store.state.describe(goal, publicNames: true) == "Mål! Saga (9)")
         let shared = store.state.report(at: .now) + String(describing: LiveShare.payload(store.state, owner: "test"))
-        #expect(!shared.contains("Saga") && !shared.contains("Lund") && !shared.contains("Berg"))
+        #expect(shared.contains("Saga (9)") && shared.contains("Alva (3)"))
+        #expect(!shared.contains("Lund") && !shared.contains("Berg"))
+    }
+
+    @Test func subsWorkForBothTeamsAndUndo() throws {
+        let store = makeStore()
+        importedMatch(in: store)
+        let out = try #require(store.state.onField(.them).first)
+        let into = try #require(store.state.bench(.them).first)
+        store.log(.sub, side: .them, player: out.id, otherPlayer: into.id)
+        #expect(store.state.onField(.them).map(\.number) == [4])
+        store.deleteEvent(try #require(store.state.events.first).id)
+        #expect(store.state.onField(.them).map(\.number) == [9])
+    }
+
+    @Test func importBelongsToTheMatchNotToMinaLag() {
+        let store = makeStore()
+        importedMatch(in: store)
+        #expect(store.teams.isEmpty)
+        #expect(store.state.ourTeam == "Björkdalens IF")
+        #expect(store.state.opponent == "Ekbacka IK")
+        #expect(store.state.isHome)
+    }
+
+    @Test func aFinishedMatchCanBeSavedOnceAndDeleted() throws {
+        let container = Persistence.container(inMemory: true)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let store = MatchStore(container: container, legacyDirectory: directory)
+        importedMatch(in: store)
+        store.saveMatch()
+        store.saveMatch()
+        #expect(store.isMatchSaved)
+        #expect(store.savedMatches.count == 1)
+        let reopened = MatchStore(container: container, legacyDirectory: directory)
+        let saved = try #require(reopened.savedMatches.first)
+        #expect(saved.state.opponentPlayers.count == 2)
+        reopened.deleteSavedMatch(saved.id)
+        #expect(MatchStore(container: container, legacyDirectory: directory).savedMatches.isEmpty)
     }
 
     @Test func aPageWithoutLineupIsNotAMatch() {
         #expect(MatchImport.parse(names: [], lines: ["Flöde", "Tabell"]) == nil)
-    }
-
-    @Test func importKeepsSurnamesAndLeavesOutOthers() throws {
-        let store = makeStore()
-        var team = Team.new(.football, name: "Björkdalens IF")
-        team.players = [Player(firstName: "Alva", lastName: "Berg", number: 3), Player(firstName: "Leo", number: 5)]
-        store.teams.append(team)
-        store.startImportedMatch(players: [ImportedPlayer(number: 3, firstName: "Alva", starts: true),
-                                           ImportedPlayer(number: 8, firstName: "Ines", starts: false)],
-                                 teamID: team.id, teamName: "", opponent: "Ekbacka IK", isHome: false)
-        let saved = try #require(store.teams.first { $0.id == team.id })
-        #expect(saved.players.map(\.number) == [3, 5, 8])
-        #expect(saved.players[0].lastName == "Berg")
-        #expect(saved.players.map(\.status) == [.start, .out, .bench])
-        #expect(store.state.opponent == "Ekbacka IK")
-        #expect(store.state.isHome == false)
-    }
-
-    @Test func importWithoutTeamCreatesOneAndUsesTheFormat() throws {
-        let store = makeStore()
-        let players = (1...7).map { ImportedPlayer(number: $0, firstName: "Spelare", starts: true) }
-        store.startImportedMatch(players: players, teamID: nil, teamName: "Nya laget", opponent: "Ekbacka IK", isHome: true)
-        let team = try #require(store.teams.first { $0.name == "Nya laget" })
-        #expect(team.sport == .football)
-        #expect(team.playersOnField == 7)
-        #expect(store.state.teamID == team.id)
     }
 }

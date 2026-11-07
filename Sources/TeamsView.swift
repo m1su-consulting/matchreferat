@@ -118,6 +118,7 @@ struct FormatFields: View {
 struct LineupSection: View {
     @Binding var players: [Player]
     let playersOnField: Int
+    var title = "Trupp"
     /// Floorball changes lines all the time, so only football counts against the format.
     var countsStarters = true
 
@@ -130,7 +131,7 @@ struct LineupSection: View {
             .onDelete { players.remove(atOffsets: $0) }
         } header: {
             HStack {
-                Text("Trupp")
+                Text(title)
                 Spacer()
                 if countsStarters {
                     Text("\(starting) av \(playersOnField) på plan")

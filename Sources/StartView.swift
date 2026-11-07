@@ -87,6 +87,30 @@ struct StartView: View {
                 Text("Mina lag · \(sport.label)")
             }
 
+            let saved = store.savedMatches.filter { $0.state.sport == sport }
+            if !saved.isEmpty {
+                Section("Sparade matcher") {
+                    ForEach(saved) { match in
+                        NavigationLink(value: Route.savedMatch(match.id)) {
+                            LabeledContent {
+                                Text(match.state.scoreText)
+                                    .font(.headline.monospacedDigit())
+                                    .foregroundStyle(.primary)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(match.state.teamName(match.state.homeSide)) – \(match.state.teamName(match.state.awaySide))")
+                                        .font(.headline)
+                                    Text(match.savedAt, format: .dateTime.day().month().year())
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                    .onDelete { offsets in offsets.map { saved[$0].id }.forEach(store.deleteSavedMatch) }
+                }
+            }
+
             Section {
                 MadeBy()
                     .frame(maxWidth: .infinity)

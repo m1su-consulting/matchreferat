@@ -14,6 +14,8 @@ final class MatchStore {
 
     var state: MatchState
     var teams: [Team]
+    /// Finished matches the user chose to keep, newest first.
+    private(set) var savedMatches: [SavedMatch] = []
     var toast: Toast?
     /// The sport chosen on the first page, remembered between launches. Nil shows the sport picker.
     var sport: Sport? {
@@ -86,6 +88,10 @@ final class MatchStore {
             match.teamID = team.id
         }
         state = match
+        let saved = (try? context.fetch(FetchDescriptor<StoredSavedMatch>(sortBy: [SortDescriptor(\.savedAt, order: .reverse)]))) ?? []
+        savedMatches = saved.compactMap { stored in
+            (try? decoder.decode(MatchState.self, from: stored.payload)).map { SavedMatch(id: stored.id, savedAt: stored.savedAt, state: $0) }
+        }
         if importing {
             save()
             saveTeams()
@@ -182,8 +188,11 @@ final class MatchStore {
     }
 
     private func setStatus(_ id: UUID, _ status: PlayerStatus) {
-        guard let index = state.players.firstIndex(where: { $0.id == id }) else { return }
-        state.players[index].status = status
+        if let index = state.players.firstIndex(where: { $0.id == id }) {
+            state.players[index].status = status
+        } else if let index = state.opponentPlayers.firstIndex(where: { $0.id == id }) {
+            state.opponentPlayers[index].status = status
+        }
     }
 
     // MARK: Clock
@@ -307,44 +316,40 @@ final class MatchStore {
         openMatch()
     }
 
-    /// Starts a football match from an imported lineup: the team gets anyone new, keeps its other players,
-    /// and those not in the lineup are Ej med. The opponent's squad belongs to this match and stays on the phone.
-    func startImportedMatch(players imported: [ImportedPlayer], opponentPlayers: [ImportedPlayer] = [], teamID: UUID?,
-                            teamName: String, opponent: String, isHome: Bool) {
-        var team: Team
-        if let existing = teams.first(where: { $0.id == teamID }) {
-            team = existing
-        } else {
-            team = Team.new(.football, name: teamName)
-            let starters = imported.filter(\.starts).count
-            if Team.formats(.football).contains(starters) {
-                team.playersOnField = starters
-                team.periodLength = Team.defaultPeriodLength(for: starters)
+    var isMatchSaved: Bool { savedMatches.contains { $0.state == state } }
+
+    func saveMatch() {
+        guard !isMatchSaved, let payload = try? JSONEncoder().encode(state) else { return }
+        let match = SavedMatch(id: UUID(), savedAt: .now, state: state)
+        savedMatches.insert(match, at: 0)
+        container.mainContext.insert(StoredSavedMatch(id: match.id, savedAt: match.savedAt, payload: payload))
+        commit()
+    }
+
+    func deleteSavedMatch(_ id: UUID) {
+        savedMatches.removeAll { $0.id == id }
+        let stored = (try? container.mainContext.fetch(FetchDescriptor<StoredSavedMatch>(predicate: #Predicate { $0.id == id }))) ?? []
+        stored.forEach(container.mainContext.delete)
+        commit()
+    }
+
+    /// Starts a football match from an imported match. Both squads belong to the match, not to Mina lag.
+    func startImportedMatch(_ match: ImportedMatch) {
+        func squad(_ team: ImportedTeam) -> [Player] {
+            team.players.sorted { $0.number < $1.number }.map {
+                Player(firstName: $0.firstName, lastName: $0.lastName, number: $0.number, status: $0.starts ? .start : .bench)
             }
         }
-        for index in team.players.indices { team.players[index].status = .out }
-        for player in imported {
-            let status: PlayerStatus = player.starts ? .start : .bench
-            if let index = team.players.firstIndex(where: { $0.number == player.number }) {
-                team.players[index].firstName = player.firstName
-                if !player.lastName.isEmpty { team.players[index].lastName = player.lastName }
-                team.players[index].status = status
-            } else {
-                team.players.append(Player(firstName: player.firstName, lastName: player.lastName, number: player.number,
-                                           status: status))
-            }
-        }
-        team.players.sort { $0.number < $1.number }
-        if let index = teams.firstIndex(where: { $0.id == team.id }) {
-            teams[index] = team
-        } else {
-            teams.append(team)
+        var team = Team.new(.football, name: match.home.name)
+        team.players = squad(match.home)
+        let starters = match.home.players.filter(\.starts).count
+        if Team.formats(.football).contains(starters) {
+            team.playersOnField = starters
+            team.periodLength = Team.defaultPeriodLength(for: starters)
         }
         sport = .football
-        newMatch(team: team, opponent: opponent, isHome: isHome)
-        state.opponentPlayers = opponentPlayers.sorted { $0.number < $1.number }.map {
-            Player(firstName: $0.firstName, lastName: $0.lastName, number: $0.number, status: $0.starts ? .start : .bench)
-        }
+        newMatch(team: team, opponent: match.away.name, isHome: true)
+        state.opponentPlayers = squad(match.away)
     }
 
     /// Remembers today's Start/Bänk/Ej med as the team's lineup for next time.

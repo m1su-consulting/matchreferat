@@ -291,6 +291,13 @@ enum ShotResult: String, Codable, CaseIterable, Hashable {
     }
 }
 
+/// A finished match kept on the phone. Saved matches never leave it.
+struct SavedMatch: Identifiable {
+    let id: UUID
+    let savedAt: Date
+    let state: MatchState
+}
+
 enum Phase: String, Codable {
     /// `interval` is the break after `period` (half-time when there are two periods).
     case notStarted, playing, interval, finished
@@ -335,7 +342,7 @@ struct MatchState: Equatable {
     var periods: Int = 2
     var playersOnField: Int = 9
     var players: [Player]
-    /// The opponent's squad from an imported match. Stays on the phone: never part of the live page or the report.
+    /// The other team's squad, from an imported match. Empty when the opponent is just a name.
     var opponentPlayers: [Player] = []
     var events: [MatchEvent]
     var phase: Phase
@@ -406,20 +413,27 @@ extension MatchState {
     var awaySide: Side { isHome ? .them : .us }
 
     func teamName(_ side: Side) -> String { side == .us ? ourTeam : opponent }
+    func players(_ side: Side) -> [Player] { side == .us ? players : opponentPlayers }
     func name(_ id: UUID?) -> String? { (players + opponentPlayers).first { $0.id == id }?.name }
 
     /// First name and shirt number, e.g. "Selma (10)". The only form of a player name that may leave the phone.
     func publicName(_ id: UUID?) -> String? {
-        guard let player = players.first(where: { $0.id == id }) else { return nil }
+        guard let player = (players + opponentPlayers).first(where: { $0.id == id }) else { return nil }
         return "\(player.firstName) (\(player.number))"
     }
 
-    var onField: [Player] { players.filter { $0.status == .start }.sorted { $0.number < $1.number } }
-    var bench: [Player] { players.filter { $0.status == .bench }.sorted { $0.number < $1.number } }
-    var playingToday: [Player] { players.filter { $0.status != .out }.sorted { $0.number < $1.number } }
+    func onField(_ side: Side) -> [Player] { players(side).filter { $0.status == .start }.sorted { $0.number < $1.number } }
+    func bench(_ side: Side) -> [Player] { players(side).filter { $0.status == .bench }.sorted { $0.number < $1.number } }
+    func playingToday(_ side: Side) -> [Player] { players(side).filter { $0.status != .out }.sorted { $0.number < $1.number } }
+    var onField: [Player] { onField(.us) }
+    var bench: [Player] { bench(.us) }
+    var playingToday: [Player] { playingToday(.us) }
     /// Players to pick from for goals and shots: those on the pitch, or everyone playing today if no starters are set.
     /// Everyone playing can score in floorball, where subs aren't logged and Start says little.
-    var pickable: [Player] { sport == .floorball || onField.isEmpty ? playingToday : onField }
+    func pickable(_ side: Side) -> [Player] {
+        sport == .floorball || onField(side).isEmpty ? playingToday(side) : onField(side)
+    }
+    var pickable: [Player] { pickable(.us) }
 
     func count(_ kind: EventKind, _ side: Side) -> Int {
         events.filter { $0.kind == kind && $0.side == side }.count
@@ -457,18 +471,23 @@ extension MatchState {
         events.filter { $0.side == side && $0.kind == .goal && $0.isPenalty == true }.count
     }
 
-    /// Our utvisningar, optionally only one kind.
-    func suspensions(_ kind: Suspension? = nil) -> Int {
-        events.filter { $0.kind == .suspension && $0.side == .us && (kind == nil || $0.suspension == kind) }.count
+    /// A team's utvisningar, optionally only one kind.
+    func suspensions(_ kind: Suspension? = nil, side: Side = .us) -> Int {
+        events.filter { $0.kind == .suspension && $0.side == side && (kind == nil || $0.suspension == kind) }.count
     }
 
-    /// Utvisningsminuter for our team; utvisningar without a kind (none so far) count as 2 minutes.
-    var suspensionMinutes: Int {
-        events.filter { $0.kind == .suspension && $0.side == .us }.reduce(0) { $0 + ($1.suspension ?? .two).minutes }
+    /// Utvisningsminuter for a team; utvisningar without a kind (none so far) count as 2 minutes.
+    func suspensionMinutes(_ side: Side) -> Int {
+        events.filter { $0.kind == .suspension && $0.side == side }.reduce(0) { $0 + ($1.suspension ?? .two).minutes }
     }
+    var suspensionMinutes: Int { suspensionMinutes(.us) }
 
-    /// "Utvisningar 2 (4 min)".
-    var suspensionsText: String { "Utvisningar \(suspensions()) (\(suspensionMinutes) min)" }
+    /// "Utvisningar 2–1 (4–2 min)", home first.
+    var suspensionsText: String {
+        let home = homeSide, away = awaySide
+        return "Utvisningar \(suspensions(side: home))–\(suspensions(side: away)) "
+            + "(\(suspensionMinutes(home))–\(suspensionMinutes(away)) min)"
+    }
 
     var scoreText: String { "\(goals(homeSide))–\(goals(awaySide))" }
 
@@ -562,7 +581,7 @@ extension MatchState {
         switch e.kind {
         case .goal:
             let penalty = e.isPenalty == true
-            guard e.side == .us else { return "Mål \(opponent)" + (penalty ? " (straff)" : "") + (who.map { " – \($0)" } ?? "") }
+            guard e.side == .us || who != nil else { return "Mål \(opponent)" + (penalty ? " (straff)" : "") }
             var text = (penalty ? "Straffmål! " : "Mål! ") + (who ?? "Okänd målskytt")
             if let assist = name(e.otherPlayer) { text += ", assist \(assist)" }
             return text
@@ -579,6 +598,7 @@ extension MatchState {
         case .yellow, .red:
             return e.kind.label + (who.map { " – \($0)" } ?? "")
         case .sub:
+            guard e.player != nil || e.otherPlayer != nil else { return "Byte" }
             return "Byte: \(who ?? "Okänd") ut, \(name(e.otherPlayer) ?? "Okänd") in"
         case .period:
             return e.note ?? ""
@@ -601,26 +621,24 @@ extension MatchState {
         let goalEmoji = sport == .football ? "⚽" : "🥅"
         group(sorted.filter { $0.kind == .goal }.map { e in
             let penalty = e.isPenalty == true ? " (straff)" : ""
-            guard e.side == .us else { return "\(goalEmoji) \(e.minute.text) \(opponent)\(penalty)" }
-            var text = "\(goalEmoji) \(e.minute.text) \(publicName(e.player) ?? ourTeam)\(penalty)"
+            var text = "\(goalEmoji) \(e.minute.text) \(publicName(e.player) ?? teamName(e.side))\(penalty)"
             if let assist = publicName(e.otherPlayer) { text += ", assist \(assist)" }
             return text
         })
         group(sorted.filter { $0.kind == .penalty }.map { e in
             let what = e.shot == .onTarget ? "Straff räddad" : "Straff miss"
-            let who = e.side == .us ? publicName(e.player) ?? ourTeam : opponent
-            return "❌ \(e.minute.text) \(what), \(who)"
+            return "❌ \(e.minute.text) \(what), \(publicName(e.player) ?? teamName(e.side))"
         })
         group(sorted.filter { $0.kind == .suspension }.map { e in
-            "⛔ \(e.minute.text) \(publicName(e.player) ?? ourTeam), \(e.suspension?.label ?? "utvisning")"
+            "⛔ \(e.minute.text) \(publicName(e.player) ?? teamName(e.side)), \(e.suspension?.label ?? "utvisning")"
         })
         group(sorted.filter { $0.kind == .yellow || $0.kind == .red }.map { e in
             let emoji = e.kind == .yellow ? "🟨" : "🟥"
-            let who = publicName(e.player) ?? ourTeam
-            return "\(emoji) \(e.minute.text) \(who)"
+            return "\(emoji) \(e.minute.text) \(publicName(e.player) ?? teamName(e.side))"
         })
         group(sorted.filter { $0.kind == .sub }.map { e in
-            "🔁 \(e.minute.text) \(publicName(e.otherPlayer) ?? "Okänd") in, \(publicName(e.player) ?? "Okänd") ut"
+            guard e.player != nil || e.otherPlayer != nil else { return "🔁 \(e.minute.text) \(teamName(e.side))" }
+            return "🔁 \(e.minute.text) \(publicName(e.otherPlayer) ?? "Okänd") in, \(publicName(e.player) ?? "Okänd") ut"
         })
         group(sorted.filter { $0.kind == .period }.map { "⏱ \($0.minute.text) \($0.note ?? "")" })
         lines.append("")
