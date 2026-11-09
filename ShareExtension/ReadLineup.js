@@ -6,18 +6,24 @@ ReadLineup.prototype = {
         var main = document.querySelector("main") || document.body;
 
         function clickTab(pattern) {
+            var clicked = false;
             main.querySelectorAll("a, button, [role=tab], li, span, div").forEach(function(element) {
-                if (element.children.length <= 1 && pattern.test(element.textContent.trim())) element.click();
+                if (element.children.length <= 1 && pattern.test(element.textContent.trim())) {
+                    element.click();
+                    clicked = true;
+                }
             });
+            return clicked;
         }
 
-        // Tries every 200 ms for up to three seconds, then goes on with what the page has.
+        // Tries every 200 ms for up to a second, then goes on with what the page has.
+        // Safari throws away the result of a script that takes too long: three seconds is too long.
         function waitFor(ready, next) {
             if (ready()) return next();
             var waited = 0;
             var timer = setInterval(function() {
                 waited += 200;
-                if (ready() || waited >= 3000) {
+                if (ready() || waited >= 1000) {
                     clearInterval(timer);
                     next();
                 }
@@ -51,7 +57,8 @@ ReadLineup.prototype = {
                                           url: location.origin + (game ? game[0] : location.pathname) });
             }
             // The squads are only on the page while the Lineup tab is open.
-            if (!squadsShown()) clickTab(/^(lineup|line-up|laguppställning)$/i);
+            // Without a tab to open there is nothing to wait for: the match is saved and the squads come later.
+            if (squadsShown() || !clickTab(/^(lineup|line-up|laguppställning)$/i)) return finish();
             waitFor(squadsShown, finish);
         }
 

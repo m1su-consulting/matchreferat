@@ -67,7 +67,12 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 ```
 (96 tecken)
 
-**Nyheter i den här versionen** (2.0)
+**Nyheter i den här versionen** (2.0.1)
+```
+• Rättat: en match som delas från Min fotboll innan trupperna är publicerade läggs nu upp under Kommande matcher, och trupperna kan hämtas senare
+```
+
+**Nyheter i 2.0** (sparas som referens)
 ```
 • Hämta matchen från Min fotboll eller Innebandy Play: öppna den i Safari och dela till Matchreferat, gärna dagen innan
 • Kommande matcher: uppdatera trupperna när de är publicerade och starta matchen när det är dags
