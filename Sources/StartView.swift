@@ -73,7 +73,13 @@ struct StartView: View {
 
             if let server = live.server {
                 OngoingSection(list: live.ongoing.filtered(sport), serverName: server.name) { match in
-                    live.openedMatch = LiveMatchLink(server: server, matchID: match.id)
+                    // Your own share opens the match you report, not the page that follows it.
+                    if match.id == live.matchID {
+                        store.sport = store.state.sport
+                        store.openMatch()
+                    } else {
+                        live.openedMatch = LiveMatchLink(server: server, matchID: match.id)
+                    }
                 }
             }
 
