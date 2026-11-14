@@ -46,22 +46,31 @@ struct ImportMatchSheet: View {
                         Text("Sidan visar inte vilken dag matchen spelas. Välj den här, så står den under Kommande matcher.")
                     }
                 }
-                if !match.hasSquads, match.sport != nil {
+                // Also once the squads are in: the lineup can change right up to kickoff.
+                if match.sport != nil, match.url != nil {
                     Section {
                         Button(action: fetchSquads) {
-                            if fetching { ProgressView() } else { Label("Hämta trupperna", systemImage: "arrow.down.circle") }
+                            if fetching {
+                                ProgressView()
+                            } else {
+                                Label(match.hasSquads ? "Uppdatera trupperna" : "Hämta trupperna",
+                                      systemImage: "arrow.down.circle")
+                            }
                         }
                         .disabled(fetching)
                     } footer: {
-                        Text("Trupperna hämtas från Innebandy Play när lagen har lagt in dem.")
+                        Text(match.hasSquads ? "Trupperna hämtas på nytt från Innebandy Play."
+                             : "Trupperna hämtas från Innebandy Play när lagen har lagt in dem.")
                     }
-                } else if !match.hasSquads, let url = match.safariURL {
+                } else if let url = match.safariURL {
                     Section {
                         Link(destination: url) {
-                            Label("Hämta trupperna", systemImage: "safari")
+                            Label(match.hasSquads ? "Uppdatera trupperna" : "Hämta trupperna", systemImage: "safari")
                         }
                     } footer: {
-                        Text("Matchen öppnas i Safari. Dela den till Matchreferat igen, så kommer trupperna med. De publiceras ungefär en timme före avspark.")
+                        Text(match.hasSquads
+                             ? "Matchen öppnas i Safari, där du är inloggad. Öppna fliken Lineup och dela den till Matchreferat igen, så uppdateras trupperna."
+                             : "Matchen öppnas i Safari. Dela den till Matchreferat igen, så kommer trupperna med. De publiceras ungefär en timme före avspark.")
                     }
                 }
                 if live.isConfigured {
