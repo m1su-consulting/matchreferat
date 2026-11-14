@@ -67,7 +67,13 @@ fotboll,innebandy,referat,live,match,resultat,ungdomsfotboll,förälder,ledare,l
 ```
 (96 tecken)
 
-**Nyheter i den här versionen** (2.0.1)
+**Nyheter i den här versionen** (2.1)
+```
+• Kommande matcher visar när matchen spelas. Tiden hämtas när du delar matchen, och dag och tid kan ändras i appen
+• Kommande matcher sorteras efter avspark och visas före Pågår nu
+```
+
+**Nyheter i 2.0.1** (sparas som referens)
 ```
 • Rättat: en match som delas från Min fotboll innan trupperna är publicerade läggs nu upp under Kommande matcher, och trupperna kan hämtas senare
 ```
