@@ -50,7 +50,8 @@ final class ShareViewController: UIViewController {
             let url = page["url"] as? String ?? ""
             return FloorballPage.isMatchLink(url) ? await FloorballPage.read(url, in: view) : nil
         }
-        return MatchImport.parse(names: page["names"] as? [String] ?? [], lines: page["lines"] as? [String] ?? [], url: page["url"] as? String)
+        return MatchImport.parse(names: page["names"] as? [String] ?? [], lines: page["lines"] as? [String] ?? [],
+                                 url: page["url"] as? String, kickoff: page["kickoff"] as? String)
     }
 }
 

@@ -25,10 +25,31 @@ struct ImportedMatch: Codable, Equatable, Identifiable {
     var sharedAt = Date()
     /// "floorball" for Innebandy Play. Nil is football from Min fotboll.
     var sport: String?
+    /// Kickoff as the page shows it, "17:00". Min fotboll only shows the time, so the day may be missing
+    /// until it is set in the app.
+    var kickoffTime: String?
+    var kickoffDay: Date?
 
     var hasSquads: Bool { !home.players.isEmpty && !away.players.isEmpty }
     /// Opens the page in Safari, where the login is, and not in the Min fotboll app.
     var safariURL: URL? { url.flatMap { URL(string: "x-safari-" + $0) } }
+
+    /// "lör 15 nov 17:00", "kl. 17:00" without a day, or nil when nothing is known.
+    var kickoffText: String? {
+        let day = kickoffDay?.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated)
+            .locale(Locale(identifier: "sv_SE")))
+        switch (day, kickoffTime) {
+        case let (day?, time?): return "\(day) \(time)"
+        case let (day?, nil): return day
+        case let (nil, time?): return "kl. \(time)"
+        case (nil, nil): return nil
+        }
+    }
+
+    /// Soonest first. Matches without a day come last, in the order they were shared.
+    static func byKickoff(_ a: ImportedMatch, _ b: ImportedMatch) -> Bool {
+        (a.kickoffDay ?? .distantFuture, a.kickoffTime ?? "99:99") < (b.kickoffDay ?? .distantFuture, b.kickoffTime ?? "99:99")
+    }
 }
 
 enum MatchImport {
@@ -41,7 +62,8 @@ enum MatchImport {
     /// Reads the text of a Min fotboll match page, line by line: for each team "Matchtrupp", then number,
     /// first name and surname (and sometimes "Målvakt") per player, then "Ersättare" and "Ledare".
     /// `names` are the two team names from the page's header. Before the squads are out only the names are there.
-    static func parse(names: [String], lines: [String], url: String? = nil) -> ImportedMatch? {
+    static func parse(names: [String], lines: [String], url: String? = nil, kickoff: String? = nil,
+                      now: Date = .now) -> ImportedMatch? {
         guard names.count == 2, !names.contains(where: \.isEmpty) else { return nil }
         let lines = lines.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         let starts = lines.indices.filter { lines[$0].caseInsensitiveCompare("Matchtrupp") == .orderedSame }
@@ -50,12 +72,15 @@ enum MatchImport {
             home = players(lines[(starts[0] + 1)..<starts[1]])
             away = players(lines[(starts[1] + 1)...])
         }
-        return ImportedMatch(home: ImportedTeam(name: names[0], players: home),
-                             away: ImportedTeam(name: names[1], players: away), url: url)
+        var match = ImportedMatch(home: ImportedTeam(name: names[0], players: home),
+                                  away: ImportedTeam(name: names[1], players: away), url: url)
+        (match.kickoffTime, match.kickoffDay) = Self.kickoff(from: kickoff, sharedAt: now)
+        return match
     }
 
     /// Reads Innebandy Play, where the page lists each player with number and full name.
-    static func parseFloorball(names: [String], teams: [[[String: String]]], url: String?) -> ImportedMatch? {
+    static func parseFloorball(names: [String], teams: [[[String: String]]], url: String?, kickoff: String? = nil,
+                               now: Date = .now) -> ImportedMatch? {
         guard names.count == 2, !names.contains(where: \.isEmpty) else { return nil }
         func squad(_ index: Int) -> [ImportedPlayer] {
             guard teams.indices.contains(index) else { return [] }
@@ -65,8 +90,53 @@ enum MatchImport {
                 return ImportedPlayer(number: number, firstName: parts.first ?? "", lastName: parts.count > 1 ? parts[1] : "", starts: true)
             }
         }
-        return ImportedMatch(home: ImportedTeam(name: names[0], players: squad(0)),
-                             away: ImportedTeam(name: names[1], players: squad(1)), url: url, sport: "floorball")
+        var match = ImportedMatch(home: ImportedTeam(name: names[0], players: squad(0)),
+                                  away: ImportedTeam(name: names[1], players: squad(1)), url: url, sport: "floorball")
+        (match.kickoffTime, match.kickoffDay) = Self.kickoff(from: kickoff, sharedAt: now)
+        return match
+    }
+
+    private static let weekdays = [["sön", "sun"], ["mån", "mon"], ["tis", "tue"], ["ons", "wed"], ["tor", "thu"],
+                                   ["fre", "fri"], ["lör", "sat"]]
+    private static let months = ["jan", "feb", "mar", "apr", "maj|may", "jun", "jul", "aug", "sep", "okt|oct", "nov", "dec"]
+
+    /// Reads kickoff from the page's text: "17:00", "lör 17:00", "Idag 18.30", "15 nov 14:00" or "2026-11-15 14:00".
+    /// A day without a year is the next one from when the match was shared. Scores and "Pågår" give nothing.
+    static func kickoff(from text: String?, sharedAt: Date) -> (time: String?, day: Date?) {
+        guard let text = text?.lowercased(), !text.isEmpty else { return (nil, nil) }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: sharedAt)
+        var time: String?
+        if let match = text.firstMatch(of: /(?:^|[^\d.:])(\d{1,2})[:.](\d{2})(?![\d.:])/),
+           let hour = Int(match.1), let minute = Int(match.2), hour < 24, minute < 60 {
+            time = String(format: "%02d:%02d", hour, minute)
+        }
+        func next(month: Int, day: Int) -> Date? {
+            let year = calendar.component(.year, from: today)
+            guard let date = calendar.date(from: DateComponents(year: year, month: month, day: day)) else { return nil }
+            // Shared after the match, or around new year: a date long past is next year's.
+            return date < calendar.date(byAdding: .day, value: -30, to: today)!
+                ? calendar.date(byAdding: .year, value: 1, to: date) : date
+        }
+        let words = text.split(whereSeparator: { !$0.isLetter }).map(String.init)
+        var day: Date?
+        if words.contains("idag") || words.contains("today") {
+            day = today
+        } else if words.contains("imorgon") || words.contains("tomorrow") {
+            day = calendar.date(byAdding: .day, value: 1, to: today)
+        } else if let match = text.firstMatch(of: /(\d{4})-(\d{2})-(\d{2})/) {
+            day = calendar.date(from: DateComponents(year: Int(match.1), month: Int(match.2), day: Int(match.3)))
+        } else if let match = text.matches(of: /(\d{1,2})\.?\s*([a-zåäö]{3})/).first(where: { match in
+            months.contains { $0.split(separator: "|").contains(Substring(match.2)) } }),
+                  let month = months.firstIndex(where: { $0.split(separator: "|").contains(Substring(match.2)) }) {
+            day = next(month: month + 1, day: Int(match.1) ?? 1)
+        } else if let match = text.firstMatch(of: /(?:^|[^\d:.])(\d{1,2})\/(\d{1,2})(?![\d])/) {
+            day = next(month: Int(match.2) ?? 1, day: Int(match.1) ?? 1)
+        } else if let weekday = weekdays.firstIndex(where: { names in words.contains { word in names.contains { word.hasPrefix($0) } } }) {
+            day = calendar.nextDate(after: today.addingTimeInterval(-1), matching: DateComponents(weekday: weekday + 1),
+                                    matchingPolicy: .nextTime)
+        }
+        return (time, day.map { calendar.startOfDay(for: $0) })
     }
 
     /// A pasted text from Min fotboll's share button: "Hemmalag - Bortalag" and a link. Without names, only the link.
@@ -89,6 +159,9 @@ enum MatchImport {
             new.id = list[index].id
             if new.home.players.isEmpty { new.home.players = list[index].home.players }
             if new.away.players.isEmpty { new.away.players = list[index].away.players }
+            // A page that doesn't show the day (or the time) keeps what was read or set before.
+            if new.kickoffTime == nil { new.kickoffTime = list[index].kickoffTime }
+            if new.kickoffDay == nil { new.kickoffDay = list[index].kickoffDay }
             list[index] = new
         } else {
             list.append(new)
@@ -104,6 +177,11 @@ enum MatchImport {
 
     static func add(_ match: ImportedMatch) {
         store(merge(match, into: planned()))
+    }
+
+    /// Saves a change made in the app, such as the kickoff, to a match waiting under Kommande matcher.
+    static func update(_ match: ImportedMatch) {
+        store(planned().map { $0.id == match.id ? match : $0 })
     }
 
     static func remove(_ id: UUID) {

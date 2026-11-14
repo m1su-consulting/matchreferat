@@ -26,6 +26,26 @@ struct ImportMatchSheet: View {
                 } footer: {
                     Text("Trupperna sparas med hela namnet på telefonen. Det som delas visar bara förnamn och nummer.")
                 }
+                Section {
+                    if let day = match.kickoffDay {
+                        DatePicker("Dag", selection: Binding(get: { day }, set: { setKickoff(day: $0) }),
+                                   displayedComponents: .date)
+                    } else {
+                        Button("Välj dag") { setKickoff(day: .now) }
+                    }
+                    if match.kickoffTime != nil {
+                        DatePicker("Tid", selection: Binding(get: { kickoffClock }, set: { setKickoff(time: $0) }),
+                                   displayedComponents: .hourAndMinute)
+                    } else {
+                        Button("Välj tid") { setKickoff(time: kickoffClock) }
+                    }
+                } header: {
+                    Text("Avspark")
+                } footer: {
+                    if match.kickoffDay == nil {
+                        Text("Sidan visar inte vilken dag matchen spelas. Välj den här, så står den under Kommande matcher.")
+                    }
+                }
                 if !match.hasSquads, match.sport != nil {
                     Section {
                         Button(action: fetchSquads) {
@@ -100,6 +120,26 @@ struct ImportMatchSheet: View {
                 }
             }
         }
+    }
+
+    /// The kickoff time as a date today, for the time picker. 12:00 until a time is set.
+    private var kickoffClock: Date {
+        let parts = (match.kickoffTime ?? "12:00").split(separator: ":").compactMap { Int($0) }
+        return Calendar.current.date(bySettingHour: parts.first ?? 12, minute: parts.count > 1 ? parts[1] : 0,
+                                     second: 0, of: .now) ?? .now
+    }
+
+    /// Saves the kickoff right away, so it shows under Kommande matcher even if the match isn't started.
+    private func setKickoff(day: Date? = nil, time: Date? = nil) {
+        if let day { match.kickoffDay = Calendar.current.startOfDay(for: day) }
+        if let time {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "HH:mm"
+            match.kickoffTime = formatter.string(from: time)
+        }
+        MatchImport.update(match)
+        store.refreshPlanned()
     }
 
     private func fetchSquads() {

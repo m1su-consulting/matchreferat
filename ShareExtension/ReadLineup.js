@@ -53,7 +53,11 @@ ReadLineup.prototype = {
                 });
                 // Every tab of a match counts as the same match.
                 var game = location.pathname.match(/\/game-view\/\d+/);
-                page.completionFunction({ supported: true, names: names, lines: textLines(),
+                // The header shows the kickoff between the teams, "17:00", until the match has a score.
+                // The whole line must end in the time, so a team called "P2014:17" isn't read as one.
+                var kickoff = textLines().map(function(line) { return line.trim(); })
+                    .filter(function(line) { return line.length < 30 && /(^|\s)\d{1,2}[:.]\d{2}$/.test(line); })[0];
+                page.completionFunction({ supported: true, names: names, lines: textLines(), kickoff: kickoff,
                                           url: location.origin + (game ? game[0] : location.pathname) });
             }
             // The squads are only on the page while the Lineup tab is open.

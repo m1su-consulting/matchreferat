@@ -663,7 +663,9 @@ extension ImportedMatch {
                 ImportedPlayer(number: first + index, firstName: firstName, starts: index < 7)
             })
         }
-        return ImportedMatch(home: team("Björkdalens IF", 1), away: team("Ekbacka IK", 11), url: "https://example.com/match")
+        var match = ImportedMatch(home: team("Björkdalens IF", 1), away: team("Ekbacka IK", 11), url: "https://example.com/match")
+        match.kickoffTime = "10:00"
+        return match
     }()
 }
 

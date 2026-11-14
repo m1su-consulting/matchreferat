@@ -8,6 +8,7 @@ enum FloorballPage {
     private struct Snapshot: Decodable {
         var names: [String]
         var players: [[String: String]]
+        var kickoff: String?
     }
 
     private static let script = """
@@ -16,6 +17,7 @@ enum FloorballPage {
       function text(name, root) { var found = all(name, root)[0]; return found ? found.textContent.trim() : ""; }
       return JSON.stringify({
         names: all("TeamInfoItem_Title").slice(0, 2).map(function(title) { return title.textContent.trim(); }),
+        kickoff: text("LiveGameData_LiveEventDate"),
         players: all("LineupPlayers_PlayerItem").map(function(item) {
           return { number: text("LineupPlayers_PlayerNumber", item), name: text("LineupPlayers_PlayerName", item) };
         })
@@ -43,7 +45,8 @@ enum FloorballPage {
 
         guard let home = await snapshot(page, base + "?tab=lineup&team=home"), home.names.count == 2 else { return nil }
         let away = await snapshot(page, base + "?tab=lineup&team=away")
-        return MatchImport.parseFloorball(names: home.names, teams: [home.players, away?.players ?? []], url: base)
+        return MatchImport.parseFloorball(names: home.names, teams: [home.players, away?.players ?? []], url: base,
+                                          kickoff: home.kickoff)
     }
 
     /// Waits for the page's own script to show the lineup. A team without a lineup never gets one, so it gives up.

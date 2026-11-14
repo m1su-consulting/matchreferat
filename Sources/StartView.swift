@@ -49,13 +49,9 @@ struct StartView: View {
                 }
             }
 
-            if let server = live.server {
-                OngoingSection(list: live.ongoing.filtered(sport), serverName: server.name) { match in
-                    live.openedMatch = LiveMatchLink(server: server, matchID: match.id)
-                }
-            }
-
+            // Your own coming matches first: once a live server is connected, Pågår nu can be a long list.
             let planned = store.plannedMatches.filter { ($0.sport == nil) == (sport == .football) }
+                .sorted(by: ImportedMatch.byKickoff)
             if planned.isEmpty && !store.hasMatchInProgress(in: sport) {
                 Section {
                     NavigationLink(value: Route.help) {
@@ -72,6 +68,12 @@ struct StartView: View {
                             .buttonStyle(.plain)
                     }
                     .onDelete { offsets in offsets.map { planned[$0].id }.forEach(store.deletePlanned) }
+                }
+            }
+
+            if let server = live.server {
+                OngoingSection(list: live.ongoing.filtered(sport), serverName: server.name) { match in
+                    live.openedMatch = LiveMatchLink(server: server, matchID: match.id)
                 }
             }
 
@@ -297,6 +299,11 @@ struct PlannedMatchRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("\(match.home.name) – \(match.away.name)").font(.headline)
+            if let kickoff = match.kickoffText {
+                Label(kickoff, systemImage: "clock")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.accent)
+            }
             Text(match.home.players.isEmpty && match.away.players.isEmpty ? "Trupperna är inte hämtade än"
                  : "\(match.home.players.count) och \(match.away.players.count) spelare")
                 .font(.caption)

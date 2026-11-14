@@ -13,6 +13,13 @@ private func makeStore(_ state: MatchState? = nil, container: ModelContainer = P
     return store
 }
 
+private struct SignUpClient: HTTPClient {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let body = #"{"localId":"uid1","idToken":"t","refreshToken":"r","expiresIn":"3600"}"#
+        return (Data(body.utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+    }
+}
+
 private func floorballMatch(periods: Int = 3) -> MatchState {
     var match = MatchState.exampleFloorball()
     match.periods = periods
@@ -522,6 +529,88 @@ struct MatchImportTests {
         #expect(shared.names == ["Björkdalens IF", "Ekbacka IK Dam"])
         #expect(try #require(MatchImport.pasted("https://play.innebandy.se/lag/games/g/x1")).names.isEmpty)
         #expect(MatchImport.pasted("ingen länk här") == nil)
+    }
+
+    @Test func kickoffIsReadFromThePageText() throws {
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        // Friday 13 November 2026, 20:00.
+        let shared = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 20)))
+        func day(_ month: Int, _ day: Int, _ year: Int = 2026) -> Date? {
+            calendar.date(from: DateComponents(year: year, month: month, day: day))
+        }
+        #expect(MatchImport.kickoff(from: "17:00", sharedAt: shared) == ("17:00", nil))
+        #expect(MatchImport.kickoff(from: "lör 9.30", sharedAt: shared) == ("09:30", day(11, 14)))
+        #expect(MatchImport.kickoff(from: "Sun 12:00", sharedAt: shared) == ("12:00", day(11, 15)))
+        #expect(MatchImport.kickoff(from: "Idag 18:30", sharedAt: shared) == ("18:30", day(11, 13)))
+        #expect(MatchImport.kickoff(from: "Imorgon 10:00", sharedAt: shared) == ("10:00", day(11, 14)))
+        #expect(MatchImport.kickoff(from: "mån 16 nov. 14:00", sharedAt: shared) == ("14:00", day(11, 16)))
+        #expect(MatchImport.kickoff(from: "3 jan 11:00", sharedAt: shared) == ("11:00", day(1, 3, 2027)))
+        #expect(MatchImport.kickoff(from: "2026-11-22 13:15", sharedAt: shared) == ("13:15", day(11, 22)))
+        #expect(MatchImport.kickoff(from: "22/11 13:15", sharedAt: shared) == ("13:15", day(11, 22)))
+        // A started or finished match shows a score or a status, not a time.
+        #expect(MatchImport.kickoff(from: "Pågår", sharedAt: shared) == (nil, nil))
+        #expect(MatchImport.kickoff(from: "9 - 6", sharedAt: shared) == (nil, nil))
+        #expect(MatchImport.kickoff(from: nil, sharedAt: shared) == (nil, nil))
+    }
+
+    @Test func kickoffIsShownAndKeptWhenSharedAgain() throws {
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        let shared = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 20)))
+        var first = try #require(MatchImport.parse(names: ["A", "B"], lines: [], url: "a", kickoff: "17:00", now: shared))
+        #expect(first.kickoffText == "kl. 17:00")
+        first.kickoffDay = calendar.date(from: DateComponents(year: 2026, month: 11, day: 14))
+        #expect(first.kickoffText == "lör 14 nov. 17:00" || first.kickoffText == "lör 14 nov 17:00")
+        // The Lineup tab shared later has no time in it: the day set in the app and the time stay.
+        let later = try #require(MatchImport.parse(names: ["A", "B"], lines: lines, url: "a", now: shared))
+        let merged = MatchImport.merge(later, into: [first], now: shared)
+        #expect(merged[0].kickoffTime == "17:00")
+        #expect(merged[0].kickoffDay == first.kickoffDay)
+        #expect(merged[0].hasSquads)
+    }
+
+    @Test func comingMatchesAreSortedByKickoff() throws {
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        var unknown = try #require(MatchImport.parse(names: ["A", "B"], lines: [], url: "a"))
+        unknown.kickoffTime = "08:00"
+        var sunday = try #require(MatchImport.parse(names: ["C", "D"], lines: [], url: "b"))
+        sunday.kickoffDay = calendar.date(from: DateComponents(year: 2026, month: 11, day: 16))
+        var saturdayLate = sunday
+        saturdayLate.id = UUID()
+        saturdayLate.kickoffDay = calendar.date(from: DateComponents(year: 2026, month: 11, day: 15))
+        saturdayLate.kickoffTime = "18:00"
+        var saturdayEarly = saturdayLate
+        saturdayEarly.id = UUID()
+        saturdayEarly.kickoffTime = "09:00"
+        let sorted = [unknown, sunday, saturdayLate, saturdayEarly].sorted(by: ImportedMatch.byKickoff)
+        #expect(sorted.map(\.id) == [saturdayEarly.id, saturdayLate.id, sunday.id, unknown.id])
+    }
+
+    @Test func matchesSavedBeforeKickoffExistedStillLoad() throws {
+        let old = #"{"id":"6E6F8B6A-0E1D-4C55-9D7B-3A3E2C9A1F01","home":{"name":"A","players":[]},"away":{"name":"B","players":[]},"url":"a","sharedAt":0}"#
+        let match = try JSONDecoder().decode(ImportedMatch.self, from: Data(old.utf8))
+        #expect(match.kickoffTime == nil)
+        #expect(match.kickoffText == nil)
+    }
+
+    @Test func connectingALiveServerKeepsComingMatches() async throws {
+        // A coming match shared from Safari, then a connection link opened: the match must still be there.
+        var match = try #require(MatchImport.parse(names: ["A", "B"], lines: [], url: "test-\(UUID().uuidString)"))
+        match.sport = "test"
+        MatchImport.add(match)
+        defer { MatchImport.remove(match.id) }
+        let defaults = UserDefaults(suiteName: "matchreferat-tests-\(UUID().uuidString)")!
+        let live = LiveShare(client: SignUpClient(), defaults: defaults)
+        try await live.connect(LiveServer(projectID: "mitt-lag", apiKey: "AIzaTESTKEY0123456789abcdefghijklmnop", name: "Mitt lag"))
+        #expect(live.isConfigured)
+        #expect(MatchImport.planned().contains { $0.id == match.id })
+        let store = makeStore()
+        store.refreshPlanned()
+        #expect(store.plannedMatches.contains { $0.id == match.id })
+        await live.disconnect()
+        #expect(MatchImport.planned().contains { $0.id == match.id })
     }
 
     @Test func oldPlannedMatchesAreForgotten() throws {
