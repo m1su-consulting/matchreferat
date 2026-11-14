@@ -100,7 +100,8 @@ enum MatchImport {
                                    ["fre", "fri"], ["lör", "sat"]]
     private static let months = ["jan", "feb", "mar", "apr", "maj|may", "jun", "jul", "aug", "sep", "okt|oct", "nov", "dec"]
 
-    /// Reads kickoff from the page's text: "17:00", "lör 17:00", "Idag 18.30", "15 nov 14:00" or "2026-11-15 14:00".
+    /// Reads kickoff from the page's text: "17:00", "lör 17:00", "Idag 18.30", "15 nov 14:00", "lör 14 nov. 2026 20:00"
+    /// or "2026-11-15 14:00".
     /// A day without a year is the next one from when the match was shared. Scores and "Pågår" give nothing.
     static func kickoff(from text: String?, sharedAt: Date) -> (time: String?, day: Date?) {
         guard let text = text?.lowercased(), !text.isEmpty else { return (nil, nil) }
@@ -111,7 +112,8 @@ enum MatchImport {
            let hour = Int(match.1), let minute = Int(match.2), hour < 24, minute < 60 {
             time = String(format: "%02d:%02d", hour, minute)
         }
-        func next(month: Int, day: Int) -> Date? {
+        func next(month: Int, day: Int, year given: Int? = nil) -> Date? {
+            if let given { return calendar.date(from: DateComponents(year: given, month: month, day: day)) }
             let year = calendar.component(.year, from: today)
             guard let date = calendar.date(from: DateComponents(year: year, month: month, day: day)) else { return nil }
             // Shared after the match, or around new year: a date long past is next year's.
@@ -126,10 +128,10 @@ enum MatchImport {
             day = calendar.date(byAdding: .day, value: 1, to: today)
         } else if let match = text.firstMatch(of: /(\d{4})-(\d{2})-(\d{2})/) {
             day = calendar.date(from: DateComponents(year: Int(match.1), month: Int(match.2), day: Int(match.3)))
-        } else if let match = text.matches(of: /(\d{1,2})\.?\s*([a-zåäö]{3})/).first(where: { match in
-            months.contains { $0.split(separator: "|").contains(Substring(match.2)) } }),
+        } else if let match = text.matches(of: /(\d{1,2})\.?\s*([a-zåäö]{3})[a-zåäö]*\.?(?:\s+(\d{4})(?![:.\d]))?/)
+                    .first(where: { match in months.contains { $0.split(separator: "|").contains(Substring(match.2)) } }),
                   let month = months.firstIndex(where: { $0.split(separator: "|").contains(Substring(match.2)) }) {
-            day = next(month: month + 1, day: Int(match.1) ?? 1)
+            day = next(month: month + 1, day: Int(match.1) ?? 1, year: match.3.flatMap { Int($0) })
         } else if let match = text.firstMatch(of: /(?:^|[^\d:.])(\d{1,2})\/(\d{1,2})(?![\d])/) {
             day = next(month: Int(match.2) ?? 1, day: Int(match.1) ?? 1)
         } else if let weekday = weekdays.firstIndex(where: { names in words.contains { word in names.contains { word.hasPrefix($0) } } }) {

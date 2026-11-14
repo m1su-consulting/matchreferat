@@ -53,10 +53,18 @@ ReadLineup.prototype = {
                 });
                 // Every tab of a match counts as the same match.
                 var game = location.pathname.match(/\/game-view\/\d+/);
-                // The header shows the kickoff between the teams, "17:00", until the match has a score.
+                // Logged in, the Feed tab lists "Datum" and "Tid", each followed by its value. Otherwise the
+                // header shows only the time between the teams, "17:00", until the match has a score.
                 // The whole line must end in the time, so a team called "P2014:17" isn't read as one.
-                var kickoff = textLines().map(function(line) { return line.trim(); })
-                    .filter(function(line) { return line.length < 30 && /(^|\s)\d{1,2}[:.]\d{2}$/.test(line); })[0];
+                var shown = textLines().map(function(line) { return line.trim(); }).filter(Boolean);
+                function after(label) {
+                    var index = shown.indexOf(label);
+                    return index >= 0 && index + 1 < shown.length ? shown[index + 1] : "";
+                }
+                var headerTime = shown.filter(function(line) {
+                    return line.length < 30 && /(^|\s)\d{1,2}[:.]\d{2}$/.test(line);
+                })[0] || "";
+                var kickoff = (after("Datum") + " " + (after("Tid") || headerTime)).trim() || undefined;
                 page.completionFunction({ supported: true, names: names, lines: textLines(), kickoff: kickoff,
                                           url: location.origin + (game ? game[0] : location.pathname) });
             }

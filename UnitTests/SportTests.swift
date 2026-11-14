@@ -546,6 +546,9 @@ struct MatchImportTests {
         #expect(MatchImport.kickoff(from: "Imorgon 10:00", sharedAt: shared) == ("10:00", day(11, 14)))
         #expect(MatchImport.kickoff(from: "mån 16 nov. 14:00", sharedAt: shared) == ("14:00", day(11, 16)))
         #expect(MatchImport.kickoff(from: "3 jan 11:00", sharedAt: shared) == ("11:00", day(1, 3, 2027)))
+        // Logged in, Min fotboll's Feed tab has "Datum" and "Tid", which the share script joins.
+        #expect(MatchImport.kickoff(from: "lör 14 nov. 2026 20:00", sharedAt: shared) == ("20:00", day(11, 14)))
+        #expect(MatchImport.kickoff(from: "sön 4 januari 2026 10:00", sharedAt: shared) == ("10:00", day(1, 4)))
         #expect(MatchImport.kickoff(from: "2026-11-22 13:15", sharedAt: shared) == ("13:15", day(11, 22)))
         #expect(MatchImport.kickoff(from: "22/11 13:15", sharedAt: shared) == ("13:15", day(11, 22)))
         // A started or finished match shows a score or a status, not a time.
